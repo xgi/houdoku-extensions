@@ -1,6 +1,6 @@
 {
-  "name": "houdoku-extensions",
-  "description": "Extensions for Houdoku, a manga reader for the desktop",
+  "name": "extension-mangadex",
+  "description": "Houdoku extension for MangaDex",
   "version": "1.0.0",
   "scripts": {
     "build": "tsc"
@@ -25,9 +25,7 @@
     "ts"
   ],
   "homepage": "https://github.com/xgi/houdoku-extensions",
-  "files": [
-    "/dist"
-  ],
+  "files": ["/dist"],
   "dependencies": {},
   "devDependencies": {
     "houdoku-extension-lib": "^1.1.1",
