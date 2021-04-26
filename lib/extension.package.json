@@ -1,19 +1,9 @@
 {
-  "name": "extension-mangadex",
-  "description": "Houdoku extension for MangaDex",
-  "version": "1.0.0",
-  "scripts": {
-    "build": "tsc"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/xgi/houdoku-extensions.git"
   },
-  "author": {
-    "name": "Jake Robertson",
-    "email": "jake@faltro.com",
-    "url": "https://faltro.com"
-  },
+  "homepage": "https://github.com/xgi/houdoku-extensions",
   "license": "MIT",
   "keywords": [
     "manga",
@@ -24,8 +14,6 @@
     "typescript",
     "ts"
   ],
-  "homepage": "https://github.com/xgi/houdoku-extensions",
-  "files": ["/dist"],
   "dependencies": {},
   "devDependencies": {
     "houdoku-extension-lib": "^1.1.1",

@@ -23,18 +23,9 @@ import {
   SeriesStatus,
   ThemeKey,
 } from "houdoku-extension-lib";
+import metadata from "./metadata.json";
 
-const METADATA: ExtensionMetadata = {
-  id: 2,
-  name: "MangaDex",
-  url: "https://mangadex.org",
-  version: 1,
-  notice:
-    "This extension currently has limited search functionality. To add a series," +
-    " either copy-paste the URL into the search field, or enter id:<series_id>",
-  noticeUrl: "",
-  pageLoadMessage: "",
-};
+const METADATA: ExtensionMetadata = metadata;
 
 const SERIES_STATUS_MAP: { [key: number]: SeriesStatus } = {
   1: SeriesStatus.ONGOING,

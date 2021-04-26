@@ -1,0 +1,9 @@
+{
+  "id": 2,
+  "name": "MangaDex",
+  "url": "https://mangadex.org",
+  "version": "1.0.0",
+  "notice": "This extension currently has limited search functionality. To add a series, either copy-paste the URL into the search field, or enter id:<series_id>",
+  "noticeUrl": "",
+  "pageLoadMessage": ""
+}

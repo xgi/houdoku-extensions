@@ -1,5 +1,5 @@
 /* eslint-disable no-continue */
-import { ipcRenderer } from 'electron';
+import { ipcRenderer } from "electron";
 import {
   FetchSeriesFunc,
   FetchChaptersFunc,
@@ -13,7 +13,7 @@ import {
   GetPageDataFunc,
   ExtensionMetadata,
   PageRequesterData,
-} from 'houdoku-extension-lib';
+} from "houdoku-extension-lib";
 import {
   Chapter,
   ContentWarningKey,
@@ -24,18 +24,10 @@ import {
   SeriesSourceType,
   SeriesStatus,
   ThemeKey,
-} from 'houdoku-extension-lib';
+} from "houdoku-extension-lib";
+import metadata from "./metadata.json";
 
-const METADATA: ExtensionMetadata = {
-  id: 3,
-  name: 'MangaNelo',
-  url: 'https://mangadex.org',
-  version: 1,
-  notice: '',
-  noticeUrl: '',
-  pageLoadMessage:
-    'Bypassing a Cloudflare filter, so this may take a few seconds.',
-};
+const METADATA: ExtensionMetadata = metadata;
 
 const SERIES_STATUS_MAP: { [key: string]: SeriesStatus } = {
   Ongoing: SeriesStatus.ONGOING,
@@ -100,32 +92,32 @@ const parseSeries: ParseSeriesFunc = (
   data: any
 ): Series => {
   const parser = new DOMParser();
-  const doc = parser.parseFromString(data, 'text/html');
+  const doc = parser.parseFromString(data, "text/html");
 
   const sourceId = doc
-    .getElementsByTagName('link')[0]
-    .getAttribute('href')
-    ?.split('/manga/')
+    .getElementsByTagName("link")[0]
+    .getAttribute("href")
+    ?.split("/manga/")
     .pop();
 
-  const description = doc.getElementById('panel-story-info-description')
+  const description = doc.getElementById("panel-story-info-description")
     ?.textContent;
-  const infoPanel = doc.getElementsByClassName('panel-story-info')[0];
+  const infoPanel = doc.getElementsByClassName("panel-story-info")[0];
   const remoteCoverUrl = infoPanel
-    .getElementsByClassName('img-loading')[0]
-    .getAttribute('src');
-  const title = infoPanel.getElementsByTagName('h1')[0].textContent;
+    .getElementsByClassName("img-loading")[0]
+    .getAttribute("src");
+  const title = infoPanel.getElementsByTagName("h1")[0].textContent;
 
-  const table = infoPanel.getElementsByClassName('variations-tableInfo')[0];
-  const tableRows = table.getElementsByTagName('tr');
+  const table = infoPanel.getElementsByClassName("variations-tableInfo")[0];
+  const tableRows = table.getElementsByTagName("tr");
 
   const altTitles = tableRows[0]
-    .getElementsByTagName('h2')[0]
-    .textContent?.split(' ; ');
-  const authorLinks = tableRows[1].getElementsByTagName('a');
-  const statusText = tableRows[2].getElementsByClassName('table-value')[0]
+    .getElementsByTagName("h2")[0]
+    .textContent?.split(" ; ");
+  const authorLinks = tableRows[1].getElementsByTagName("a");
+  const statusText = tableRows[2].getElementsByClassName("table-value")[0]
     .textContent;
-  const tagLinks = tableRows[3].getElementsByTagName('a');
+  const tagLinks = tableRows[3].getElementsByTagName("a");
 
   const authors: string[] = [];
   Object.values(authorLinks).forEach((tagLink: HTMLAnchorElement) => {
@@ -142,7 +134,7 @@ const parseSeries: ParseSeriesFunc = (
   let languageKey = LanguageKey.JAPANESE;
 
   Object.values(tagLinks).forEach((tagLink: HTMLAnchorElement) => {
-    const tagNumStr = tagLink.getAttribute('href')?.split('-').pop();
+    const tagNumStr = tagLink.getAttribute("href")?.split("-").pop();
     if (tagNumStr !== undefined) {
       const tag = parseInt(tagNumStr, 10);
 
@@ -167,11 +159,11 @@ const parseSeries: ParseSeriesFunc = (
   const series: Series = {
     id: undefined,
     extensionId: METADATA.id,
-    sourceId: sourceId || '',
+    sourceId: sourceId || "",
     sourceType: SeriesSourceType.STANDARD,
-    title: title || '',
+    title: title || "",
     altTitles: altTitles || [],
-    description: description || '',
+    description: description || "",
     authors,
     artists: [],
     genres,
@@ -181,7 +173,7 @@ const parseSeries: ParseSeriesFunc = (
     status,
     originalLanguageKey: languageKey,
     numberUnread: 0,
-    remoteCoverUrl: remoteCoverUrl || '',
+    remoteCoverUrl: remoteCoverUrl || "",
     userTags: [],
   };
   return series;
@@ -202,20 +194,20 @@ const parseChapters: ParseChaptersFunc = (
   const chapters: Chapter[] = [];
 
   const parser = new DOMParser();
-  const doc = parser.parseFromString(data, 'text/html');
+  const doc = parser.parseFromString(data, "text/html");
 
-  const chapterContainer = doc.getElementsByClassName('row-content-chapter')[0];
-  const chapterRows = chapterContainer.getElementsByTagName('li');
+  const chapterContainer = doc.getElementsByClassName("row-content-chapter")[0];
+  const chapterRows = chapterContainer.getElementsByTagName("li");
 
   Object.values(chapterRows).forEach((chapterRow: HTMLLIElement) => {
     const timeStr = chapterRow
-      .getElementsByClassName('chapter-time')[0]
-      .getAttribute('title');
+      .getElementsByClassName("chapter-time")[0]
+      .getAttribute("title");
     const time =
       timeStr === null ? new Date().getTime() : new Date(timeStr).getTime();
 
-    const chapterLink = chapterRow.getElementsByTagName('a')[0];
-    const sourceId = chapterLink.getAttribute('href')?.split('/').pop();
+    const chapterLink = chapterRow.getElementsByTagName("a")[0];
+    const sourceId = chapterLink.getAttribute("href")?.split("/").pop();
     const title = chapterLink.textContent;
     if (title === null) return;
 
@@ -227,19 +219,19 @@ const parseChapters: ParseChaptersFunc = (
     );
 
     if (matchChapterNum === null) return;
-    const chapterNumber = matchChapterNum[0].split(' ').pop();
+    const chapterNumber = matchChapterNum[0].split(" ").pop();
     const volumeNumber =
-      matchVolumeNum === null ? '' : matchVolumeNum[0].split('.').pop();
+      matchVolumeNum === null ? "" : matchVolumeNum[0].split(".").pop();
 
     chapters.push({
       id: undefined,
       seriesId: undefined,
-      sourceId: sourceId || '',
-      title: title || '',
-      chapterNumber: chapterNumber || '',
-      volumeNumber: volumeNumber || '',
+      sourceId: sourceId || "",
+      title: title || "",
+      chapterNumber: chapterNumber || "",
+      volumeNumber: volumeNumber || "",
       languageKey: LanguageKey.ENGLISH,
-      groupName: '',
+      groupName: "",
       time,
       read: false,
     });
@@ -253,7 +245,7 @@ const fetchPageRequesterData: FetchPageRequesterDataFunc = (
   chapterSourceId: string
 ) => {
   return ipcRenderer.invoke(
-    'load-url-spoof',
+    "load-url-spoof",
     `https://manganelo.com/chapter/${seriesSourceId}/${chapterSourceId}`
   );
 };
@@ -262,22 +254,22 @@ const parsePageRequesterData: ParsePageRequesterDataFunc = (
   data: any
 ): PageRequesterData => {
   const parser = new DOMParser();
-  const doc = parser.parseFromString(data, 'text/html');
+  const doc = parser.parseFromString(data, "text/html");
 
   const readerContainer = doc.getElementsByClassName(
-    'container-chapter-reader'
+    "container-chapter-reader"
   )[0];
-  const imageElements = readerContainer.getElementsByTagName('img');
+  const imageElements = readerContainer.getElementsByTagName("img");
 
   const pageFilenames: string[] = [];
   Object.values(imageElements).forEach((imageElement: HTMLImageElement) => {
-    const src = imageElement.getAttribute('src');
+    const src = imageElement.getAttribute("src");
     if (src !== null) pageFilenames.push(src);
   });
 
   return {
-    server: 'json.data.server',
-    hash: '',
+    server: "json.data.server",
+    hash: "",
     numPages: pageFilenames.length,
     pageFilenames,
   };
@@ -303,31 +295,31 @@ const fetchSearch: FetchSearchFunc = (
 
 const parseSearch: ParseSearchFunc = (data: any) => {
   const parser = new DOMParser();
-  const doc = parser.parseFromString(data, 'text/html');
+  const doc = parser.parseFromString(data, "text/html");
 
-  const searchContainers = doc.getElementsByClassName('search-story-item');
+  const searchContainers = doc.getElementsByClassName("search-story-item");
 
   const seriesList: Series[] = [];
   for (let i = 0; i < searchContainers.length; i += 1) {
     const item = searchContainers.item(i);
     if (item === null) break;
 
-    const imgs = item.getElementsByClassName('img-loading');
-    const coverUrl = imgs.length > 0 ? imgs.item(0)?.getAttribute('src') : '';
+    const imgs = item.getElementsByClassName("img-loading");
+    const coverUrl = imgs.length > 0 ? imgs.item(0)?.getAttribute("src") : "";
 
-    const linkElements = item.getElementsByClassName('item-img');
+    const linkElements = item.getElementsByClassName("item-img");
     const link = linkElements.item(0);
     if (link === null) continue;
 
-    const title = link.getAttribute('title');
-    const sourceId = link.getAttribute('href')?.split('/').pop();
+    const title = link.getAttribute("title");
+    const sourceId = link.getAttribute("href")?.split("/").pop();
     if (title === null || sourceId === undefined) continue;
 
-    const authorElements = item.getElementsByClassName('item-author');
+    const authorElements = item.getElementsByClassName("item-author");
     const author =
       authorElements.length > 0
-        ? authorElements.item(0)?.getAttribute('title')
-        : '';
+        ? authorElements.item(0)?.getAttribute("title")
+        : "";
 
     seriesList.push({
       id: undefined,
@@ -336,7 +328,7 @@ const parseSearch: ParseSearchFunc = (data: any) => {
       sourceType: SeriesSourceType.STANDARD,
       title,
       altTitles: [],
-      description: '',
+      description: "",
       authors: author ? [author] : [],
       artists: [],
       genres: [],
@@ -346,7 +338,7 @@ const parseSearch: ParseSearchFunc = (data: any) => {
       status: SeriesStatus.ONGOING,
       originalLanguageKey: LanguageKey.JAPANESE,
       numberUnread: 0,
-      remoteCoverUrl: coverUrl || '',
+      remoteCoverUrl: coverUrl || "",
       userTags: [],
     });
   }
