@@ -1,5 +1,4 @@
 /* eslint-disable no-continue */
-import { ipcRenderer } from "electron";
 import {
   FetchSeriesFunc,
   FetchChaptersFunc,
@@ -25,9 +24,10 @@ import {
   SeriesStatus,
   ThemeKey,
 } from "houdoku-extension-lib";
+import { Response } from "node-fetch";
 import metadata from "./metadata.json";
 
-const METADATA: ExtensionMetadata = metadata;
+export const METADATA: ExtensionMetadata = metadata;
 
 const SERIES_STATUS_MAP: { [key: string]: SeriesStatus } = {
   Ongoing: SeriesStatus.ONGOING,
@@ -79,20 +79,20 @@ const CONTENT_WARNING_MAP: { [key: number]: ContentWarningKey } = {
   36: ContentWarningKey.SMUT,
 };
 
-const fetchSeries: FetchSeriesFunc = (
+export const fetchSeries: FetchSeriesFunc = (
   sourceType: SeriesSourceType,
-  id: string
+  id: string,
+  fetchFn: (url: string) => Promise<Response>
 ) => {
-  const promise = fetch(`https://manganelo.com/manga/${id}`);
-  return promise;
+  return fetchFn(`https://manganelo.com/manga/${id}`);
 };
 
-const parseSeries: ParseSeriesFunc = (
+export const parseSeries: ParseSeriesFunc = (
   sourceType: SeriesSourceType,
-  data: any
+  data: any,
+  domParser: DOMParser
 ): Series => {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(data, "text/html");
+  const doc = domParser.parseFromString(data, "text/html");
 
   const sourceId = doc
     .getElementsByTagName("link")[0]
@@ -179,22 +179,21 @@ const parseSeries: ParseSeriesFunc = (
   return series;
 };
 
-const fetchChapters: FetchChaptersFunc = (
+export const fetchChapters: FetchChaptersFunc = (
   sourceType: SeriesSourceType,
-  id: string
+  id: string,
+  fetchFn: (url: string) => Promise<Response>
 ) => {
-  const promise = fetch(`https://manganelo.com/manga/${id}`);
-  return promise;
+  return fetchFn(`https://manganelo.com/manga/${id}`);
 };
 
-const parseChapters: ParseChaptersFunc = (
+export const parseChapters: ParseChaptersFunc = (
   sourceType: SeriesSourceType,
-  data: any
+  data: any,
+  domParser: DOMParser
 ): Chapter[] => {
   const chapters: Chapter[] = [];
-
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(data, "text/html");
+  const doc = domParser.parseFromString(data, "text/html");
 
   const chapterContainer = doc.getElementsByClassName("row-content-chapter")[0];
   const chapterRows = chapterContainer.getElementsByTagName("li");
@@ -239,22 +238,23 @@ const parseChapters: ParseChaptersFunc = (
   return chapters;
 };
 
-const fetchPageRequesterData: FetchPageRequesterDataFunc = (
+export const fetchPageRequesterData: FetchPageRequesterDataFunc = (
   sourceType: SeriesSourceType,
   seriesSourceId: string,
-  chapterSourceId: string
+  chapterSourceId: string,
+  fetchFn: (url: string) => Promise<Response>,
+  webviewFunc: (url: string) => Promise<string>
 ) => {
-  return ipcRenderer.invoke(
-    "load-url-spoof",
+  return webviewFunc(
     `https://manganelo.com/chapter/${seriesSourceId}/${chapterSourceId}`
   );
 };
 
-const parsePageRequesterData: ParsePageRequesterDataFunc = (
-  data: any
+export const parsePageRequesterData: ParsePageRequesterDataFunc = (
+  data: any,
+  domParser: DOMParser
 ): PageRequesterData => {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(data, "text/html");
+  const doc = domParser.parseFromString(data, "text/html");
 
   const readerContainer = doc.getElementsByClassName(
     "container-chapter-reader"
@@ -275,40 +275,44 @@ const parsePageRequesterData: ParsePageRequesterDataFunc = (
   };
 };
 
-const getPageUrls: GetPageUrlsFunc = (pageRequesterData: PageRequesterData) => {
+export const getPageUrls: GetPageUrlsFunc = (
+  pageRequesterData: PageRequesterData
+) => {
   return pageRequesterData.pageFilenames;
 };
 
-const getPageData: GetPageDataFunc = (series: Series, url: string) => {
+export const getPageData: GetPageDataFunc = (series: Series, url: string) => {
   return new Promise((resolve, reject) => {
     resolve(url);
   });
 };
 
-const fetchSearch: FetchSearchFunc = (
+export const fetchSearch: FetchSearchFunc = (
   text: string,
-  params: { [key: string]: string }
+  params: { [key: string]: string },
+  fetchFn: (url: string) => Promise<Response>
 ) => {
-  const promise = fetch(`https://manganelo.com/search/story/${text}`);
-  return promise;
+  return fetchFn(`https://manganelo.com/search/story/${text}`);
 };
 
-const parseSearch: ParseSearchFunc = (data: any) => {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(data, "text/html");
+export const parseSearch: ParseSearchFunc = (
+  data: any,
+  domParser: DOMParser
+) => {
+  const doc = domParser.parseFromString(data, "text/html");
 
   const searchContainers = doc.getElementsByClassName("search-story-item");
 
   const seriesList: Series[] = [];
   for (let i = 0; i < searchContainers.length; i += 1) {
-    const item = searchContainers.item(i);
+    const item = searchContainers[i];
     if (item === null) break;
 
     const imgs = item.getElementsByClassName("img-loading");
-    const coverUrl = imgs.length > 0 ? imgs.item(0)?.getAttribute("src") : "";
+    const coverUrl = imgs.length > 0 ? imgs[0]?.getAttribute("src") : "";
 
     const linkElements = item.getElementsByClassName("item-img");
-    const link = linkElements.item(0);
+    const link = linkElements[0];
     if (link === null) continue;
 
     const title = link.getAttribute("title");
@@ -317,9 +321,7 @@ const parseSearch: ParseSearchFunc = (data: any) => {
 
     const authorElements = item.getElementsByClassName("item-author");
     const author =
-      authorElements.length > 0
-        ? authorElements.item(0)?.getAttribute("title")
-        : "";
+      authorElements.length > 0 ? authorElements[0]?.getAttribute("title") : "";
 
     seriesList.push({
       id: undefined,
@@ -343,18 +345,4 @@ const parseSearch: ParseSearchFunc = (data: any) => {
     });
   }
   return seriesList;
-};
-
-export default {
-  METADATA,
-  fetchSeries,
-  parseSeries,
-  fetchChapters,
-  parseChapters,
-  fetchPageRequesterData,
-  parsePageRequesterData,
-  getPageUrls,
-  getPageData,
-  fetchSearch,
-  parseSearch,
 };
