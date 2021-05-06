@@ -1,5 +1,7 @@
 #!/bin/bash
 
+cd "$(dirname "$0")"
+
 EXTENSION_PACKAGE_JSON=../lib/extension.package.json
 EXTENSION_TSCONFIG_JSON=../lib/extension.tsconfig.json
 
@@ -20,10 +22,10 @@ for EXTENSION_DIR in ../extensions/*/; do
     --arg description "$DESCRIPTION" \
     --arg version "$VERSION" \
     '.name=$name | .description=$description | .version=$version' \
-    $EXTENSION_DIR/package.json) > $EXTENSION_DIR/package.json
+    $EXTENSION_DIR/package.json) >$EXTENSION_DIR/package.json
 
   cd $EXTENSION_DIR
   tsc
 
-  cd - > /dev/null
+  cd - >/dev/null
 done
