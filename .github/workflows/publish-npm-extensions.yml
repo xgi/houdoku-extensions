@@ -1,7 +1,5 @@
 name: Publish npm Extensions
-on:
-  release:
-    types: [created]
+on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
