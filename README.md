@@ -1,6 +1,7 @@
 # About
 
-This repository contains extensions for Houdoku, a manga reader for the
+This repository contains extensions for
+[Houdoku](https://github.com/xgi/houdoku), a manga reader for the
 desktop. Houdoku users can install and load extensions at runtime separate
 from the application itself.
 
@@ -16,7 +17,9 @@ extensions, check the npm registry in the @houdoku scope:
 Definitions for functions that extensions should implement are in the
 [houdoku-extension-lib repo](https://github.com/xgi/houdoku-extension-lib).
 
-In particular, see the [interface](https://github.com/xgi/houdoku-extension-lib/blob/master/src/interface.ts) source, which has method documentation.
+In particular, see the
+[interface](https://github.com/xgi/houdoku-extension-lib/blob/master/src/interface.ts)
+source, which has full method documentation.
 
 ## Building
 
@@ -33,3 +36,12 @@ the Houdoku client (like the fetch function from `node-fetch`).
 
 Additions to dependencies are possible, but would require updates at every
 layer of the application.
+
+## Related Repositories
+
+- [houdoku](https://github.com/xgi/houdoku) - the application itself
+- [houdoku-extension-lib](https://github.com/xgi/houdoku-extension-lib) -
+  interface library for extensions, used by extensions and the client
+- [aki-plugin-manager](https://github.com/xgi/aki-plugin-manager) - the
+  utility used by Houdoku to find/install/load extensions, independent of
+  Houdoku's functionality
