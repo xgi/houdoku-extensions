@@ -54,7 +54,7 @@ export const parseSeries: ParseSeriesFunc = (
     status: SeriesStatus.ONGOING,
     originalLanguageKey: LanguageKey.JAPANESE,
     numberUnread: 0,
-    remoteCoverUrl: json.cover,
+    remoteCoverUrl: `https://guya.moe/${json.cover}`,
     userTags: [],
   };
   return series;
@@ -77,18 +77,18 @@ export const parseChapters: ParseChaptersFunc = (
   const { groups } = json;
 
   Object.keys(json.chapters).forEach((chapterNum: string) => {
-    const chapterData = json.chapters.chapterNum;
-    Object.keys(json.chapters.chapterNum.groups).forEach((groupNum: string) => {
+    const chapterData = json.chapters[chapterNum];
+    Object.keys(json.chapters[chapterNum].groups).forEach((groupNum: string) => {
       chapters.push({
         id: undefined,
         seriesId: undefined,
-        sourceId: `${json.slug}/chapters/${chapterData.folder}/${groupNum}`,
+        sourceId: `${chapterNum}:${json.slug}/chapters/${chapterData.folder}/${groupNum}`,
         title: chapterData.title,
         chapterNumber: chapterNum,
         volumeNumber: chapterData.volume,
         languageKey: LanguageKey.ENGLISH,
-        groupName: groups.groupNum,
-        time: chapterData.release_date.groupNum,
+        groupName: groups[groupNum],
+        time: chapterData.release_date[groupNum],
         read: false,
       });
     });
@@ -104,19 +104,28 @@ export const fetchPageRequesterData: FetchPageRequesterDataFunc = (
   fetchFn: (url: string) => Promise<Response>,
   webviewFunc: (url: string) => Promise<string>
 ) => {
-  return fetchFn(`https://mangadex.org/api/v2/chapter/${chapterSourceId}`);
+  return fetchFn(`https://guya.moe/api/series/${seriesSourceId}`);
 };
 
 export const parsePageRequesterData: ParsePageRequesterDataFunc = (
   json: any,
+  chapterSourceId: string,
   domParser: DOMParser
 ): PageRequesterData => {
-  const pageFilenames: string[] = [];
-  json.data.pages.forEach((filename: string) => pageFilenames.push(filename));
+  const chapterNum = chapterSourceId.split(":")[0];
+  let groupNum = chapterSourceId.split("/").pop();
+  groupNum = groupNum ? groupNum : "";
+
+  const pageBasenames: string[] = json.chapters[chapterNum].groups[groupNum];
+  const pageFilenames = pageBasenames.map((basename: string) => {
+    return `https://guya.moe/media/manga/${chapterSourceId
+      .split(":")
+      .pop()}/${basename}`;
+  });
 
   return {
-    server: json.data.server,
-    hash: json.data.hash,
+    server: "",
+    hash: "",
     numPages: pageFilenames.length,
     pageFilenames,
   };
@@ -125,13 +134,7 @@ export const parsePageRequesterData: ParsePageRequesterDataFunc = (
 export const getPageUrls: GetPageUrlsFunc = (
   pageRequesterData: PageRequesterData
 ) => {
-  const pageUrls: string[] = [];
-  for (let i = 0; i < pageRequesterData.numPages; i += 1) {
-    pageUrls.push(
-      `${pageRequesterData.server}${pageRequesterData.hash}/${pageRequesterData.pageFilenames[i]}`
-    );
-  }
-  return pageUrls;
+  return pageRequesterData.pageFilenames;
 };
 
 export const getPageData: GetPageDataFunc = (series: Series, url: string) => {
@@ -145,33 +148,39 @@ export const fetchSearch: FetchSearchFunc = (
   params: { [key: string]: string },
   fetchFn: (url: string) => Promise<Response>
 ) => {
-  if ("id" in params) {
-    if (!Number.isNaN(parseInt(params.id, 10))) {
-      return fetchFn(`https://mangadex.org/api/v2/manga/${params.id}`);
-    }
-  }
-
-  if ("https" in params) {
-    const matchUrl: RegExpMatchArray | null = params.https.match(
-      new RegExp(/\/\/mangadex\.org\/title\/\d*/g)
-    );
-    if (matchUrl !== null) {
-      const id: string = matchUrl[0].replace("//mangadex.org/title/", "");
-      return fetchFn(`https://mangadex.org/api/v2/manga/${id}`);
-    }
-  }
-
-  return new Promise((resolve, reject) => {
-    reject("Did not receive an expected ID parameter or series page URL");
-  });
+  return fetchFn(`https://guya.moe/api/get_all_series`);
 };
 
 export const parseSearch: ParseSearchFunc = (
   json: any,
   domParser: DOMParser
 ) => {
-  if (!("error" in json) && json.code === 200) {
-    return [parseSeries(SeriesSourceType.STANDARD, json, domParser)];
-  }
-  return [];
+  const seriesList: Series[] = [];
+
+  Object.keys(json).forEach((title: string) => {
+    const seriesData = json[title];
+    const series: Series = {
+      id: undefined,
+      extensionId: METADATA.id,
+      sourceId: seriesData.slug,
+      sourceType: SeriesSourceType.STANDARD,
+      title: title,
+      altTitles: [],
+      description: seriesData.description,
+      authors: [seriesData.author],
+      artists: [seriesData.artist],
+      genres: [],
+      themes: [],
+      formats: [],
+      contentWarnings: [],
+      status: SeriesStatus.ONGOING,
+      originalLanguageKey: LanguageKey.JAPANESE,
+      numberUnread: 0,
+      remoteCoverUrl: `https://guya.moe/${seriesData.cover}`,
+      userTags: [],
+    };
+    seriesList.push(series);
+  });
+
+  return seriesList;
 };

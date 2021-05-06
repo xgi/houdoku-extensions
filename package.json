@@ -24,7 +24,7 @@
   "homepage": "https://github.com/xgi/houdoku-extensions",
   "devDependencies": {
     "@types/node-fetch": "^2.5.10",
-    "houdoku-extension-lib": "^1.2.3",
+    "houdoku-extension-lib": "^1.2.4",
     "node-fetch": "^2.6.1",
     "typescript": "^4.2.4"
   }
