@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2018",
-    "module": "esnext",
+    "module": "commonjs",
     "lib": ["dom", "esnext"],
     "outDir": "./dist",
     "declaration": true,

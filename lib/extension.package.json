@@ -1,4 +1,5 @@
 {
+  "main": "dist/index.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/xgi/houdoku-extensions.git"
@@ -14,9 +15,14 @@
     "typescript",
     "ts"
   ],
-  "dependencies": {},
+  "dependencies": {
+    "houdoku-extension-lib": "^1.2.3",
+    "@types/jsdom": "^16.2.10",
+    "@types/node-fetch": "^2.5.10"
+  },
   "devDependencies": {
-    "houdoku-extension-lib": "^1.1.1",
-    "typescript": "^4.2.4"
+    "typescript": "^4.2.4",
+    "node-fetch": "^2.6.1",
+    "jsdom": "^16.5.3"
   }
 }
