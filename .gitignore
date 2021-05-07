@@ -1,3 +1,5 @@
 .vscode
 node_modules
 dist/
+extensions/*/package.json
+extensions/*/tsconfig.json
