@@ -25,6 +25,7 @@ import {
   ThemeKey,
 } from "houdoku-extension-lib";
 import { Response } from "node-fetch";
+import DOMParser from "dom-parser";
 import metadata from "./metadata.json";
 
 export const METADATA: ExtensionMetadata = metadata;
@@ -92,7 +93,7 @@ export const parseSeries: ParseSeriesFunc = (
   data: any,
   domParser: DOMParser
 ): Series => {
-  const doc = domParser.parseFromString(data, "text/html");
+  const doc = domParser.parseFromString(data);
 
   const sourceId = doc
     .getElementsByTagName("link")[0]
@@ -120,7 +121,7 @@ export const parseSeries: ParseSeriesFunc = (
   const tagLinks = tableRows[3].getElementsByTagName("a");
 
   const authors: string[] = [];
-  Object.values(authorLinks).forEach((tagLink: HTMLAnchorElement) => {
+  Object.values(authorLinks).forEach((tagLink: DOMParser.Node) => {
     if (tagLink.textContent) authors.push(tagLink.textContent);
   });
   const status = statusText
@@ -133,8 +134,8 @@ export const parseSeries: ParseSeriesFunc = (
   const contentWarnings: ContentWarningKey[] = [];
   let languageKey = LanguageKey.JAPANESE;
 
-  Object.values(tagLinks).forEach((tagLink: HTMLAnchorElement) => {
-    const tagNumStr = tagLink.getAttribute("href")?.split("-").pop();
+  Object.values(tagLinks).forEach((node: DOMParser.Node) => {
+    const tagNumStr = node.getAttribute("href")?.split("-").pop();
     if (tagNumStr !== undefined) {
       const tag = parseInt(tagNumStr, 10);
 
@@ -193,12 +194,12 @@ export const parseChapters: ParseChaptersFunc = (
   domParser: DOMParser
 ): Chapter[] => {
   const chapters: Chapter[] = [];
-  const doc = domParser.parseFromString(data, "text/html");
+  const doc = domParser.parseFromString(data);
 
   const chapterContainer = doc.getElementsByClassName("row-content-chapter")[0];
   const chapterRows = chapterContainer.getElementsByTagName("li");
 
-  Object.values(chapterRows).forEach((chapterRow: HTMLLIElement) => {
+  Object.values(chapterRows).forEach((chapterRow: DOMParser.Node) => {
     const timeStr = chapterRow
       .getElementsByClassName("chapter-time")[0]
       .getAttribute("title");
@@ -252,9 +253,10 @@ export const fetchPageRequesterData: FetchPageRequesterDataFunc = (
 
 export const parsePageRequesterData: ParsePageRequesterDataFunc = (
   data: any,
+  chapterSourceId: string,
   domParser: DOMParser
 ): PageRequesterData => {
-  const doc = domParser.parseFromString(data, "text/html");
+  const doc = domParser.parseFromString(data);
 
   const readerContainer = doc.getElementsByClassName(
     "container-chapter-reader"
@@ -262,7 +264,7 @@ export const parsePageRequesterData: ParsePageRequesterDataFunc = (
   const imageElements = readerContainer.getElementsByTagName("img");
 
   const pageFilenames: string[] = [];
-  Object.values(imageElements).forEach((imageElement: HTMLImageElement) => {
+  Object.values(imageElements).forEach((imageElement: DOMParser.Node) => {
     const src = imageElement.getAttribute("src");
     if (src !== null) pageFilenames.push(src);
   });
@@ -299,7 +301,7 @@ export const parseSearch: ParseSearchFunc = (
   data: any,
   domParser: DOMParser
 ) => {
-  const doc = domParser.parseFromString(data, "text/html");
+  const doc = domParser.parseFromString(data);
 
   const searchContainers = doc.getElementsByClassName("search-story-item");
 
