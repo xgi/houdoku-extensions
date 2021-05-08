@@ -83,7 +83,8 @@ const CONTENT_WARNING_MAP: { [key: number]: ContentWarningKey } = {
 export const fetchSeries: FetchSeriesFunc = (
   sourceType: SeriesSourceType,
   id: string,
-  fetchFn: (url: string) => Promise<Response>
+  fetchFn: (url: string) => Promise<Response>,
+  webviewFunc: (url: string) => Promise<string>
 ) => {
   return fetchFn(`https://manganelo.com/manga/${id}`);
 };
@@ -92,7 +93,7 @@ export const parseSeries: ParseSeriesFunc = (
   sourceType: SeriesSourceType,
   data: any,
   domParser: DOMParser
-): Series => {
+): Series | undefined => {
   const doc = domParser.parseFromString(data);
 
   const sourceId = doc
@@ -183,7 +184,8 @@ export const parseSeries: ParseSeriesFunc = (
 export const fetchChapters: FetchChaptersFunc = (
   sourceType: SeriesSourceType,
   id: string,
-  fetchFn: (url: string) => Promise<Response>
+  fetchFn: (url: string) => Promise<Response>,
+  webviewFunc: (url: string) => Promise<string>
 ) => {
   return fetchFn(`https://manganelo.com/manga/${id}`);
 };
@@ -292,7 +294,8 @@ export const getPageData: GetPageDataFunc = (series: Series, url: string) => {
 export const fetchSearch: FetchSearchFunc = (
   text: string,
   params: { [key: string]: string },
-  fetchFn: (url: string) => Promise<Response>
+  fetchFn: (url: string) => Promise<Response>,
+  webviewFunc: (url: string) => Promise<string>
 ) => {
   return fetchFn(`https://manganelo.com/search/story/${text}`);
 };
