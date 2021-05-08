@@ -17,15 +17,18 @@ for EXTENSION_DIR in ../extensions/*/; do
   DESCRIPTION="$EXTENSION_NAME - $EXTENSION_ID - $EXTENSION_URL"
   VERSION=$(jq -r '.version' $EXTENSION_DIR/metadata.json)
 
+  cd $EXTENSION_DIR
+  tsc
+
+  INDEX_PATH=$(find . -name "index.js")
+
   echo $(jq \
+    --arg main "$INDEX_PATH" \
     --arg name "$NAME" \
     --arg description "$DESCRIPTION" \
     --arg version "$VERSION" \
-    '.name=$name | .description=$description | .version=$version' \
-    $EXTENSION_DIR/package.json) >$EXTENSION_DIR/package.json
-
-  cd $EXTENSION_DIR
-  tsc
+    '.main=$main | .name=$name | .description=$description | .version=$version' \
+    package.json) >package.json
 
   cd - >/dev/null
 done
