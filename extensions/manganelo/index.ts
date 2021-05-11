@@ -24,7 +24,7 @@ import {
   SeriesStatus,
   ThemeKey,
 } from "houdoku-extension-lib";
-import { Response } from "node-fetch";
+import { Response, RequestInfo, RequestInit } from "node-fetch";
 import DOMParser from "dom-parser";
 import metadata from "./metadata.json";
 
@@ -83,7 +83,10 @@ const CONTENT_WARNING_MAP: { [key: number]: ContentWarningKey } = {
 export const fetchSeries: FetchSeriesFunc = (
   sourceType: SeriesSourceType,
   id: string,
-  fetchFn: (url: string) => Promise<Response>,
+  fetchFn: (
+    url: RequestInfo,
+    init?: RequestInit | undefined
+  ) => Promise<Response>,
   webviewFunc: (url: string) => Promise<string>
 ) => {
   return fetchFn(`https://manganelo.com/manga/${id}`);
@@ -102,8 +105,9 @@ export const parseSeries: ParseSeriesFunc = (
     ?.split("/manga/")
     .pop();
 
-  const description = doc.getElementById("panel-story-info-description")
-    ?.textContent;
+  const description = doc.getElementById(
+    "panel-story-info-description"
+  )?.textContent;
   const infoPanel = doc.getElementsByClassName("panel-story-info")[0];
   const remoteCoverUrl = infoPanel
     .getElementsByClassName("img-loading")[0]
@@ -117,8 +121,8 @@ export const parseSeries: ParseSeriesFunc = (
     .getElementsByTagName("h2")[0]
     .textContent?.split(" ; ");
   const authorLinks = tableRows[1].getElementsByTagName("a");
-  const statusText = tableRows[2].getElementsByClassName("table-value")[0]
-    .textContent;
+  const statusText =
+    tableRows[2].getElementsByClassName("table-value")[0].textContent;
   const tagLinks = tableRows[3].getElementsByTagName("a");
 
   const authors: string[] = [];
@@ -184,7 +188,10 @@ export const parseSeries: ParseSeriesFunc = (
 export const fetchChapters: FetchChaptersFunc = (
   sourceType: SeriesSourceType,
   id: string,
-  fetchFn: (url: string) => Promise<Response>,
+  fetchFn: (
+    url: RequestInfo,
+    init?: RequestInit | undefined
+  ) => Promise<Response>,
   webviewFunc: (url: string) => Promise<string>
 ) => {
   return fetchFn(`https://manganelo.com/manga/${id}`);
@@ -245,7 +252,10 @@ export const fetchPageRequesterData: FetchPageRequesterDataFunc = (
   sourceType: SeriesSourceType,
   seriesSourceId: string,
   chapterSourceId: string,
-  fetchFn: (url: string) => Promise<Response>,
+  fetchFn: (
+    url: RequestInfo,
+    init?: RequestInit | undefined
+  ) => Promise<Response>,
   webviewFunc: (url: string) => Promise<string>
 ) => {
   return webviewFunc(
@@ -294,7 +304,10 @@ export const getPageData: GetPageDataFunc = (series: Series, url: string) => {
 export const fetchSearch: FetchSearchFunc = (
   text: string,
   params: { [key: string]: string },
-  fetchFn: (url: string) => Promise<Response>,
+  fetchFn: (
+    url: RequestInfo,
+    init?: RequestInit | undefined
+  ) => Promise<Response>,
   webviewFunc: (url: string) => Promise<string>
 ) => {
   return fetchFn(`https://manganelo.com/search/story/${text}`);

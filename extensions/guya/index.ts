@@ -19,7 +19,8 @@ import {
   SeriesSourceType,
   SeriesStatus,
 } from "houdoku-extension-lib";
-import { Response } from "node-fetch";
+import { Response, RequestInfo, RequestInit } from "node-fetch";
+import DOMParser from "dom-parser";
 import metadata from "./metadata.json";
 
 export const METADATA: ExtensionMetadata = metadata;
@@ -27,7 +28,10 @@ export const METADATA: ExtensionMetadata = metadata;
 export const fetchSeries: FetchSeriesFunc = (
   sourceType: SeriesSourceType,
   id: string,
-  fetchFn: (url: string) => Promise<Response>
+  fetchFn: (
+    url: RequestInfo,
+    init?: RequestInit | undefined
+  ) => Promise<Response>
 ) => {
   return fetchFn(`https://guya.moe/api/series/${id}`);
 };
@@ -63,7 +67,10 @@ export const parseSeries: ParseSeriesFunc = (
 export const fetchChapters: FetchChaptersFunc = (
   sourceType: SeriesSourceType,
   id: string,
-  fetchFn: (url: string) => Promise<Response>
+  fetchFn: (
+    url: RequestInfo,
+    init?: RequestInit | undefined
+  ) => Promise<Response>
 ) => {
   return fetchFn(`https://guya.moe/api/series/${id}`);
 };
@@ -78,20 +85,22 @@ export const parseChapters: ParseChaptersFunc = (
 
   Object.keys(json.chapters).forEach((chapterNum: string) => {
     const chapterData = json.chapters[chapterNum];
-    Object.keys(json.chapters[chapterNum].groups).forEach((groupNum: string) => {
-      chapters.push({
-        id: undefined,
-        seriesId: undefined,
-        sourceId: `${chapterNum}:${json.slug}/chapters/${chapterData.folder}/${groupNum}`,
-        title: chapterData.title,
-        chapterNumber: chapterNum,
-        volumeNumber: chapterData.volume,
-        languageKey: LanguageKey.ENGLISH,
-        groupName: groups[groupNum],
-        time: chapterData.release_date[groupNum],
-        read: false,
-      });
-    });
+    Object.keys(json.chapters[chapterNum].groups).forEach(
+      (groupNum: string) => {
+        chapters.push({
+          id: undefined,
+          seriesId: undefined,
+          sourceId: `${chapterNum}:${json.slug}/chapters/${chapterData.folder}/${groupNum}`,
+          title: chapterData.title,
+          chapterNumber: chapterNum,
+          volumeNumber: chapterData.volume,
+          languageKey: LanguageKey.ENGLISH,
+          groupName: groups[groupNum],
+          time: chapterData.release_date[groupNum],
+          read: false,
+        });
+      }
+    );
   });
 
   return chapters;
@@ -101,7 +110,10 @@ export const fetchPageRequesterData: FetchPageRequesterDataFunc = (
   sourceType: SeriesSourceType,
   seriesSourceId: string,
   chapterSourceId: string,
-  fetchFn: (url: string) => Promise<Response>,
+  fetchFn: (
+    url: RequestInfo,
+    init?: RequestInit | undefined
+  ) => Promise<Response>,
   webviewFunc: (url: string) => Promise<string>
 ) => {
   return fetchFn(`https://guya.moe/api/series/${seriesSourceId}`);
@@ -146,7 +158,10 @@ export const getPageData: GetPageDataFunc = (series: Series, url: string) => {
 export const fetchSearch: FetchSearchFunc = (
   text: string,
   params: { [key: string]: string },
-  fetchFn: (url: string) => Promise<Response>
+  fetchFn: (
+    url: RequestInfo,
+    init?: RequestInit | undefined
+  ) => Promise<Response>
 ) => {
   return fetchFn(`https://guya.moe/api/get_all_series`);
 };

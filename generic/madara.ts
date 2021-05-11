@@ -22,7 +22,7 @@ import {
   ThemeKey,
   SeriesStatus,
 } from "houdoku-extension-lib";
-import { Response } from "node-fetch";
+import { Response, RequestInfo, RequestInit } from "node-fetch";
 import DOMParser from "dom-parser";
 
 const SERIES_STATUS_MAP: { [key: string]: SeriesStatus } = {
@@ -78,7 +78,10 @@ export class MadaraClient {
   fetchSeries: FetchSeriesFunc = (
     sourceType: SeriesSourceType,
     id: string,
-    fetchFn: (url: string) => Promise<Response>,
+    fetchFn: (
+      url: RequestInfo,
+      init?: RequestInit | undefined
+    ) => Promise<Response>,
     webviewFunc: (url: string) => Promise<string>
   ) => {
     return webviewFunc(`${this.baseUrl}/${id.split(":").pop()}`);
@@ -108,11 +111,11 @@ export class MadaraClient {
       const sourceId = `${dataId}:${pageId}`;
 
       const image = link.getElementsByTagName("img")[0];
-      const remoteCoverUrl = (image.attributes.find(
-        (attrib: any) => attrib.name === "data-src"
-      ) !== undefined
-        ? image.getAttribute("data-src")
-        : image.getAttribute("srcset")
+      const remoteCoverUrl = (
+        image.attributes.find((attrib: any) => attrib.name === "data-src") !==
+        undefined
+          ? image.getAttribute("data-src")
+          : image.getAttribute("srcset")
       ).split(" ")[0];
 
       const description = doc
@@ -126,9 +129,8 @@ export class MadaraClient {
         ?.getElementsByClassName("artist-content")[0]
         ?.textContent.trim();
 
-      const statusContainer = detailsContainer.getElementsByClassName(
-        "post-status"
-      )[0];
+      const statusContainer =
+        detailsContainer.getElementsByClassName("post-status")[0];
       const statusText = statusContainer
         .getElementsByClassName("summary-content")
         .pop()
@@ -197,11 +199,12 @@ export class MadaraClient {
   fetchChapters: FetchChaptersFunc = (
     sourceType: SeriesSourceType,
     id: string,
-    fetchFn: (url: string) => Promise<Response>,
+    fetchFn: (
+      url: RequestInfo,
+      init?: RequestInit | undefined
+    ) => Promise<Response>,
     webviewFunc: (url: string) => Promise<string>
   ) => {
-    // TODO: update fetchFn signature
-    // @ts-expect-error
     return fetchFn(`${this.baseUrl}/wp-admin/admin-ajax.php`, {
       method: "POST",
       headers: {
@@ -273,7 +276,10 @@ export class MadaraClient {
     sourceType: SeriesSourceType,
     seriesSourceId: string,
     chapterSourceId: string,
-    fetchFn: (url: string) => Promise<Response>,
+    fetchFn: (
+      url: RequestInfo,
+      init?: RequestInit | undefined
+    ) => Promise<Response>,
     webviewFunc: (url: string) => Promise<string>
   ) => {
     return webviewFunc(
@@ -305,9 +311,7 @@ export class MadaraClient {
     };
   };
 
-  getPageUrls: GetPageUrlsFunc = (
-    pageRequesterData: PageRequesterData
-  ) => {
+  getPageUrls: GetPageUrlsFunc = (pageRequesterData: PageRequesterData) => {
     return pageRequesterData.pageFilenames;
   };
 
@@ -320,7 +324,10 @@ export class MadaraClient {
   fetchSearch: FetchSearchFunc = (
     text: string,
     params: { [key: string]: string },
-    fetchFn: (url: string) => Promise<Response>,
+    fetchFn: (
+      url: RequestInfo,
+      init?: RequestInit | undefined
+    ) => Promise<Response>,
     webviewFunc: (url: string) => Promise<string>
   ) => {
     return webviewFunc(`${this.baseUrl}/?s=${text}&post_type=wp-manga`);
@@ -350,11 +357,11 @@ export class MadaraClient {
 
       const image = item.getElementsByClassName("img-responsive")[0];
 
-      const coverUrl = (image.attributes.find(
-        (attrib: any) => attrib.name === "data-src"
-      ) !== undefined
-        ? image.getAttribute("data-src")
-        : image.getAttribute("srcset")
+      const coverUrl = (
+        image.attributes.find((attrib: any) => attrib.name === "data-src") !==
+        undefined
+          ? image.getAttribute("data-src")
+          : image.getAttribute("srcset")
       ).split(" ")[0];
 
       seriesList.push({
