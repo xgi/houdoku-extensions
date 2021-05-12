@@ -24,6 +24,10 @@ import {
 } from "houdoku-extension-lib";
 import { Response, RequestInfo, RequestInit } from "node-fetch";
 import DOMParser from "dom-parser";
+import {
+  FetchDirectoryFunc,
+  ParseDirectoryFunc,
+} from "houdoku-extension-lib/dist/interface";
 
 const SERIES_STATUS_MAP: { [key: string]: SeriesStatus } = {
   OnGoing: SeriesStatus.ONGOING,
@@ -330,7 +334,7 @@ export class MadaraClient {
     ) => Promise<Response>,
     webviewFunc: (url: string) => Promise<string>
   ) => {
-    return webviewFunc(`${this.baseUrl}/?s=${text}&post_type=wp-manga`);
+    return fetchFn(`${this.baseUrl}/?s=${text}&post_type=wp-manga`);
   };
 
   parseSearch: ParseSearchFunc = (data: any, domParser: DOMParser) => {
@@ -386,5 +390,19 @@ export class MadaraClient {
       });
     }
     return seriesList;
+  };
+
+  fetchDirectory: FetchDirectoryFunc = (
+    fetchFn: (
+      url: RequestInfo,
+      init?: RequestInit | undefined
+    ) => Promise<Response>,
+    webviewFunc: (url: string) => Promise<string>
+  ) => {
+    return fetchFn(`${this.baseUrl}/?s&post_type=wp-manga&m_orderby=views`);
+  };
+
+  parseDirectory: ParseDirectoryFunc = (data: any, domParser: DOMParser) => {
+    return this.parseSearch(data, domParser);
   };
 }

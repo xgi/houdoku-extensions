@@ -22,6 +22,10 @@ import {
 import { Response, RequestInfo, RequestInit } from "node-fetch";
 import DOMParser from "dom-parser";
 import metadata from "./metadata.json";
+import {
+  FetchDirectoryFunc,
+  ParseDirectoryFunc,
+} from "houdoku-extension-lib/dist/interface";
 
 export const METADATA: ExtensionMetadata = metadata;
 
@@ -155,18 +159,17 @@ export const getPageData: GetPageDataFunc = (series: Series, url: string) => {
   });
 };
 
-export const fetchSearch: FetchSearchFunc = (
-  text: string,
-  params: { [key: string]: string },
+export const fetchDirectory: FetchDirectoryFunc = (
   fetchFn: (
     url: RequestInfo,
     init?: RequestInit | undefined
-  ) => Promise<Response>
+  ) => Promise<Response>,
+  webviewFunc: (url: string) => Promise<string>
 ) => {
   return fetchFn(`https://guya.moe/api/get_all_series`);
 };
 
-export const parseSearch: ParseSearchFunc = (
+export const parseDirectory: ParseDirectoryFunc = (
   json: any,
   domParser: DOMParser
 ) => {
@@ -198,4 +201,23 @@ export const parseSearch: ParseSearchFunc = (
   });
 
   return seriesList;
+};
+
+export const fetchSearch: FetchSearchFunc = (
+  text: string,
+  params: { [key: string]: string },
+  fetchFn: (
+    url: RequestInfo,
+    init?: RequestInit | undefined
+  ) => Promise<Response>,
+  webviewFunc: (url: string) => Promise<string>
+) => {
+  return fetchDirectory(fetchFn, webviewFunc);
+};
+
+export const parseSearch: ParseSearchFunc = (
+  json: any,
+  domParser: DOMParser
+) => {
+  return parseDirectory(json, domParser);
 };

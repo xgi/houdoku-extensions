@@ -27,6 +27,10 @@ import {
 import { Response, RequestInfo, RequestInit } from "node-fetch";
 import DOMParser from "dom-parser";
 import metadata from "./metadata.json";
+import {
+  FetchDirectoryFunc,
+  ParseDirectoryFunc,
+} from "houdoku-extension-lib/dist/interface";
 
 export const METADATA: ExtensionMetadata = metadata;
 
@@ -338,6 +342,69 @@ export const parseSearch: ParseSearchFunc = (
     if (title === null || sourceId === undefined) continue;
 
     const authorElements = item.getElementsByClassName("item-author");
+    const author =
+      authorElements.length > 0 ? authorElements[0]?.getAttribute("title") : "";
+
+    seriesList.push({
+      id: undefined,
+      extensionId: METADATA.id,
+      sourceId,
+      sourceType: SeriesSourceType.STANDARD,
+      title,
+      altTitles: [],
+      description: "",
+      authors: author ? [author] : [],
+      artists: [],
+      genres: [],
+      themes: [],
+      contentWarnings: [],
+      formats: [],
+      status: SeriesStatus.ONGOING,
+      originalLanguageKey: LanguageKey.JAPANESE,
+      numberUnread: 0,
+      remoteCoverUrl: coverUrl || "",
+      userTags: [],
+    });
+  }
+  return seriesList;
+};
+
+export const fetchDirectory: FetchDirectoryFunc = (
+  fetchFn: (
+    url: RequestInfo,
+    init?: RequestInit | undefined
+  ) => Promise<Response>,
+  webviewFunc: (url: string) => Promise<string>
+) => {
+  return fetchFn(`https://manganelo.com/genre-all?type=topview`);
+};
+
+export const parseDirectory: ParseDirectoryFunc = (
+  data: any,
+  domParser: DOMParser
+) => {
+  const doc = domParser.parseFromString(data);
+
+  const containers = doc.getElementsByClassName("content-genres-item");
+
+  const seriesList: Series[] = [];
+  for (let i = 0; i < containers.length; i += 1) {
+    const item = containers[i];
+    if (item === null) break;
+
+    const coverUrl = item
+      .getElementsByClassName("img-loading")[0]
+      ?.getAttribute("src");
+
+    const linkElements = item.getElementsByClassName("genres-item-img");
+    const link = linkElements[0];
+    if (link === null) continue;
+
+    const title = link.getAttribute("title");
+    const sourceId = link.getAttribute("href")?.split("/").pop();
+    if (title === null || sourceId === undefined) continue;
+
+    const authorElements = item.getElementsByClassName("genres-item-author");
     const author =
       authorElements.length > 0 ? authorElements[0]?.getAttribute("title") : "";
 

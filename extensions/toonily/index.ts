@@ -13,6 +13,10 @@ import {
 } from "houdoku-extension-lib";
 import metadata from "./metadata.json";
 import { MadaraClient } from "../../generic/madara";
+import {
+  FetchDirectoryFunc,
+  ParseDirectoryFunc,
+} from "houdoku-extension-lib/dist/interface";
 
 export const METADATA: ExtensionMetadata = metadata;
 
@@ -30,3 +34,5 @@ export const getPageUrls: GetPageUrlsFunc = madaraClient.getPageUrls;
 export const getPageData: GetPageDataFunc = madaraClient.getPageData;
 export const fetchSearch: FetchSearchFunc = madaraClient.fetchSearch;
 export const parseSearch: ParseSearchFunc = madaraClient.parseSearch;
+export const fetchDirectory: FetchDirectoryFunc = madaraClient.fetchDirectory;
+export const parseDirectory: ParseDirectoryFunc = madaraClient.parseDirectory;
