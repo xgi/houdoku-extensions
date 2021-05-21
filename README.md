@@ -8,7 +8,7 @@ from the application itself.
 Extensions are published as separate npm packages. For a list of published
 extensions, check the @houdoku scope on the npm registry:
 
-- https://www.npmjs.com/search?q=%40houdoku
+- <https://www.npmjs.com/search?q=scope%3Ahoudoku>
 
 ## Development
 
