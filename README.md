@@ -23,8 +23,24 @@ source, which has full method documentation.
 
 ### Building
 
-All extensions use a common base `package.json` and `tsconfig.json` which
-is copied/edited on build. Use `scripts/build-all.sh` to build.
+Utility scripts are provided in `/scripts`:
+
+```bash
+# Clean build artifacts
+./scripts/clean-all.sh
+
+# Build all extensions (may take a while)
+./scripts/build-all.sh
+
+# Build a specific extension
+./scripts/build-one.sh guya
+
+# Manually install extensions into Houdoku for testing
+#  - unbuilt extensions are automatically skipped
+#  - INSTALL_DIR is Houdoku's userData directory,
+#    e.g. C:/Users/user/AppData/Roaming/Electron
+./scripts/manual-install-all.sh INSTALL_DIR
+```
 
 ### Dependencies
 
