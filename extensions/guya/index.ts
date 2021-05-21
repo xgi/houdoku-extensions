@@ -217,6 +217,8 @@ export const fetchSearch: FetchSearchFunc = (
 
 export const parseSearch: ParseSearchFunc = (
   json: any,
+  text: string,
+  params: { [key: string]: string },
   domParser: DOMParser
 ) => {
   return parseDirectory(json, domParser);

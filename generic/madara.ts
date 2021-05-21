@@ -337,7 +337,12 @@ export class MadaraClient {
     return fetchFn(`${this.baseUrl}/?s=${text}&post_type=wp-manga`);
   };
 
-  parseSearch: ParseSearchFunc = (data: any, domParser: DOMParser) => {
+  parseSearch: ParseSearchFunc = (
+    data: any,
+    text: string,
+    params: { [key: string]: string },
+    domParser: DOMParser
+  ) => {
     const doc = domParser.parseFromString(data);
 
     const searchContainers = doc.getElementsByClassName("c-tabs-item__content");
@@ -403,6 +408,6 @@ export class MadaraClient {
   };
 
   parseDirectory: ParseDirectoryFunc = (data: any, domParser: DOMParser) => {
-    return this.parseSearch(data, domParser);
+    return this.parseSearch(data, "", {}, domParser);
   };
 }

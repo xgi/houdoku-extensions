@@ -319,6 +319,8 @@ export const fetchSearch: FetchSearchFunc = (
 
 export const parseSearch: ParseSearchFunc = (
   data: any,
+  text: string,
+  params: { [key: string]: string },
   domParser: DOMParser
 ) => {
   const doc = domParser.parseFromString(data);
