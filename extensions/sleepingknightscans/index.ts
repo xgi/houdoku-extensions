@@ -1,38 +1,25 @@
 import {
-  FetchSeriesFunc,
-  FetchChaptersFunc,
-  ParseSeriesFunc,
-  ParseChaptersFunc,
-  ParsePageRequesterDataFunc,
-  FetchPageRequesterDataFunc,
+  GetSeriesFunc,
+  GetChaptersFunc,
+  GetPageRequesterDataFunc,
   GetPageUrlsFunc,
-  FetchSearchFunc,
-  ParseSearchFunc,
+  GetSearchFunc,
   GetPageDataFunc,
   ExtensionMetadata,
+  GetDirectoryFunc,
 } from "houdoku-extension-lib";
 import metadata from "./metadata.json";
 import { MadaraClient } from "../../generic/madara";
-import {
-  FetchDirectoryFunc,
-  ParseDirectoryFunc,
-} from "houdoku-extension-lib/dist/interface";
 
 export const METADATA: ExtensionMetadata = metadata;
 
 const madaraClient = new MadaraClient(METADATA.id, METADATA.url);
 
-export const fetchSeries: FetchSeriesFunc = madaraClient.fetchSeries;
-export const parseSeries: ParseSeriesFunc = madaraClient.parseSeries;
-export const fetchChapters: FetchChaptersFunc = madaraClient.fetchChapters;
-export const parseChapters: ParseChaptersFunc = madaraClient.parseChapters;
-export const fetchPageRequesterData: FetchPageRequesterDataFunc =
-  madaraClient.fetchPageRequesterData;
-export const parsePageRequesterData: ParsePageRequesterDataFunc =
-  madaraClient.parsePageRequesterData;
+export const getSeries: GetSeriesFunc = madaraClient.getSeries;
+export const getChapters: GetChaptersFunc = madaraClient.getChapters;
+export const getPageRequesterData: GetPageRequesterDataFunc =
+  madaraClient.getPageRequesterData;
 export const getPageUrls: GetPageUrlsFunc = madaraClient.getPageUrls;
 export const getPageData: GetPageDataFunc = madaraClient.getPageData;
-export const fetchSearch: FetchSearchFunc = madaraClient.fetchSearch;
-export const parseSearch: ParseSearchFunc = madaraClient.parseSearch;
-export const fetchDirectory: FetchDirectoryFunc = madaraClient.fetchDirectory;
-export const parseDirectory: ParseDirectoryFunc = madaraClient.parseDirectory;
+export const getSearch: GetSearchFunc = madaraClient.getSearch;
+export const getDirectory: GetDirectoryFunc = madaraClient.getDirectory;
