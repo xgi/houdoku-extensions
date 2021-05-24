@@ -286,10 +286,10 @@ const _parseMangaResults = (
           artists: result.relationships
             .filter((relationship: any) => relationship.type === "artist")
             .map((relationship: any) => artistMap[relationship.id]),
-          genres: [],
-          themes: [],
-          formats: [],
-          contentWarnings: [],
+          genres: genres,
+          themes: themes,
+          formats: formats,
+          contentWarnings: contentWarnings,
           demographic:
             DEMOGRAPHIC_MAP[result.data.attributes.publicationDemographic],
           status: SERIES_STATUS_MAP[result.data.attributes.status],
@@ -350,6 +350,7 @@ export const getChapters: GetChaptersFunc = async (
   }
 
   const chapterList: Chapter[] = [];
+  const groupIdList: string[] = [];
   let gotAllChapters: boolean = false;
   offset = 0;
   while (!gotAllChapters) {
@@ -363,6 +364,13 @@ export const getChapters: GetChaptersFunc = async (
     );
     const json = await response.json();
     json.results.forEach((result: any) => {
+      const groupRelationship: any | undefined = result.relationships.find(
+        (relationship: any) => relationship.type === "scanlation_group"
+      );
+      if (groupRelationship !== undefined) {
+        groupIdList.push(groupRelationship.id);
+      }
+
       chapterList.push({
         id: undefined,
         seriesId: undefined,
@@ -371,7 +379,7 @@ export const getChapters: GetChaptersFunc = async (
         chapterNumber: result.data.attributes.chapter,
         volumeNumber: result.data.attributes.volume || "",
         languageKey: LANGUAGE_MAP[result.data.attributes.translatedLanguage],
-        groupName: "", // TODO
+        groupName: groupRelationship === undefined ? "" : groupRelationship.id,
         time: new Date(result.data.attributes.updatedAt).getTime(),
         read: false,
       });
@@ -384,7 +392,32 @@ export const getChapters: GetChaptersFunc = async (
     }
   }
 
-  return chapterList;
+  const groupMap: { [id: string]: string } = {};
+  offset = 0;
+  while (offset < groupIdList.length) {
+    const curGroupIds: string[] = groupIdList.slice(offset, offset + 100);
+    const groupIdsStr = curGroupIds
+      .map((id: string) => `ids[]=${id}`)
+      .join("&");
+
+    const response = await fetchFn(
+      `https://api.mangadex.org/group?limit=100&${groupIdsStr}`
+    );
+    const json = await response.json();
+    json.results.forEach((result: any) => {
+      groupMap[result.data.id] = result.data.attributes.name;
+    });
+
+    offset += 100;
+  }
+
+  return chapterList.map((chapter: Chapter) => {
+    return {
+      ...chapter,
+      groupName:
+        chapter.groupName in groupMap ? groupMap[chapter.groupName] : "",
+    };
+  });
 };
 
 export const getPageRequesterData: GetPageRequesterDataFunc = (
