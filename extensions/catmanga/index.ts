@@ -12,6 +12,7 @@ import {
   ThemeKey,
   FormatKey,
   ContentWarningKey,
+  DemographicKey,
 } from "houdoku-extension-lib";
 import {
   Chapter,
@@ -65,11 +66,19 @@ const FORMAT_MAP: { [key: string]: FormatKey } = {};
 
 const CONTENT_WARNING_MAP: { [key: string]: ContentWarningKey } = {};
 
+const DEMOGRAPHIC_MAP: { [key: string]: DemographicKey } = {
+  shounen: DemographicKey.SHOUNEN,
+  seinen: DemographicKey.SEINEN,
+  shoujo: DemographicKey.SHOUJO,
+  josei: DemographicKey.JOSEI,
+};
+
 const mapSeriesData = (seriesData: any): Series => {
   const genres: GenreKey[] = [];
   const themes: ThemeKey[] = [];
   const formats: FormatKey[] = [];
   const contentWarnings: ContentWarningKey[] = [];
+  const demographics: DemographicKey[] = [DemographicKey.UNCERTAIN];
 
   seriesData.genres.forEach((genre: string) => {
     const tagStr = genre.trim().replace(" ", "").replace("-", "").toLowerCase();
@@ -85,6 +94,9 @@ const mapSeriesData = (seriesData: any): Series => {
       }
       if (tagStr in CONTENT_WARNING_MAP) {
         contentWarnings.push(CONTENT_WARNING_MAP[tagStr]);
+      }
+      if (tagStr in DEMOGRAPHIC_MAP) {
+        demographics.push(DEMOGRAPHIC_MAP[tagStr]);
       }
     }
   });
@@ -103,6 +115,7 @@ const mapSeriesData = (seriesData: any): Series => {
     themes: themes,
     formats: formats,
     contentWarnings: contentWarnings,
+    demographic: demographics.pop(),
     status: SERIES_STATUS_MAP[seriesData.status],
     originalLanguageKey: LanguageKey.JAPANESE,
     numberUnread: 0,

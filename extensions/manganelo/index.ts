@@ -9,6 +9,7 @@ import {
   ExtensionMetadata,
   PageRequesterData,
   GetDirectoryFunc,
+  DemographicKey,
 } from "houdoku-extension-lib";
 import {
   Chapter,
@@ -45,9 +46,7 @@ const GENRE_MAP: { [key: number]: GenreKey } = {
   26: GenreKey.PSYCHOLOGICAL,
   27: GenreKey.ROMANCE,
   29: GenreKey.SCI_FI,
-  31: GenreKey.SHOUJO_AI,
   32: GenreKey.SHOUJO_AI,
-  33: GenreKey.SHOUNEN_AI,
   34: GenreKey.SHOUNEN_AI,
   35: GenreKey.SLICE_OF_LIFE,
   37: GenreKey.SPORTS,
@@ -75,6 +74,13 @@ const FORMAT_MAP: { [key: number]: FormatKey } = {
 const CONTENT_WARNING_MAP: { [key: number]: ContentWarningKey } = {
   11: ContentWarningKey.ECCHI,
   36: ContentWarningKey.SMUT,
+};
+
+const DEMOGRAPHIC_MAP: { [key: number]: DemographicKey } = {
+  17: DemographicKey.JOSEI,
+  30: DemographicKey.SEINEN,
+  31: DemographicKey.SHOUJO,
+  33: DemographicKey.SHOUNEN,
 };
 
 export const getSeries: GetSeriesFunc = (
@@ -130,6 +136,7 @@ export const getSeries: GetSeriesFunc = (
       const themes: ThemeKey[] = [];
       const formats: FormatKey[] = [];
       const contentWarnings: ContentWarningKey[] = [];
+      const demographics: DemographicKey[] = [DemographicKey.UNCERTAIN];
       let languageKey = LanguageKey.JAPANESE;
 
       Object.values(tagLinks).forEach((node: DOMParser.Node) => {
@@ -148,6 +155,9 @@ export const getSeries: GetSeriesFunc = (
           }
           if (tag in CONTENT_WARNING_MAP) {
             contentWarnings.push(CONTENT_WARNING_MAP[tag]);
+          }
+          if (tag in DEMOGRAPHIC_MAP) {
+            demographics.push(DEMOGRAPHIC_MAP[tag]);
           }
 
           if (tag === 44) languageKey = LanguageKey.CHINESE_SIMP;
@@ -169,6 +179,7 @@ export const getSeries: GetSeriesFunc = (
         themes,
         formats,
         contentWarnings,
+        demographic: demographics.pop(),
         status,
         originalLanguageKey: languageKey,
         numberUnread: 0,
@@ -342,6 +353,7 @@ export const getSearch: GetSearchFunc = (
           themes: [],
           contentWarnings: [],
           formats: [],
+          demographic: DemographicKey.UNCERTAIN,
           status: SeriesStatus.ONGOING,
           originalLanguageKey: LanguageKey.JAPANESE,
           numberUnread: 0,
@@ -406,6 +418,7 @@ export const getDirectory: GetDirectoryFunc = (
           themes: [],
           contentWarnings: [],
           formats: [],
+          demographic: DemographicKey.UNCERTAIN,
           status: SeriesStatus.ONGOING,
           originalLanguageKey: LanguageKey.JAPANESE,
           numberUnread: 0,
