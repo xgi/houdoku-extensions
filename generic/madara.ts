@@ -7,6 +7,7 @@ import {
   GetPageDataFunc,
   PageRequesterData,
   GetDirectoryFunc,
+  DemographicKey,
 } from "houdoku-extension-lib";
 import {
   Chapter,
@@ -60,7 +61,14 @@ const THEME_MAP: { [key: string]: ThemeKey } = {
 const FORMAT_MAP: { [key: string]: FormatKey } = {};
 
 const CONTENT_WARNING_MAP: { [key: string]: ContentWarningKey } = {
-  adult: ContentWarningKey.SMUT,
+  adult: ContentWarningKey.PORNOGRAPHIC,
+};
+
+const DEMOGRAPHIC_MAP: { [key: string]: DemographicKey } = {
+  shounen: DemographicKey.SHOUNEN,
+  seinen: DemographicKey.SEINEN,
+  shoujo: DemographicKey.SHOUJO,
+  josei: DemographicKey.JOSEI,
 };
 
 const _getSearch = (
@@ -122,6 +130,7 @@ const _getSearch = (
           themes: [],
           contentWarnings: [],
           formats: [],
+          demographic: DemographicKey.UNCERTAIN,
           status: SeriesStatus.ONGOING,
           originalLanguageKey: LanguageKey.JAPANESE,
           numberUnread: 0,
@@ -203,6 +212,7 @@ export class MadaraClient {
           const themes: ThemeKey[] = [];
           const formats: FormatKey[] = [];
           const contentWarnings: ContentWarningKey[] = [];
+          const demographics: DemographicKey[] = [DemographicKey.UNCERTAIN];
 
           const tagLinks = detailsContainer
             .getElementsByClassName("genres-content")[0]
@@ -227,6 +237,9 @@ export class MadaraClient {
               if (tagStr in CONTENT_WARNING_MAP) {
                 contentWarnings.push(CONTENT_WARNING_MAP[tagStr]);
               }
+              if (tagStr in DEMOGRAPHIC_MAP) {
+                demographics.push(DEMOGRAPHIC_MAP[tagStr]);
+              }
             }
           });
 
@@ -244,6 +257,7 @@ export class MadaraClient {
             themes,
             formats,
             contentWarnings,
+            demographic: demographics.pop(),
             status: statusText
               ? SERIES_STATUS_MAP[statusText]
               : SeriesStatus.ONGOING,

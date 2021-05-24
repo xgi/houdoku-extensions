@@ -8,6 +8,7 @@ import {
   ExtensionMetadata,
   PageRequesterData,
   GetDirectoryFunc,
+  DemographicKey,
 } from "houdoku-extension-lib";
 import {
   Chapter,
@@ -49,6 +50,7 @@ export const getSeries: GetSeriesFunc = (
         themes: [],
         formats: [],
         contentWarnings: [],
+        demographic: DemographicKey.UNCERTAIN,
         status: SeriesStatus.ONGOING,
         originalLanguageKey: LanguageKey.JAPANESE,
         numberUnread: 0,
@@ -175,6 +177,7 @@ export const getDirectory: GetDirectoryFunc = (
           themes: [],
           formats: [],
           contentWarnings: [],
+          demographic: DemographicKey.UNCERTAIN,
           status: SeriesStatus.ONGOING,
           originalLanguageKey: LanguageKey.JAPANESE,
           numberUnread: 0,
