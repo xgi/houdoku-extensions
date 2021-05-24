@@ -1,20 +1,17 @@
 import {
-  FetchSeriesFunc,
-  FetchChaptersFunc,
-  ParseSeriesFunc,
-  ParseChaptersFunc,
-  ParsePageRequesterDataFunc,
-  FetchPageRequesterDataFunc,
+  GetSeriesFunc,
+  GetChaptersFunc,
+  GetPageRequesterDataFunc,
   GetPageUrlsFunc,
-  FetchSearchFunc,
-  ParseSearchFunc,
+  GetSearchFunc,
   GetPageDataFunc,
   ExtensionMetadata,
   PageRequesterData,
-  ContentWarningKey,
-  FormatKey,
-  ThemeKey,
+  GetDirectoryFunc,
   GenreKey,
+  ThemeKey,
+  FormatKey,
+  ContentWarningKey,
 } from "houdoku-extension-lib";
 import {
   Chapter,
@@ -26,10 +23,6 @@ import {
 import { Response, RequestInfo, RequestInit } from "node-fetch";
 import DOMParser from "dom-parser";
 import metadata from "./metadata.json";
-import {
-  FetchDirectoryFunc,
-  ParseDirectoryFunc,
-} from "houdoku-extension-lib/dist/interface";
 
 export const METADATA: ExtensionMetadata = metadata;
 
@@ -119,68 +112,66 @@ const mapSeriesData = (seriesData: any): Series => {
   return series;
 };
 
-export const fetchSeries: FetchSeriesFunc = (
+export const getSeries: GetSeriesFunc = (
   sourceType: SeriesSourceType,
   id: string,
   fetchFn: (
     url: RequestInfo,
     init?: RequestInit | undefined
-  ) => Promise<Response>
-) => {
-  return fetchFn(`https://catmanga.org/series/${id}`);
-};
-
-export const parseSeries: ParseSeriesFunc = (
-  sourceType: SeriesSourceType,
-  data: any,
+  ) => Promise<Response>,
+  webviewFunc: (url: string) => Promise<string>,
   domParser: DOMParser
-): Series => {
-  const doc = domParser.parseFromString(data);
-  const nextDataText = doc.getElementById("__NEXT_DATA__").textContent;
-  const nextData = JSON.parse(nextDataText);
+) => {
+  return fetchFn(`https://catmanga.org/series/${id}`)
+    .then((response: Response) => response.text())
+    .then((data: string) => {
+      const doc = domParser.parseFromString(data);
+      const nextDataText = doc.getElementById("__NEXT_DATA__").textContent;
+      const nextData = JSON.parse(nextDataText);
 
-  const seriesData = nextData.props.pageProps.series;
-  return mapSeriesData(seriesData);
+      const seriesData = nextData.props.pageProps.series;
+      return mapSeriesData(seriesData);
+    });
 };
 
-export const fetchChapters: FetchChaptersFunc = (
+export const getChapters: GetChaptersFunc = (
   sourceType: SeriesSourceType,
   id: string,
   fetchFn: (
     url: RequestInfo,
     init?: RequestInit | undefined
-  ) => Promise<Response>
-) => {
-  return fetchFn(`https://catmanga.org/series/${id}`);
-};
-
-export const parseChapters: ParseChaptersFunc = (
-  sourceType: SeriesSourceType,
-  data: any,
+  ) => Promise<Response>,
+  webviewFunc: (url: string) => Promise<string>,
   domParser: DOMParser
-): Chapter[] => {
-  const doc = domParser.parseFromString(data);
-  const nextDataText = doc.getElementById("__NEXT_DATA__").textContent;
-  const nextData = JSON.parse(nextDataText);
+) => {
+  return fetchFn(`https://catmanga.org/series/${id}`)
+    .then((response: Response) => response.text())
+    .then((data: string) => {
+      const doc = domParser.parseFromString(data);
+      const nextDataText = doc.getElementById("__NEXT_DATA__").textContent;
+      const nextData = JSON.parse(nextDataText);
 
-  return nextData.props.pageProps.series.chapters.map((chapterData: any) => {
-    const chapter: Chapter = {
-      id: undefined,
-      seriesId: undefined,
-      sourceId: `${chapterData.number}`,
-      title: chapterData.title,
-      chapterNumber: `${chapterData.number}`,
-      volumeNumber: "",
-      languageKey: LanguageKey.ENGLISH,
-      groupName: chapterData.groups[0],
-      time: 0,
-      read: false,
-    };
-    return chapter;
-  });
+      return nextData.props.pageProps.series.chapters.map(
+        (chapterData: any) => {
+          const chapter: Chapter = {
+            id: undefined,
+            seriesId: undefined,
+            sourceId: `${chapterData.number}`,
+            title: chapterData.title,
+            chapterNumber: `${chapterData.number}`,
+            volumeNumber: "",
+            languageKey: LanguageKey.ENGLISH,
+            groupName: chapterData.groups[0],
+            time: 0,
+            read: false,
+          };
+          return chapter;
+        }
+      );
+    });
 };
 
-export const fetchPageRequesterData: FetchPageRequesterDataFunc = (
+export const getPageRequesterData: GetPageRequesterDataFunc = (
   sourceType: SeriesSourceType,
   seriesSourceId: string,
   chapterSourceId: string,
@@ -188,30 +179,27 @@ export const fetchPageRequesterData: FetchPageRequesterDataFunc = (
     url: RequestInfo,
     init?: RequestInit | undefined
   ) => Promise<Response>,
-  webviewFunc: (url: string) => Promise<string>
+  webviewFunc: (url: string) => Promise<string>,
+  domParser: DOMParser
 ) => {
   return fetchFn(
     `https://catmanga.org/series/${seriesSourceId}/${chapterSourceId}`
-  );
-};
+  )
+    .then((response: Response) => response.text())
+    .then((data: string) => {
+      const doc = domParser.parseFromString(data);
+      const nextDataText = doc.getElementById("__NEXT_DATA__").textContent;
+      const nextData = JSON.parse(nextDataText);
 
-export const parsePageRequesterData: ParsePageRequesterDataFunc = (
-  data: any,
-  chapterSourceId: string,
-  domParser: DOMParser
-): PageRequesterData => {
-  const doc = domParser.parseFromString(data);
-  const nextDataText = doc.getElementById("__NEXT_DATA__").textContent;
-  const nextData = JSON.parse(nextDataText);
+      const pages = nextData.props.pageProps.pages;
 
-  const pages = nextData.props.pageProps.pages;
-
-  return {
-    server: "",
-    hash: "",
-    numPages: pages.length,
-    pageFilenames: pages,
-  };
+      return {
+        server: "",
+        hash: "",
+        numPages: pages.length,
+        pageFilenames: pages,
+      };
+    });
 };
 
 export const getPageUrls: GetPageUrlsFunc = (
@@ -226,59 +214,53 @@ export const getPageData: GetPageDataFunc = (series: Series, url: string) => {
   });
 };
 
-export const fetchDirectory: FetchDirectoryFunc = (
+export const getDirectory: GetDirectoryFunc = (
   fetchFn: (
     url: RequestInfo,
     init?: RequestInit | undefined
   ) => Promise<Response>,
-  webviewFunc: (url: string) => Promise<string>
-) => {
-  return fetchFn(`https://catmanga.org`);
-};
-
-export const parseDirectory: ParseDirectoryFunc = (
-  data: any,
+  webviewFunc: (url: string) => Promise<string>,
   domParser: DOMParser
 ) => {
-  const doc = domParser.parseFromString(data);
-  const nextDataText = doc.getElementById("__NEXT_DATA__").textContent;
-  const nextData = JSON.parse(nextDataText);
+  return fetchFn(`https://catmanga.org`)
+    .then((response: Response) => response.text())
+    .then((data: string) => {
+      const doc = domParser.parseFromString(data);
+      const nextDataText = doc.getElementById("__NEXT_DATA__").textContent;
+      const nextData = JSON.parse(nextDataText);
 
-  return nextData.props.pageProps.latests.map((entry: any) => {
-    const seriesData = entry[0];
-    return mapSeriesData(seriesData);
-  });
+      return nextData.props.pageProps.latests.map((entry: any) => {
+        const seriesData = entry[0];
+        return mapSeriesData(seriesData);
+      });
+    });
 };
 
-export const fetchSearch: FetchSearchFunc = (
+export const getSearch: GetSearchFunc = (
   text: string,
   params: { [key: string]: string },
   fetchFn: (
     url: RequestInfo,
     init?: RequestInit | undefined
   ) => Promise<Response>,
-  webviewFunc: (url: string) => Promise<string>
-) => {
-  return fetchFn(`https://catmanga.org`);
-};
-
-export const parseSearch: ParseSearchFunc = (
-  data: any,
-  text: string,
-  params: { [key: string]: string },
+  webviewFunc: (url: string) => Promise<string>,
   domParser: DOMParser
 ) => {
-  const doc = domParser.parseFromString(data);
-  const nextDataText = doc.getElementById("__NEXT_DATA__").textContent;
-  const nextData = JSON.parse(nextDataText);
+  return fetchFn(`https://catmanga.org`)
+    .then((response: Response) => response.text())
+    .then((data: string) => {
+      const doc = domParser.parseFromString(data);
+      const nextDataText = doc.getElementById("__NEXT_DATA__").textContent;
+      const nextData = JSON.parse(nextDataText);
 
-  const seriesList: Series[] = nextData.props.pageProps.series.map(
-    (seriesData: any) => {
-      return mapSeriesData(seriesData);
-    }
-  );
+      const seriesList: Series[] = nextData.props.pageProps.series.map(
+        (seriesData: any) => {
+          return mapSeriesData(seriesData);
+        }
+      );
 
-  return seriesList.filter((series: Series) => {
-    return series.title.toLowerCase().includes(text.toLowerCase());
-  });
+      return seriesList.filter((series: Series) => {
+        return series.title.toLowerCase().includes(text.toLowerCase());
+      });
+    });
 };
