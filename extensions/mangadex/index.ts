@@ -19,8 +19,13 @@ import {
   SeriesSourceType,
   SeriesStatus,
   ExtensionClientAbstract,
+  GetSettingsFunc,
+  FetchFunc,
+  WebviewFunc,
+  SetSettingsFunc,
 } from "houdoku-extension-lib";
 import { Response, RequestInfo, RequestInit } from "node-fetch";
+import DOMParser from "dom-parser";
 import metadata from "./metadata.json";
 
 export const METADATA: ExtensionMetadata = metadata;
@@ -160,6 +165,22 @@ const DEMOGRAPHIC_MAP: { [key: string]: DemographicKey } = {
   josei: DemographicKey.JOSEI,
   seinen: DemographicKey.SEINEN,
   none: DemographicKey.UNCERTAIN,
+};
+
+enum SETTING_NAMES {
+  USE_DATA_SAVER = "Use data saver",
+  INCLUDE_SAFE = "Include safe content",
+  INCLUDE_ECCHI = "Include ecchi (suggestive) content",
+  INCLUDE_SMUT = "Include smut (erotica) content",
+  INCLUDE_PORNOGRAPHIC = "Include pornographic content",
+}
+
+const DEFAULT_SETTINGS = {
+  [SETTING_NAMES.USE_DATA_SAVER]: true,
+  [SETTING_NAMES.INCLUDE_SAFE]: true,
+  [SETTING_NAMES.INCLUDE_ECCHI]: true,
+  [SETTING_NAMES.INCLUDE_SMUT]: false,
+  [SETTING_NAMES.INCLUDE_PORNOGRAPHIC]: false,
 };
 
 const _parseMangaResults = (
@@ -305,6 +326,15 @@ const _parseMangaResults = (
 };
 
 export class ExtensionClient extends ExtensionClientAbstract {
+  constructor(
+    fetchFn: FetchFunc,
+    webviewFn: WebviewFunc,
+    domParser: DOMParser
+  ) {
+    super(fetchFn, webviewFn, domParser);
+    this.settings = DEFAULT_SETTINGS;
+  }
+
   getMetadata: () => ExtensionMetadata = () => {
     return METADATA;
   };
@@ -429,7 +459,9 @@ export class ExtensionClient extends ExtensionClientAbstract {
       })
       .then((response: Response) => response.json())
       .then((json: any) => {
-        const pageFilenames = json.data.attributes.data;
+        const pageFilenames = this.settings[SETTING_NAMES.USE_DATA_SAVER]
+          ? json.data.attributes.dataSaver
+          : json.data.attributes.data;
         return {
           server: baseUrl,
           hash: json.data.attributes.hash,
@@ -440,8 +472,11 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getPageUrls: GetPageUrlsFunc = (pageRequesterData: PageRequesterData) => {
+    const dataStr = this.settings[SETTING_NAMES.USE_DATA_SAVER]
+      ? "data-saver"
+      : "data";
     return pageRequesterData.pageFilenames.map((filename: string) => {
-      return `${pageRequesterData.server}/data/${pageRequesterData.hash}/${filename}`;
+      return `${pageRequesterData.server}/${dataStr}/${pageRequesterData.hash}/${filename}`;
     });
   };
 
@@ -466,5 +501,20 @@ export class ExtensionClient extends ExtensionClientAbstract {
       .then((response: Response) => response.json())
       .then((json: any) => _parseMangaResults(json, this.fetchFn))
       .then((results: any[]) => results);
+  };
+
+  getSettings: GetSettingsFunc = () => {
+    return this.settings;
+  };
+
+  setSettings: SetSettingsFunc = (newSettings: { [key: string]: any }) => {
+    Object.keys(newSettings).forEach((key: string) => {
+      if (
+        key in this.settings &&
+        typeof (this.settings[key] === newSettings[key])
+      ) {
+        this.settings[key] = newSettings[key];
+      }
+    });
   };
 }
