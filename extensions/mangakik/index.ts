@@ -13,6 +13,8 @@ import {
   Series,
   PageRequesterData,
   SeriesSourceType,
+  SetSettingsFunc,
+  GetSettingsFunc,
 } from "houdoku-extension-lib";
 import DOMParser from "dom-parser";
 import metadata from "./metadata.json";
@@ -71,4 +73,8 @@ export class ExtensionClient extends ExtensionClientAbstract {
   ) => this.madaraClient.getSearch(text, params);
 
   getDirectory: GetDirectoryFunc = () => this.madaraClient.getDirectory();
+
+  setSettings: SetSettingsFunc = (newSettings: { [key: string]: any }) =>
+    this.madaraClient.setSettings(newSettings);
+  getSettings: GetSettingsFunc = () => this.madaraClient.getSettings();
 }

@@ -10,6 +10,8 @@ import {
   DemographicKey,
   WebviewFunc,
   FetchFunc,
+  GetSettingsFunc,
+  SetSettingsFunc,
 } from "houdoku-extension-lib";
 import {
   Chapter,
@@ -403,4 +405,10 @@ export class MadaraClient {
       this.fetchFn,
       this.domParser
     );
+
+  getSettings: GetSettingsFunc = () => {
+    return {};
+  };
+
+  setSettings: SetSettingsFunc = (newSettings: { [key: string]: any }) => {};
 }

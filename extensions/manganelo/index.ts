@@ -11,6 +11,8 @@ import {
   GetDirectoryFunc,
   DemographicKey,
   ExtensionClientAbstract,
+  GetSettingsFunc,
+  SetSettingsFunc,
 } from "houdoku-extension-lib";
 import {
   Chapter,
@@ -401,4 +403,10 @@ export class ExtensionClient extends ExtensionClientAbstract {
         return seriesList;
       });
   };
+
+  getSettings: GetSettingsFunc = () => {
+    return {};
+  };
+
+  setSettings: SetSettingsFunc = () => {};
 }
