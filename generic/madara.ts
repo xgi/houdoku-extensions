@@ -8,6 +8,8 @@ import {
   PageRequesterData,
   GetDirectoryFunc,
   DemographicKey,
+  WebviewFunc,
+  FetchFunc,
 } from "houdoku-extension-lib";
 import {
   Chapter,
@@ -143,27 +145,30 @@ const _getSearch = (
 };
 
 export class MadaraClient {
+  fetchFn: FetchFunc;
+  webviewFn: WebviewFunc;
+  domParser: DOMParser;
   extensionId: string;
   baseUrl: string;
 
-  constructor(extensionId: string, baseUrl: string) {
+  constructor(
+    extensionId: string,
+    baseUrl: string,
+    fetchFn: FetchFunc,
+    webviewFn: WebviewFunc,
+    domParser: DOMParser
+  ) {
     this.extensionId = extensionId;
     this.baseUrl = baseUrl;
+    this.fetchFn = fetchFn;
+    this.webviewFn = webviewFn;
+    this.domParser = domParser;
   }
 
-  getSeries: GetSeriesFunc = (
-    sourceType: SeriesSourceType,
-    id: string,
-    fetchFn: (
-      url: RequestInfo,
-      init?: RequestInit | undefined
-    ) => Promise<Response>,
-    webviewFunc: (url: string) => Promise<string>,
-    domParser: DOMParser
-  ) => {
-    return webviewFunc(`${this.baseUrl}/${id.split(":").pop()}`).then(
+  getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) => {
+    return this.webviewFn(`${this.baseUrl}/${id.split(":").pop()}`).then(
       (data: string) => {
-        const doc = domParser.parseFromString(data);
+        const doc = this.domParser.parseFromString(data);
 
         try {
           const titleContainer = doc.getElementsByClassName("post-title")[0];
@@ -275,17 +280,8 @@ export class MadaraClient {
     );
   };
 
-  getChapters: GetChaptersFunc = (
-    sourceType: SeriesSourceType,
-    id: string,
-    fetchFn: (
-      url: RequestInfo,
-      init?: RequestInit | undefined
-    ) => Promise<Response>,
-    webviewFunc: (url: string) => Promise<string>,
-    domParser: DOMParser
-  ) => {
-    return fetchFn(`${this.baseUrl}/wp-admin/admin-ajax.php`, {
+  getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) => {
+    return this.fetchFn(`${this.baseUrl}/wp-admin/admin-ajax.php`, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
@@ -298,7 +294,7 @@ export class MadaraClient {
       .then((data: string) => {
         const chapters: Chapter[] = [];
 
-        const doc = domParser.parseFromString(data);
+        const doc = this.domParser.parseFromString(data);
 
         try {
           const chapterContainers =
@@ -352,18 +348,12 @@ export class MadaraClient {
   getPageRequesterData: GetPageRequesterDataFunc = (
     sourceType: SeriesSourceType,
     seriesSourceId: string,
-    chapterSourceId: string,
-    fetchFn: (
-      url: RequestInfo,
-      init?: RequestInit | undefined
-    ) => Promise<Response>,
-    webviewFunc: (url: string) => Promise<string>,
-    domParser: DOMParser
+    chapterSourceId: string
   ) => {
-    return webviewFunc(
+    return this.webviewFn(
       `${this.baseUrl}/${seriesSourceId.split(":").pop()}/${chapterSourceId}`
     ).then((data: string) => {
-      const doc = domParser.parseFromString(data);
+      const doc = this.domParser.parseFromString(data);
       const imgContainers = doc.getElementsByClassName("wp-manga-chapter-img");
 
       const pageFilenames = imgContainers.map((node: DOMParser.Node) => {
@@ -395,21 +385,22 @@ export class MadaraClient {
 
   getSearch: GetSearchFunc = (
     text: string,
-    params: { [key: string]: string },
-    fetchFn: (
-      url: RequestInfo,
-      init?: RequestInit | undefined
-    ) => Promise<Response>,
-    webviewFunc: (url: string) => Promise<string>,
-    domParser: DOMParser
-  ) => _getSearch(this.baseUrl, this.extensionId, text, fetchFn, domParser);
+    params: { [key: string]: string }
+  ) =>
+    _getSearch(
+      this.baseUrl,
+      this.extensionId,
+      text,
+      this.fetchFn,
+      this.domParser
+    );
 
-  getDirectory: GetDirectoryFunc = (
-    fetchFn: (
-      url: RequestInfo,
-      init?: RequestInit | undefined
-    ) => Promise<Response>,
-    webviewFunc: (url: string) => Promise<string>,
-    domParser: DOMParser
-  ) => _getSearch(this.baseUrl, this.extensionId, "", fetchFn, domParser);
+  getDirectory: GetDirectoryFunc = () =>
+    _getSearch(
+      this.baseUrl,
+      this.extensionId,
+      "",
+      this.fetchFn,
+      this.domParser
+    );
 }

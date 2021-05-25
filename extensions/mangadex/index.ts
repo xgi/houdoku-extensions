@@ -13,16 +13,14 @@ import {
   ThemeKey,
   FormatKey,
   ContentWarningKey,
-} from "houdoku-extension-lib";
-import {
   Chapter,
   LanguageKey,
   Series,
   SeriesSourceType,
   SeriesStatus,
+  ExtensionClientAbstract,
 } from "houdoku-extension-lib";
 import { Response, RequestInfo, RequestInit } from "node-fetch";
-import DOMParser from "dom-parser";
 import metadata from "./metadata.json";
 
 export const METADATA: ExtensionMetadata = metadata;
@@ -306,192 +304,167 @@ const _parseMangaResults = (
     });
 };
 
-export const getSeries: GetSeriesFunc = (
-  sourceType: SeriesSourceType,
-  id: string,
-  fetchFn: (
-    url: RequestInfo,
-    init?: RequestInit | undefined
-  ) => Promise<Response>,
-  webviewFunc: (url: string) => Promise<string>,
-  domParser: DOMParser
-) => {
-  return fetchFn(`https://api.mangadex.org/manga?ids[]=${id}`)
-    .then((response: Response) => response.json())
-    .then((json: any) => _parseMangaResults(json, fetchFn))
-    .then((results: any[]) => results[0]);
-};
+export class ExtensionClient extends ExtensionClientAbstract {
+  getMetadata: () => ExtensionMetadata = () => {
+    return METADATA;
+  };
 
-export const getChapters: GetChaptersFunc = async (
-  sourceType: SeriesSourceType,
-  id: string,
-  fetchFn: (
-    url: RequestInfo,
-    init?: RequestInit | undefined
-  ) => Promise<Response>,
-  webviewFunc: (url: string) => Promise<string>,
-  domParser: DOMParser
-) => {
-  const chapterIdList: string[] = [];
-  let gotAllChapterIds: boolean = false;
-  let offset = 0;
-  while (!gotAllChapterIds) {
-    const response = await fetchFn(
-      `https://api.mangadex.org/manga/${id}/feed?limit=500&offset=${offset}`
-    );
-    const json = await response.json();
-    json.results.forEach((result: any) => chapterIdList.push(result.data.id));
+  getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) => {
+    return this.fetchFn(`https://api.mangadex.org/manga?ids[]=${id}`)
+      .then((response: Response) => response.json())
+      .then((json: any) => _parseMangaResults(json, this.fetchFn))
+      .then((results: any[]) => results[0]);
+  };
 
-    if (json.total > offset + 500) {
-      offset += 500;
-    } else {
-      gotAllChapterIds = true;
-    }
-  }
-
-  const chapterList: Chapter[] = [];
-  const groupIdList: string[] = [];
-  let gotAllChapters: boolean = false;
-  offset = 0;
-  while (!gotAllChapters) {
-    const curChapterIds: string[] = chapterIdList.slice(offset, offset + 100);
-    const chapterIdsStr = curChapterIds
-      .map((id: string) => `ids[]=${id}`)
-      .join("&");
-
-    const response = await fetchFn(
-      `https://api.mangadex.org/chapter?limit=100&${chapterIdsStr}`
-    );
-    const json = await response.json();
-    json.results.forEach((result: any) => {
-      const groupRelationship: any | undefined = result.relationships.find(
-        (relationship: any) => relationship.type === "scanlation_group"
+  getChapters: GetChaptersFunc = async (
+    sourceType: SeriesSourceType,
+    id: string
+  ) => {
+    const chapterIdList: string[] = [];
+    let gotAllChapterIds: boolean = false;
+    let offset = 0;
+    while (!gotAllChapterIds) {
+      const response = await this.fetchFn(
+        `https://api.mangadex.org/manga/${id}/feed?limit=500&offset=${offset}`
       );
-      if (groupRelationship !== undefined) {
-        groupIdList.push(groupRelationship.id);
+      const json = await response.json();
+      json.results.forEach((result: any) => chapterIdList.push(result.data.id));
+
+      if (json.total > offset + 500) {
+        offset += 500;
+      } else {
+        gotAllChapterIds = true;
       }
-
-      chapterList.push({
-        id: undefined,
-        seriesId: undefined,
-        sourceId: result.data.id,
-        title: result.data.attributes.title,
-        chapterNumber: result.data.attributes.chapter,
-        volumeNumber: result.data.attributes.volume || "",
-        languageKey: LANGUAGE_MAP[result.data.attributes.translatedLanguage],
-        groupName: groupRelationship === undefined ? "" : groupRelationship.id,
-        time: new Date(result.data.attributes.updatedAt).getTime(),
-        read: false,
-      });
-    });
-
-    if (json.total > offset + 100) {
-      offset += 100;
-    } else {
-      gotAllChapters = true;
     }
-  }
 
-  const groupMap: { [id: string]: string } = {};
-  offset = 0;
-  while (offset < groupIdList.length) {
-    const curGroupIds: string[] = groupIdList.slice(offset, offset + 100);
-    const groupIdsStr = curGroupIds
-      .map((id: string) => `ids[]=${id}`)
-      .join("&");
+    const chapterList: Chapter[] = [];
+    const groupIdList: string[] = [];
+    let gotAllChapters: boolean = false;
+    offset = 0;
+    while (!gotAllChapters) {
+      const curChapterIds: string[] = chapterIdList.slice(offset, offset + 100);
+      const chapterIdsStr = curChapterIds
+        .map((id: string) => `ids[]=${id}`)
+        .join("&");
 
-    const response = await fetchFn(
-      `https://api.mangadex.org/group?limit=100&${groupIdsStr}`
-    );
-    const json = await response.json();
-    json.results.forEach((result: any) => {
-      groupMap[result.data.id] = result.data.attributes.name;
-    });
+      const response = await this.fetchFn(
+        `https://api.mangadex.org/chapter?limit=100&${chapterIdsStr}`
+      );
+      const json = await response.json();
+      json.results.forEach((result: any) => {
+        const groupRelationship: any | undefined = result.relationships.find(
+          (relationship: any) => relationship.type === "scanlation_group"
+        );
+        if (groupRelationship !== undefined) {
+          groupIdList.push(groupRelationship.id);
+        }
 
-    offset += 100;
-  }
+        chapterList.push({
+          id: undefined,
+          seriesId: undefined,
+          sourceId: result.data.id,
+          title: result.data.attributes.title,
+          chapterNumber: result.data.attributes.chapter,
+          volumeNumber: result.data.attributes.volume || "",
+          languageKey: LANGUAGE_MAP[result.data.attributes.translatedLanguage],
+          groupName:
+            groupRelationship === undefined ? "" : groupRelationship.id,
+          time: new Date(result.data.attributes.updatedAt).getTime(),
+          read: false,
+        });
+      });
 
-  return chapterList.map((chapter: Chapter) => {
-    return {
-      ...chapter,
-      groupName:
-        chapter.groupName in groupMap ? groupMap[chapter.groupName] : "",
-    };
-  });
-};
+      if (json.total > offset + 100) {
+        offset += 100;
+      } else {
+        gotAllChapters = true;
+      }
+    }
 
-export const getPageRequesterData: GetPageRequesterDataFunc = (
-  sourceType: SeriesSourceType,
-  seriesSourceId: string,
-  chapterSourceId: string,
-  fetchFn: (
-    url: RequestInfo,
-    init?: RequestInit | undefined
-  ) => Promise<Response>,
-  webviewFunc: (url: string) => Promise<string>,
-  domParser: DOMParser
-) => {
-  let baseUrl: string;
+    const groupMap: { [id: string]: string } = {};
+    offset = 0;
+    while (offset < groupIdList.length) {
+      const curGroupIds: string[] = groupIdList.slice(offset, offset + 100);
+      const groupIdsStr = curGroupIds
+        .map((id: string) => `ids[]=${id}`)
+        .join("&");
 
-  return fetchFn(`https://api.mangadex.org/at-home/server/${chapterSourceId}`)
-    .then((response: Response) => response.json())
-    .then((json: any) => {
-      baseUrl = json.baseUrl;
+      const response = await this.fetchFn(
+        `https://api.mangadex.org/group?limit=100&${groupIdsStr}`
+      );
+      const json = await response.json();
+      json.results.forEach((result: any) => {
+        groupMap[result.data.id] = result.data.attributes.name;
+      });
 
-      return fetchFn(`https://api.mangadex.org/chapter/${chapterSourceId}`);
-    })
-    .then((response: Response) => response.json())
-    .then((json: any) => {
-      const pageFilenames = json.data.attributes.data;
+      offset += 100;
+    }
+
+    return chapterList.map((chapter: Chapter) => {
       return {
-        server: baseUrl,
-        hash: json.data.attributes.hash,
-        numPages: pageFilenames.length,
-        pageFilenames,
+        ...chapter,
+        groupName:
+          chapter.groupName in groupMap ? groupMap[chapter.groupName] : "",
       };
     });
-};
+  };
 
-export const getPageUrls: GetPageUrlsFunc = (
-  pageRequesterData: PageRequesterData
-) => {
-  return pageRequesterData.pageFilenames.map((filename: string) => {
-    return `${pageRequesterData.server}/data/${pageRequesterData.hash}/${filename}`;
-  });
-};
+  getPageRequesterData: GetPageRequesterDataFunc = (
+    sourceType: SeriesSourceType,
+    seriesSourceId: string,
+    chapterSourceId: string
+  ) => {
+    let baseUrl: string;
 
-export const getPageData: GetPageDataFunc = (series: Series, url: string) => {
-  return new Promise((resolve, reject) => {
-    resolve(url);
-  });
-};
+    return this.fetchFn(
+      `https://api.mangadex.org/at-home/server/${chapterSourceId}`
+    )
+      .then((response: Response) => response.json())
+      .then((json: any) => {
+        baseUrl = json.baseUrl;
 
-export const getDirectory: GetDirectoryFunc = (
-  fetchFn: (
-    url: RequestInfo,
-    init?: RequestInit | undefined
-  ) => Promise<Response>,
-  webviewFunc: (url: string) => Promise<string>,
-  domParser: DOMParser
-) => {
-  return fetchFn(`https://api.mangadex.org/manga`)
-    .then((response: Response) => response.json())
-    .then((json: any) => _parseMangaResults(json, fetchFn))
-    .then((results: any[]) => results);
-};
+        return this.fetchFn(
+          `https://api.mangadex.org/chapter/${chapterSourceId}`
+        );
+      })
+      .then((response: Response) => response.json())
+      .then((json: any) => {
+        const pageFilenames = json.data.attributes.data;
+        return {
+          server: baseUrl,
+          hash: json.data.attributes.hash,
+          numPages: pageFilenames.length,
+          pageFilenames,
+        };
+      });
+  };
 
-export const getSearch: GetSearchFunc = (
-  text: string,
-  params: { [key: string]: string },
-  fetchFn: (
-    url: RequestInfo,
-    init?: RequestInit | undefined
-  ) => Promise<Response>,
-  webviewFunc: (url: string) => Promise<string>,
-  domParser: DOMParser
-) => {
-  return fetchFn(`https://api.mangadex.org/manga?title=${text}"}`)
-    .then((response: Response) => response.json())
-    .then((json: any) => _parseMangaResults(json, fetchFn))
-    .then((results: any[]) => results);
-};
+  getPageUrls: GetPageUrlsFunc = (pageRequesterData: PageRequesterData) => {
+    return pageRequesterData.pageFilenames.map((filename: string) => {
+      return `${pageRequesterData.server}/data/${pageRequesterData.hash}/${filename}`;
+    });
+  };
+
+  getPageData: GetPageDataFunc = (series: Series, url: string) => {
+    return new Promise((resolve, reject) => {
+      resolve(url);
+    });
+  };
+
+  getDirectory: GetDirectoryFunc = () => {
+    return this.fetchFn(`https://api.mangadex.org/manga`)
+      .then((response: Response) => response.json())
+      .then((json: any) => _parseMangaResults(json, this.fetchFn))
+      .then((results: any[]) => results);
+  };
+
+  getSearch: GetSearchFunc = (
+    text: string,
+    params: { [key: string]: string }
+  ) => {
+    return this.fetchFn(`https://api.mangadex.org/manga?title=${text}"}`)
+      .then((response: Response) => response.json())
+      .then((json: any) => _parseMangaResults(json, this.fetchFn))
+      .then((results: any[]) => results);
+  };
+}

@@ -7,19 +7,68 @@ import {
   GetPageDataFunc,
   ExtensionMetadata,
   GetDirectoryFunc,
+  ExtensionClientAbstract,
+  FetchFunc,
+  WebviewFunc,
+  Series,
+  PageRequesterData,
+  SeriesSourceType,
 } from "houdoku-extension-lib";
+import DOMParser from "dom-parser";
 import metadata from "./metadata.json";
 import { MadaraClient } from "../../generic/madara";
 
 export const METADATA: ExtensionMetadata = metadata;
 
-const madaraClient = new MadaraClient(METADATA.id, METADATA.url);
+export class ExtensionClient extends ExtensionClientAbstract {
+  madaraClient: MadaraClient;
 
-export const getSeries: GetSeriesFunc = madaraClient.getSeries;
-export const getChapters: GetChaptersFunc = madaraClient.getChapters;
-export const getPageRequesterData: GetPageRequesterDataFunc =
-  madaraClient.getPageRequesterData;
-export const getPageUrls: GetPageUrlsFunc = madaraClient.getPageUrls;
-export const getPageData: GetPageDataFunc = madaraClient.getPageData;
-export const getSearch: GetSearchFunc = madaraClient.getSearch;
-export const getDirectory: GetDirectoryFunc = madaraClient.getDirectory;
+  constructor(
+    fetchFn: FetchFunc,
+    webviewFn: WebviewFunc,
+    domParser: DOMParser
+  ) {
+    super(fetchFn, webviewFn, domParser);
+    this.madaraClient = new MadaraClient(
+      METADATA.id,
+      METADATA.url,
+      fetchFn,
+      webviewFn,
+      domParser
+    );
+  }
+
+  getMetadata: () => ExtensionMetadata = () => {
+    return METADATA;
+  };
+
+  getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) =>
+    this.madaraClient.getSeries(sourceType, id);
+
+  getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) =>
+    this.madaraClient.getChapters(sourceType, id);
+
+  getPageRequesterData: GetPageRequesterDataFunc = (
+    sourceType: SeriesSourceType,
+    seriesSourceId: string,
+    chapterSourceId: string
+  ) =>
+    this.madaraClient.getPageRequesterData(
+      sourceType,
+      seriesSourceId,
+      chapterSourceId
+    );
+
+  getPageUrls: GetPageUrlsFunc = (pageRequesterData: PageRequesterData) =>
+    this.madaraClient.getPageUrls(pageRequesterData);
+
+  getPageData: GetPageDataFunc = (series: Series, url: string) =>
+    this.madaraClient.getPageData(series, url);
+
+  getSearch: GetSearchFunc = (
+    text: string,
+    params: { [key: string]: string }
+  ) => this.madaraClient.getSearch(text, params);
+
+  getDirectory: GetDirectoryFunc = () => this.madaraClient.getDirectory();
+}
