@@ -176,11 +176,11 @@ enum SETTING_NAMES {
 }
 
 const DEFAULT_SETTINGS = {
-  [SETTING_NAMES.USE_DATA_SAVER]: true,
-  [SETTING_NAMES.INCLUDE_SAFE]: true,
-  [SETTING_NAMES.INCLUDE_ECCHI]: true,
+  [SETTING_NAMES.USE_DATA_SAVER]: false,
+  [SETTING_NAMES.INCLUDE_SAFE]: false,
+  [SETTING_NAMES.INCLUDE_ECCHI]: false,
   [SETTING_NAMES.INCLUDE_SMUT]: false,
-  [SETTING_NAMES.INCLUDE_PORNOGRAPHIC]: false,
+  [SETTING_NAMES.INCLUDE_PORNOGRAPHIC]: true,
 };
 
 const _parseMangaResults = (
@@ -198,6 +198,14 @@ const _parseMangaResults = (
   let authorMap: { [key: string]: string } = {};
   let artistMap: { [key: string]: string } = {};
   // let coverMap: { [key: string]: string } = {};
+
+  if (
+    !("results" in json) ||
+    json.results === undefined ||
+    json.results.length === 0
+  ) {
+    return new Promise<any>((resolve) => resolve([]));
+  }
 
   return new Promise<any>((resolve) => resolve(json))
     .then((json: any) => {
@@ -310,7 +318,9 @@ const _parseMangaResults = (
           formats: formats,
           contentWarnings: contentWarnings,
           demographic:
-            DEMOGRAPHIC_MAP[result.data.attributes.publicationDemographic],
+            result.data.attributes.publicationDemographic === null
+              ? DemographicKey.UNCERTAIN
+              : DEMOGRAPHIC_MAP[result.data.attributes.publicationDemographic],
           status: SERIES_STATUS_MAP[result.data.attributes.status],
           originalLanguageKey:
             LANGUAGE_MAP[result.data.attributes.originalLanguage],
@@ -323,6 +333,19 @@ const _parseMangaResults = (
 
       return seriesList;
     });
+};
+
+const _getContentRatingsStr = (settings: { [key: string]: any }) => {
+  const contentRatings: string[] = [];
+  if (settings[SETTING_NAMES.INCLUDE_SAFE]) contentRatings.push("safe");
+  if (settings[SETTING_NAMES.INCLUDE_ECCHI]) contentRatings.push("suggestive");
+  if (settings[SETTING_NAMES.INCLUDE_SMUT]) contentRatings.push("erotica");
+  if (settings[SETTING_NAMES.INCLUDE_PORNOGRAPHIC])
+    contentRatings.push("pornographic");
+
+  return contentRatings
+    .map((rating: string) => `contentRating[]=${rating}`)
+    .join("&");
 };
 
 export class ExtensionClient extends ExtensionClientAbstract {
@@ -487,7 +510,9 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getDirectory: GetDirectoryFunc = () => {
-    return this.fetchFn(`https://api.mangadex.org/manga`)
+    return this.fetchFn(
+      `https://api.mangadex.org/manga?${_getContentRatingsStr(this.settings)}`
+    )
       .then((response: Response) => response.json())
       .then((json: any) => _parseMangaResults(json, this.fetchFn))
       .then((results: any[]) => results);
@@ -497,7 +522,11 @@ export class ExtensionClient extends ExtensionClientAbstract {
     text: string,
     params: { [key: string]: string }
   ) => {
-    return this.fetchFn(`https://api.mangadex.org/manga?title=${text}"}`)
+    return this.fetchFn(
+      `https://api.mangadex.org/manga?title=${text}&${_getContentRatingsStr(
+        this.settings
+      )}`
+    )
       .then((response: Response) => response.json())
       .then((json: any) => _parseMangaResults(json, this.fetchFn))
       .then((results: any[]) => results);
