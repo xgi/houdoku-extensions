@@ -15,5 +15,5 @@ for EXTENSION_DIR in ../extensions/*/; do
   EXTENSION_URL=$(jq -r '.url' metadata.json)
 
   cd - >/dev/null
-  echo "| $EXTENSION_ID | $EXTENSION_NAME | $EXTENSION_URL | |" >>$OUTPATH
+  echo "| $EXTENSION_ID | $EXTENSION_NAME | <$EXTENSION_URL> | |" >>$OUTPATH
 done
