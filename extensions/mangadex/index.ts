@@ -23,6 +23,8 @@ import {
   FetchFunc,
   WebviewFunc,
   SetSettingsFunc,
+  GetSettingTypesFunc,
+  SettingType,
 } from "houdoku-extension-lib";
 import { Response, RequestInfo, RequestInit } from "node-fetch";
 import DOMParser from "dom-parser";
@@ -173,7 +175,17 @@ enum SETTING_NAMES {
   INCLUDE_ECCHI = "Include ecchi (suggestive) content",
   INCLUDE_SMUT = "Include smut (erotica) content",
   INCLUDE_PORNOGRAPHIC = "Include pornographic content",
+  LANGUAGE_KEYS = "Languages (leave empty for all)",
 }
+
+const SETTING_TYPES = {
+  [SETTING_NAMES.USE_DATA_SAVER]: SettingType.BOOLEAN,
+  [SETTING_NAMES.INCLUDE_SAFE]: SettingType.BOOLEAN,
+  [SETTING_NAMES.INCLUDE_ECCHI]: SettingType.BOOLEAN,
+  [SETTING_NAMES.INCLUDE_SMUT]: SettingType.BOOLEAN,
+  [SETTING_NAMES.INCLUDE_PORNOGRAPHIC]: SettingType.BOOLEAN,
+  [SETTING_NAMES.LANGUAGE_KEYS]: SettingType.LANGUAGE_KEY_ARRAY,
+};
 
 const DEFAULT_SETTINGS = {
   [SETTING_NAMES.USE_DATA_SAVER]: false,
@@ -181,6 +193,7 @@ const DEFAULT_SETTINGS = {
   [SETTING_NAMES.INCLUDE_ECCHI]: true,
   [SETTING_NAMES.INCLUDE_SMUT]: false,
   [SETTING_NAMES.INCLUDE_PORNOGRAPHIC]: false,
+  [SETTING_NAMES.LANGUAGE_KEYS]: [LanguageKey.ENGLISH],
 };
 
 const _parseMangaResults = (
@@ -348,6 +361,23 @@ const _getContentRatingsStr = (settings: { [key: string]: any }) => {
     .join("&");
 };
 
+const _getTranslatedLanguagesStr = (settings: { [key: string]: any }) => {
+  if (settings[SETTING_NAMES.LANGUAGE_KEYS].length === 0) return "";
+
+  return (
+    "&" +
+    settings[SETTING_NAMES.LANGUAGE_KEYS]
+      .map((languageKey: LanguageKey) => {
+        const langMapKey: string | null = Object.keys(LANGUAGE_MAP).find(
+          (key: string) => LANGUAGE_MAP[key] === languageKey
+        );
+
+        return langMapKey === null ? "" : `translatedLanguage[]=${langMapKey}`;
+      })
+      .join("&")
+  );
+};
+
 export class ExtensionClient extends ExtensionClientAbstract {
   constructor(
     fetchFn: FetchFunc,
@@ -378,9 +408,12 @@ export class ExtensionClient extends ExtensionClientAbstract {
     let offset = 0;
     while (!gotAllChapterIds) {
       const response = await this.fetchFn(
-        `https://api.mangadex.org/manga/${id}/feed?limit=500&offset=${offset}`
+        `https://api.mangadex.org/manga/${id}/feed?limit=500&offset=${offset}${_getTranslatedLanguagesStr(
+          this.settings
+        )}`
       );
       const json = await response.json();
+      if (!json.results || json.results.length === 0) return [];
       json.results.forEach((result: any) => chapterIdList.push(result.data.id));
 
       if (json.total > offset + 500) {
@@ -530,6 +563,10 @@ export class ExtensionClient extends ExtensionClientAbstract {
       .then((response: Response) => response.json())
       .then((json: any) => _parseMangaResults(json, this.fetchFn))
       .then((results: any[]) => results);
+  };
+
+  getSettingTypes: GetSettingTypesFunc = () => {
+    return SETTING_TYPES;
   };
 
   getSettings: GetSettingsFunc = () => {
