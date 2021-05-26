@@ -12,6 +12,7 @@ import {
   FetchFunc,
   GetSettingsFunc,
   SetSettingsFunc,
+  GetSettingTypesFunc,
 } from "houdoku-extension-lib";
 import {
   Chapter,
@@ -405,6 +406,10 @@ export class MadaraClient {
       this.fetchFn,
       this.domParser
     );
+
+  getSettingTypes: GetSettingTypesFunc = () => {
+    return {};
+  };
 
   getSettings: GetSettingsFunc = () => {
     return {};

@@ -16,6 +16,7 @@ import {
   ExtensionClientAbstract,
   GetSettingsFunc,
   SetSettingsFunc,
+  GetSettingTypesFunc,
 } from "houdoku-extension-lib";
 import {
   Chapter,
@@ -244,6 +245,10 @@ export class ExtensionClient extends ExtensionClientAbstract {
           return series.title.toLowerCase().includes(text.toLowerCase());
         });
       });
+  };
+
+  getSettingTypes: GetSettingTypesFunc = () => {
+    return {};
   };
 
   getSettings: GetSettingsFunc = () => {
