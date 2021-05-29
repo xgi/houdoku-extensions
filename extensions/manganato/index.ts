@@ -93,16 +93,10 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.fetchFn(`https://manganelo.com/manga/${id}`)
+    return this.fetchFn(`${id}`)
       .then((response: Response) => response.text())
       .then((data: string) => {
         const doc = this.domParser.parseFromString(data);
-
-        const sourceId = doc
-          .getElementsByTagName("link")[0]
-          .getAttribute("href")
-          ?.split("/manga/")
-          .pop();
 
         const description = doc.getElementById(
           "panel-story-info-description"
@@ -170,7 +164,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
         const series: Series = {
           id: undefined,
           extensionId: METADATA.id,
-          sourceId: sourceId || "",
+          sourceId: id,
           sourceType: SeriesSourceType.STANDARD,
           title: title || "",
           altTitles: altTitles || [],
@@ -193,7 +187,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.fetchFn(`https://manganelo.com/manga/${id}`)
+    return this.fetchFn(`${id}`)
       .then((response: Response) => response.text())
       .then((data: string) => {
         const chapters: Chapter[] = [];
@@ -214,7 +208,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
               : new Date(timeStr).getTime();
 
           const chapterLink = chapterRow.getElementsByTagName("a")[0];
-          const sourceId = chapterLink.getAttribute("href")?.split("/").pop();
+          const sourceId = chapterLink.getAttribute("href");
           const title = chapterLink.textContent;
           if (title === null) return;
 
@@ -252,9 +246,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
     seriesSourceId: string,
     chapterSourceId: string
   ) => {
-    return this.webviewFn(
-      `https://manganelo.com/chapter/${seriesSourceId}/${chapterSourceId}`
-    ).then((data: string) => {
+    return this.webviewFn(`${chapterSourceId}`).then((data: string) => {
       const doc = this.domParser.parseFromString(data);
 
       const readerContainer = doc.getElementsByClassName(
@@ -291,7 +283,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
     text: string,
     params: { [key: string]: string }
   ) => {
-    return this.fetchFn(`https://manganelo.com/search/story/${text}`)
+    return this.fetchFn(`https://manganato.com/search/story/${text}`)
       .then((response: Response) => response.text())
       .then((data: string) => {
         const doc = this.domParser.parseFromString(data);
@@ -312,7 +304,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
           if (link === null) continue;
 
           const title = link.getAttribute("title");
-          const sourceId = link.getAttribute("href")?.split("/").pop();
+          const sourceId = link.getAttribute("href");
           if (title === null || sourceId === undefined) continue;
 
           const authorElements = item.getElementsByClassName("item-author");
@@ -348,7 +340,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getDirectory: GetDirectoryFunc = () => {
-    return this.fetchFn(`https://manganelo.com/genre-all?type=topview`)
+    return this.fetchFn(`https://manganato.com/genre-all?type=topview`)
       .then((response: Response) => response.text())
       .then((data: string) => {
         const doc = this.domParser.parseFromString(data);
@@ -369,15 +361,13 @@ export class ExtensionClient extends ExtensionClientAbstract {
           if (link === null) continue;
 
           const title = link.getAttribute("title");
-          const sourceId = link.getAttribute("href")?.split("/").pop();
+          const sourceId = link.getAttribute("href");
           if (title === null || sourceId === undefined) continue;
 
           const authorElements =
             item.getElementsByClassName("genres-item-author");
           const author =
-            authorElements.length > 0
-              ? authorElements[0]?.getAttribute("title")
-              : "";
+            authorElements.length > 0 ? authorElements[0].textContent : "";
 
           seriesList.push({
             id: undefined,
