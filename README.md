@@ -79,7 +79,6 @@ and may be out-of-date; the only authoritative source is the
 | c50fef38-5c90-4e3a-8730-68bc1d2af7d8 | Manga347              | <https://manga347.com>        |       |
 | 6b4e9df1-b369-4adc-8d36-fe954dd793e3 | MangaDex              | <https://mangadex.org>        |       |
 | bfc30edf-535d-44c6-8224-83e368235a27 | MangaKik              | <https://mangakik.com>        |       |
-| 214cba07-d258-4b68-8b0e-b9da093fb942 | MangaNelo             | <https://manganelo.tv>        |       |
 | 2ba694f4-97e5-459a-8f52-9d11487f3d03 | Mangarave             | <https://mangarave.com>       |       |
 | cd649429-6b6a-4874-96cd-4914b64e5002 | Sleeping Knight Scans | <https://skscans.com>         |       |
 | 23750732-4b05-44f3-8daf-853627f628e2 | Toonily               | <https://toonily.com>         |       |
