@@ -34,6 +34,12 @@ const SERIES_STATUS_MAP: { [key: string]: SeriesStatus } = {
   Cancelled: SeriesStatus.CANCELLED,
 };
 
+const ORIGINAL_LANGUAGE_MAP: { [key: string]: LanguageKey } = {
+  Manga: LanguageKey.JAPANESE,
+  Manhua: LanguageKey.CHINESE_SIMP,
+  Manhwa: LanguageKey.KOREAN,
+};
+
 const GENRE_MAP: { [key: string]: GenreKey } = {
   Action: GenreKey.ACTION,
   Adventure: GenreKey.ADVENTURE,
@@ -189,6 +195,13 @@ export class NepClient {
           .parentNode.getElementsByTagName("a")
           .map((node: DOMParser.Node) => node.textContent.trim());
 
+        const typeStr = findNodeWithText(detailLabels, "Type")
+          .parentNode.getElementsByTagName("a")[0]
+          .getAttribute("href")
+          .split("=")
+          .pop();
+        const originalLanguage = ORIGINAL_LANGUAGE_MAP[typeStr];
+
         const statusStr = findNodeWithText(detailLabels, "Status")
           .parentNode.getElementsByTagName("a")[0]
           .getAttribute("href")
@@ -240,7 +253,7 @@ export class NepClient {
           contentWarnings,
           demographic: demographics.pop(),
           status: status,
-          originalLanguageKey: LanguageKey.JAPANESE,
+          originalLanguageKey: originalLanguage,
           numberUnread: 0,
           remoteCoverUrl: `https://cover.nep.li/cover/${id}.jpg`,
           userTags: [],
