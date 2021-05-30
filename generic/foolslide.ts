@@ -23,6 +23,45 @@ import {
 import { Response } from "node-fetch";
 import DOMParser from "dom-parser";
 
+const _parseResults = (doc: DOMParser.Dom, extensionId: string): Series[] => {
+  const seriesContainers = doc.getElementsByClassName("group");
+  return seriesContainers.map((node: DOMParser.Node) => {
+    const linkElement = node.getElementsByClassName("title")[0].firstChild;
+    const title = linkElement.textContent.trim();
+    const link = linkElement.getAttribute("href");
+    const sourceId = link
+      .substr(0, link.length - 1)
+      .split("/")
+      .pop();
+
+    const imgs = node.getElementsByTagName("img");
+    const remoteCoverUrl = imgs.length > 0 ? imgs[0].getAttribute("src") : "";
+
+    const series: Series = {
+      id: undefined,
+      extensionId: extensionId,
+      sourceId: sourceId,
+      sourceType: SeriesSourceType.STANDARD,
+      title: title,
+      altTitles: [],
+      description: "",
+      authors: [],
+      artists: [],
+      genres: [],
+      themes: [],
+      formats: [],
+      contentWarnings: [],
+      demographic: DemographicKey.UNCERTAIN,
+      status: SeriesStatus.ONGOING,
+      originalLanguageKey: LanguageKey.JAPANESE,
+      numberUnread: 0,
+      remoteCoverUrl: remoteCoverUrl,
+      userTags: [],
+    };
+    return series;
+  });
+};
+
 export class FoolSlideClient {
   fetchFn: FetchFunc;
   domParser: DOMParser;
@@ -171,53 +210,30 @@ export class FoolSlideClient {
     text: string,
     params: { [key: string]: string }
   ) => {
-    return this.fetchFn(`${this.baseUrl}/TODO`).then(() => []);
+    return this.fetchFn(`${this.baseUrl}/search`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+      },
+      body: `search=${text}`,
+    })
+      .then((response: Response) => response.text())
+      .then((data: string) => {
+        return _parseResults(
+          this.domParser.parseFromString(data),
+          this.extensionId
+        );
+      });
   };
 
   getDirectory: GetDirectoryFunc = () => {
     return this.fetchFn(`${this.baseUrl}/directory`)
       .then((response: Response) => response.text())
       .then((data: string) => {
-        const doc = this.domParser.parseFromString(data);
-
-        const seriesContainers = doc.getElementsByClassName("group");
-        return seriesContainers.map((node: DOMParser.Node) => {
-          const linkElement =
-            node.getElementsByClassName("title")[0].firstChild;
-          const title = linkElement.textContent.trim();
-          const link = linkElement.getAttribute("href");
-          const sourceId = link
-            .substr(0, link.length - 1)
-            .split("/")
-            .pop();
-
-          const imgs = node.getElementsByTagName("img");
-          const remoteCoverUrl =
-            imgs.length > 0 ? imgs[0].getAttribute("src") : "";
-
-          const series: Series = {
-            id: undefined,
-            extensionId: this.extensionId,
-            sourceId: sourceId,
-            sourceType: SeriesSourceType.STANDARD,
-            title: title,
-            altTitles: [],
-            description: "",
-            authors: [],
-            artists: [],
-            genres: [],
-            themes: [],
-            formats: [],
-            contentWarnings: [],
-            demographic: DemographicKey.UNCERTAIN,
-            status: SeriesStatus.ONGOING,
-            originalLanguageKey: LanguageKey.JAPANESE,
-            numberUnread: 0,
-            remoteCoverUrl: remoteCoverUrl,
-            userTags: [],
-          };
-          return series;
-        });
+        return _parseResults(
+          this.domParser.parseFromString(data),
+          this.extensionId
+        );
       });
   };
 
