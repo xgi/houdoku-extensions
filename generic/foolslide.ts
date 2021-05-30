@@ -85,14 +85,19 @@ export class FoolSlideClient {
       .then((response: Response) => response.text())
       .then((data: string) => {
         const doc = this.domParser.parseFromString(data);
-        const infoContainer = doc.getElementsByClassName("large comic")[0];
+        const articleContainer = doc.getElementById("content");
+        const infoContainer =
+          articleContainer.getElementsByClassName("large comic")[0];
 
         const title = infoContainer
           .getElementsByClassName("title")[0]
           .textContent.trim();
-        const imgs = infoContainer.getElementsByTagName("img");
+
+        const thumbnails = articleContainer.getElementsByClassName("thumbnail");
         const remoteCoverUrl =
-          imgs.length > 0 ? imgs[0].getAttribute("src") : "";
+          thumbnails.length > 0
+            ? thumbnails[0].getElementsByTagName("img")[0].getAttribute("src")
+            : "";
 
         return {
           id: undefined,
