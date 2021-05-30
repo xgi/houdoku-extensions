@@ -20,8 +20,9 @@ import {
 import DOMParser from "dom-parser";
 import metadata from "./metadata.json";
 import { FoolSlideClient } from "../../generic/foolslide";
+import { parseMetadata } from "../../util/configuring";
 
-export const METADATA: ExtensionMetadata = metadata;
+export const METADATA: ExtensionMetadata = parseMetadata(metadata);
 
 export class ExtensionClient extends ExtensionClientAbstract {
   foolslideClient: FoolSlideClient;

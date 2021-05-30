@@ -26,9 +26,9 @@ import {
   SeriesStatus,
 } from "houdoku-extension-lib";
 import { Response } from "node-fetch";
-import metadata from "./metadata.json";
+import { parseMetadata } from "../../util/configuring";
 
-export const METADATA: ExtensionMetadata = metadata;
+export const METADATA: ExtensionMetadata = parseMetadata(metadata);
 
 const SERIES_STATUS_MAP: { [key: string]: SeriesStatus } = {
   ongoing: SeriesStatus.ONGOING,

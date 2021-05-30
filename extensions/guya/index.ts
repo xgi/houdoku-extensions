@@ -23,8 +23,9 @@ import {
 } from "houdoku-extension-lib";
 import { Response } from "node-fetch";
 import metadata from "./metadata.json";
+import { parseMetadata } from "../../util/configuring";
 
-export const METADATA: ExtensionMetadata = metadata;
+export const METADATA: ExtensionMetadata = parseMetadata(metadata);
 
 export class ExtensionClient extends ExtensionClientAbstract {
   getMetadata: () => ExtensionMetadata = () => {
