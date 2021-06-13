@@ -330,7 +330,6 @@ export class NepClient {
   };
 
   getPageUrls: GetPageUrlsFunc = (pageRequesterData: PageRequesterData) => {
-    console.log(pageRequesterData);
     return pageRequesterData.pageFilenames.map((fname: string) => {
       return `https://${pageRequesterData.server}/manga/${pageRequesterData.hash}${fname}`;
     });
