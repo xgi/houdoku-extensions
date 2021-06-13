@@ -5,8 +5,7 @@ This repository contains extensions for
 desktop. Houdoku users can install and load extensions at runtime separate
 from the application itself.
 
-Extensions are published as separate npm packages. For a list of published
-extensions, check the @houdoku scope on the npm registry:
+Extensions are published as separate npm packages under the @houdoku scope:
 
 - <https://www.npmjs.com/search?q=scope%3Ahoudoku>
 
@@ -61,3 +60,32 @@ layer of the application.
 - [aki-plugin-manager](https://github.com/xgi/aki-plugin-manager) - the
   utility used by Houdoku to find/install/load extensions, independent of
   Houdoku's functionality
+
+## Extension List
+
+This list is provided as a reference, but it is not updated automatically
+and may be out-of-date; the only authoritative source is the
+[@houdoku scope on the npm registry](https://www.npmjs.com/search?q=scope%3Ahoudoku).
+
+| Name                  | URL                               | Version | Notes |
+| --------------------- | --------------------------------- | ------- | ----- |
+| Arang Scans           | <https://arangscans.com>          | 1.1.0   |       |
+| CatManga              | <https://catmanga.org>            | 1.1.0   |       |
+| Death Toll Scans      | <https://www.deathtollscans.net>  | 1.0.0   |       |
+| Disaster Scans        | <https://disasterscans.com>       | 1.1.0   |       |
+| Guya                  | <https://guya.moe>                | 1.1.0   |       |
+| Immortal Updates      | <https://immortalupdates.com>     | 1.1.0   |       |
+| IsekaiScan            | <https://isekaiscan.com>          | 1.1.0   |       |
+| Kirei Cake            | <https://kireicake.com>           | 1.0.0   |       |
+| LeviatanScans         | <https://leviatanscans.com>       | 1.1.0   |       |
+| Lilyreader            | <https://manga.smuglo.li>         | 1.0.0   |       |
+| Manga347              | <https://manga347.com>            | 1.1.0   |       |
+| MangaDex              | <https://mangadex.org>            | 1.0.0   |       |
+| MangaKik              | <https://mangakik.com>            | 1.1.0   |       |
+| Mangarave             | <https://mangarave.com>           | 1.1.0   |       |
+| MangaTellers          | <https://mangatellers.gr/>        | 1.0.0   |       |
+| Sense-Scans           | <https://www.sensescans.com>      | 1.0.0   |       |
+| Silent Sky            | <https://www.silentsky-scans.net> | 1.0.0   |       |
+| Sleeping Knight Scans | <https://skscans.com>             | 1.1.0   |       |
+| Toonily               | <https://toonily.com>             | 1.1.0   |       |
+| Tritinia Scans        | <https://tritinia.com>            | 1.1.0   |       |
