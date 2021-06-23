@@ -116,14 +116,15 @@ export class NepClient {
   }
 
   _getDirectoryList = () => {
-    return this.webviewFn(`${this.baseUrl}`).then((data: string) => {
-      const contentStr = data.split("vm.HotUpdateJSON = ").pop().split(";")[0];
+    return this.webviewFn(`${this.baseUrl}/directory`).then((data: string) => {
+      let contentStr = data.split("vm.FullDirectory = ").pop().split("vm.CurrLetter")[0].trim();
+      contentStr = contentStr.substr(0, contentStr.length - 1);
       const content = JSON.parse(contentStr);
 
-      this.fullDirectoryList = content.map((entry: any) => {
+      this.fullDirectoryList = content['Directory'].map((entry: any) => {
         return {
-          indexName: entry.IndexName,
-          seriesName: entry.SeriesName,
+          indexName: entry.i,
+          seriesName: entry.s,
         };
       });
     });
