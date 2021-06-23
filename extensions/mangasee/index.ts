@@ -37,6 +37,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
       METADATA.id,
       METADATA.url,
       fetchFn,
+      webviewFn,
       domParser
     );
   }

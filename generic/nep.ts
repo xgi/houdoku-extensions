@@ -16,6 +16,7 @@ import {
   ThemeKey,
   FormatKey,
   ContentWarningKey,
+  WebviewFunc,
 } from "houdoku-extension-lib";
 import {
   Chapter,
@@ -24,7 +25,6 @@ import {
   SeriesSourceType,
   SeriesStatus,
 } from "houdoku-extension-lib";
-import { Response } from "node-fetch";
 import DOMParser from "dom-parser";
 import { findNodeWithText } from "../util/parsing";
 
@@ -92,6 +92,7 @@ const DEMOGRAPHIC_MAP: { [key: string]: DemographicKey } = {
 
 export class NepClient {
   fetchFn: FetchFunc;
+  webviewFn: WebviewFunc;
   domParser: DOMParser;
   extensionId: string;
   baseUrl: string;
@@ -102,33 +103,30 @@ export class NepClient {
     extensionId: string,
     baseUrl: string,
     fetchFn: FetchFunc,
+    webviewFn: WebviewFunc,
     domParser: DOMParser
   ) {
     this.extensionId = extensionId;
     this.baseUrl = baseUrl;
     this.fetchFn = fetchFn;
+    this.webviewFn = webviewFn;
     this.domParser = domParser;
 
     this.fullDirectoryList = [];
   }
 
   _getDirectoryList = () => {
-    return this.fetchFn(`${this.baseUrl}`)
-      .then((response: Response) => response.text())
-      .then((data: string) => {
-        const contentStr = data
-          .split("vm.HotUpdateJSON = ")
-          .pop()
-          .split(";")[0];
-        const content = JSON.parse(contentStr);
+    return this.webviewFn(`${this.baseUrl}`).then((data: string) => {
+      const contentStr = data.split("vm.HotUpdateJSON = ").pop().split(";")[0];
+      const content = JSON.parse(contentStr);
 
-        this.fullDirectoryList = content.map((entry: any) => {
-          return {
-            indexName: entry.IndexName,
-            seriesName: entry.SeriesName,
-          };
-        });
+      this.fullDirectoryList = content.map((entry: any) => {
+        return {
+          indexName: entry.IndexName,
+          seriesName: entry.SeriesName,
+        };
       });
+    });
   };
 
   _decodeChapterId = (id: string): { path: string; number: string } => {
@@ -166,9 +164,8 @@ export class NepClient {
   };
 
   getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.fetchFn(`${this.baseUrl}/manga/${id}`)
-      .then((response: Response) => response.text())
-      .then((data: string) => {
+    return this.webviewFn(`${this.baseUrl}/manga/${id}`).then(
+      (data: string) => {
         // some list item tags are incorrectly closed with </i> instead of </li>,
         // so we manually replace them here
         const fixedData = data.replace(/\<\/i>/g, "</li>");
@@ -259,13 +256,13 @@ export class NepClient {
           userTags: [],
         };
         return series;
-      });
+      }
+    );
   };
 
   getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.fetchFn(`${this.baseUrl}/manga/${id}`)
-      .then((response: Response) => response.text())
-      .then((data: string) => {
+    return this.webviewFn(`${this.baseUrl}/manga/${id}`).then(
+      (data: string) => {
         const contentStr = data.split("vm.Chapters = ").pop().split(";")[0];
         const content = JSON.parse(contentStr);
 
@@ -283,7 +280,8 @@ export class NepClient {
             read: false,
           } as Chapter;
         });
-      });
+      }
+    );
   };
 
   getPageRequesterData: GetPageRequesterDataFunc = (
@@ -291,42 +289,39 @@ export class NepClient {
     seriesSourceId: string,
     chapterSourceId: string
   ) => {
-    return this.fetchFn(
+    return this.webviewFn(
       `${this.baseUrl}/read-online/${seriesSourceId}${chapterSourceId}`
-    )
-      .then((response: Response) => response.text())
-      .then((data: string) => {
-        const host = JSON.parse(
-          '"' + data.split('vm.CurPathName = "').pop().split(";")[0]
-        );
-        const curChapter = JSON.parse(
-          "{" + data.split("vm.CurChapter = {").pop().split(";")[0]
-        );
-        const indexName = JSON.parse(
-          data.split("vm.IndexName = ").pop().split(";")[0]
-        );
+    ).then((data: string) => {
+      const host = JSON.parse(
+        '"' + data.split('vm.CurPathName = "').pop().split(";")[0]
+      );
+      const curChapter = JSON.parse(
+        "{" + data.split("vm.CurChapter = {").pop().split(";")[0]
+      );
+      const indexName = JSON.parse(
+        data.split("vm.IndexName = ").pop().split(";")[0]
+      );
 
-        const dir =
-          curChapter.Directory === "" ? "" : `${curChapter.Directory}/`;
-        const chNum = this._chapterImage(curChapter.Chapter);
+      const dir = curChapter.Directory === "" ? "" : `${curChapter.Directory}/`;
+      const chNum = this._chapterImage(curChapter.Chapter);
 
-        const numPages = parseInt(curChapter.Page);
-        const pageFilenames = [];
-        for (let i = 1; i <= numPages; i++) {
-          const iStr = i.toLocaleString("en-US", {
-            minimumIntegerDigits: 3,
-            useGrouping: false,
-          });
-          pageFilenames.push(`${chNum}-${iStr}.png`);
-        }
+      const numPages = parseInt(curChapter.Page);
+      const pageFilenames = [];
+      for (let i = 1; i <= numPages; i++) {
+        const iStr = i.toLocaleString("en-US", {
+          minimumIntegerDigits: 3,
+          useGrouping: false,
+        });
+        pageFilenames.push(`${chNum}-${iStr}.png`);
+      }
 
-        return {
-          server: host,
-          hash: `${indexName}/${dir}`,
-          pageFilenames: pageFilenames,
-          numPages,
-        };
-      });
+      return {
+        server: host,
+        hash: `${indexName}/${dir}`,
+        pageFilenames: pageFilenames,
+        numPages,
+      };
+    });
   };
 
   getPageUrls: GetPageUrlsFunc = (pageRequesterData: PageRequesterData) => {
