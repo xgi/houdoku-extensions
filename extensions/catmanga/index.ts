@@ -161,7 +161,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
               id: undefined,
               seriesId: undefined,
               sourceId: `${chapterData.number}`,
-              title: chapterData.title,
+              title: chapterData.title ? chapterData.title : '',
               chapterNumber: `${chapterData.number}`,
               volumeNumber: "",
               languageKey: LanguageKey.ENGLISH,
