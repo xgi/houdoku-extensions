@@ -10,6 +10,7 @@ export const parseMetadata = (metadata: any): ExtensionMetadata => {
       metadata.translatedLanguage === ""
         ? undefined
         : (metadata.translatedLanguage as LanguageKey),
+    hasSettings: metadata.hasSettings,
     notice: metadata.notice,
     noticeUrl: metadata.noticeUrl,
     pageLoadMessage: metadata.pageLoadMessage,
