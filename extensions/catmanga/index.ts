@@ -161,11 +161,11 @@ export class ExtensionClient extends ExtensionClientAbstract {
               id: undefined,
               seriesId: undefined,
               sourceId: `${chapterData.number}`,
-              title: chapterData.title ? chapterData.title : '',
+              title: chapterData.title ? chapterData.title : "",
               chapterNumber: `${chapterData.number}`,
               volumeNumber: "",
               languageKey: LanguageKey.ENGLISH,
-              groupName: chapterData.groups[0],
+              groupName: chapterData.groups.length > 0 ? chapterData.groups[0] : "",
               time: 0,
               read: false,
             };
