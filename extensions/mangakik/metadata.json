@@ -2,8 +2,9 @@
   "id": "bfc30edf-535d-44c6-8224-83e368235a27",
   "name": "MangaKik",
   "url": "https://mangakik.com",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "translatedLanguage": "ENGLISH",
+  "hasSettings": false,
   "notice": "",
   "noticeUrl": "",
   "pageLoadMessage": ""
