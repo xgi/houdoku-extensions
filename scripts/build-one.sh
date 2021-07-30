@@ -16,12 +16,8 @@ EXTENSION_DIR=../extensions/$1
 cp $EXTENSION_PACKAGE_JSON $EXTENSION_DIR/package.json
 cp $EXTENSION_TSCONFIG_JSON $EXTENSION_DIR/tsconfig.json
 
-EXTENSION_NAME=$(jq -r '.name' $EXTENSION_DIR/metadata.json)
-EXTENSION_ID=$(jq -r '.id' $EXTENSION_DIR/metadata.json)
-EXTENSION_URL=$(jq -r '.url' $EXTENSION_DIR/metadata.json)
-
 NAME="@houdoku/extension-"$(basename $EXTENSION_DIR)
-DESCRIPTION="$EXTENSION_NAME - $EXTENSION_ID - $EXTENSION_URL"
+DESCRIPTION=$(jq -c '.' $EXTENSION_DIR/metadata.json)
 VERSION=$(jq -r '.version' $EXTENSION_DIR/metadata.json)
 
 cd $EXTENSION_DIR
