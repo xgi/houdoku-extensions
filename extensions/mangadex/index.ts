@@ -26,7 +26,7 @@ import {
   GetSettingTypesFunc,
   SettingType,
 } from "houdoku-extension-lib";
-import { Response, RequestInfo, RequestInit } from "node-fetch";
+import { Response } from "node-fetch";
 import DOMParser from "dom-parser";
 import metadata from "./metadata.json";
 import { parseMetadata } from "../../util/configuring";
@@ -197,22 +197,7 @@ const DEFAULT_SETTINGS = {
   [SETTING_NAMES.LANGUAGE_KEYS]: [LanguageKey.ENGLISH],
 };
 
-const _parseMangaResults = (
-  json: any,
-  fetchFn: (
-    url: RequestInfo,
-    init?: RequestInit | undefined
-  ) => Promise<Response>
-) => {
-  const seriesList: Series[] = [];
-  const resultList: any[] = [];
-  let authorIds: string[] = [];
-  let artistIds: string[] = [];
-  let coverIds: string[] = [];
-  let authorMap: { [key: string]: string } = {};
-  let artistMap: { [key: string]: string } = {};
-  // let coverMap: { [key: string]: string } = {};
-
+const _parseMangaResults = (json: any) => {
   if (
     !("results" in json) ||
     json.results === undefined ||
@@ -221,132 +206,98 @@ const _parseMangaResults = (
     return new Promise<any>((resolve) => resolve([]));
   }
 
-  return new Promise<any>((resolve) => resolve(json))
-    .then((json: any) => {
-      json.results.forEach((result: any) => {
-        resultList.push(result);
+  return json.results.map((result: any) => {
+    const genres: GenreKey[] = [];
+    const themes: ThemeKey[] = [];
+    const formats: FormatKey[] = [];
+    const contentWarnings: ContentWarningKey[] = [];
 
-        result.relationships.forEach((relationship: any) => {
-          if (relationship.type === "author") authorIds.push(relationship.id);
-          if (relationship.type === "artist") artistIds.push(relationship.id);
-          if (relationship.type === "cover_art") coverIds.push(relationship.id);
-        });
-      });
-
-      const authorIdsStr = authorIds
-        .map((id: string) => `ids[]=${id}`)
-        .join("&");
-      return fetchFn(
-        `https://api.mangadex.org/author?limit=${
-          authorIdsStr.length > 100 ? 100 : authorIdsStr.length
-        }&${authorIdsStr}`
-      );
-    })
-    .then((response: Response) => response.json())
-    .then((json: any) => {
-      // retrieved data for authors
-      json.results.forEach((result: any) => {
-        authorMap[result.data.id] = result.data.attributes.name;
-      });
-
-      const artistIdsStr = artistIds
-        .map((id: string) => `ids[]=${id}`)
-        .join("&");
-      return fetchFn(
-        `https://api.mangadex.org/author?limit=${
-          artistIdsStr.length > 100 ? 100 : artistIdsStr.length
-        }&${artistIdsStr}`
-      );
-    })
-    .then((response: Response) => response.json())
-    .then((json: any) => {
-      // retrieved data for artists
-      json.results.forEach((result: any) => {
-        artistMap[result.data.id] = result.data.attributes.name;
-      });
-
-      const coverIdsStr = coverIds.map((id: string) => `ids[]=${id}`).join("&");
-      return fetchFn(
-        `https://api.mangadex.org/cover?limit=${
-          coverIdsStr.length > 100 ? 100 : coverIdsStr.length
-        }&${coverIdsStr}`
-      );
-    })
-    .then((response: Response) => response.json())
-    .then((json: any) => {
-      // retrieved data for covers
-      // TODO: support covers
-
-      resultList.map((result: any) => {
-        const genres: GenreKey[] = [];
-        const themes: ThemeKey[] = [];
-        const formats: FormatKey[] = [];
-        const contentWarnings: ContentWarningKey[] = [];
-
-        result.data.attributes.tags.forEach((tag: any) => {
-          const tagId: string = tag.id;
-          if (tagId in GENRE_MAP) {
-            genres.push(GENRE_MAP[tagId]);
-          }
-          if (tagId in THEME_MAP) {
-            themes.push(THEME_MAP[tagId]);
-          }
-          if (tagId in FORMAT_MAP) {
-            formats.push(FORMAT_MAP[tagId]);
-          }
-          if (tagId in CONTENT_WARNING_MAP) {
-            contentWarnings.push(CONTENT_WARNING_MAP[tagId]);
-          }
-        });
-
-        switch (result.data.attributes.contentRating) {
-          case "suggestive":
-            contentWarnings.push(ContentWarningKey.ECCHI);
-            break;
-          case "erotica":
-            contentWarnings.push(ContentWarningKey.SMUT);
-            break;
-          case "pornographic":
-            contentWarnings.push(ContentWarningKey.PORNOGRAPHIC);
-            break;
-        }
-
-        const series: Series = {
-          id: undefined,
-          extensionId: METADATA.id,
-          sourceId: result.data.id,
-          sourceType: SeriesSourceType.STANDARD,
-          title: result.data.attributes.title.en,
-          altTitles: result.data.attributes.altTitles.map(
-            (altTitleCont: any) => altTitleCont.en
-          ),
-          description: result.data.attributes.description.en,
-          authors: result.relationships
-            .filter((relationship: any) => relationship.type === "author")
-            .map((relationship: any) => authorMap[relationship.id]),
-          artists: result.relationships
-            .filter((relationship: any) => relationship.type === "artist")
-            .map((relationship: any) => artistMap[relationship.id]),
-          genres: genres,
-          themes: themes,
-          formats: formats,
-          contentWarnings: contentWarnings,
-          demographic:
-            result.data.attributes.publicationDemographic === null
-              ? DemographicKey.UNCERTAIN
-              : DEMOGRAPHIC_MAP[result.data.attributes.publicationDemographic],
-          status: SERIES_STATUS_MAP[result.data.attributes.status],
-          originalLanguageKey:
-            LANGUAGE_MAP[result.data.attributes.originalLanguage],
-          numberUnread: 0,
-          remoteCoverUrl: "https://i.imgur.com/6TrIues.jpeg",
-          userTags: [],
-        };
-        seriesList.push(series);
-      });
-
-      return seriesList;
+    result.data.attributes.tags.forEach((tag: any) => {
+      const tagId: string = tag.id;
+      if (tagId in GENRE_MAP) {
+        genres.push(GENRE_MAP[tagId]);
+      }
+      if (tagId in THEME_MAP) {
+        themes.push(THEME_MAP[tagId]);
+      }
+      if (tagId in FORMAT_MAP) {
+        formats.push(FORMAT_MAP[tagId]);
+      }
+      if (tagId in CONTENT_WARNING_MAP) {
+        contentWarnings.push(CONTENT_WARNING_MAP[tagId]);
+      }
     });
+
+    switch (result.data.attributes.contentRating) {
+      case "suggestive":
+        contentWarnings.push(ContentWarningKey.ECCHI);
+        break;
+      case "erotica":
+        contentWarnings.push(ContentWarningKey.SMUT);
+        break;
+      case "pornographic":
+        contentWarnings.push(ContentWarningKey.PORNOGRAPHIC);
+        break;
+    }
+
+    const title =
+      result.data.attributes.title.en !== undefined
+        ? result.data.attributes.title.en
+        : Object.values(result.data.attributes.title)[0];
+
+    const coverRelationship = result.relationships.find(
+      (relationship: any) =>
+        relationship.type === "cover_art" &&
+        relationship.attributes !== undefined
+    );
+    const remoteCoverUrl =
+      coverRelationship !== undefined
+        ? `https://uploads.mangadex.org/covers/${result.data.id}/${coverRelationship.attributes.fileName}.512.jpg`
+        : "";
+
+    console.log(result.data.attributes.title.en);
+
+    const series: Series = {
+      id: undefined,
+      extensionId: METADATA.id,
+      sourceId: result.data.id,
+      sourceType: SeriesSourceType.STANDARD,
+      title,
+      altTitles: result.data.attributes.altTitles.map(
+        (altTitleCont: any) => altTitleCont.en
+      ),
+      description: result.data.attributes.description.en,
+      authors: result.relationships
+        .filter(
+          (relationship: any) =>
+            relationship.type === "author" &&
+            relationship.attributes !== undefined
+        )
+        .map((relationship: any) => relationship.attributes.name),
+      artists: result.relationships
+        .filter(
+          (relationship: any) =>
+            relationship.type === "artist" &&
+            relationship.attributes !== undefined
+        )
+        .map((relationship: any) => relationship.attributes.name),
+      genres: genres,
+      themes: themes,
+      formats: formats,
+      contentWarnings: contentWarnings,
+      demographic:
+        result.data.attributes.publicationDemographic === null
+          ? DemographicKey.UNCERTAIN
+          : DEMOGRAPHIC_MAP[result.data.attributes.publicationDemographic],
+      status: SERIES_STATUS_MAP[result.data.attributes.status],
+      originalLanguageKey:
+        LANGUAGE_MAP[result.data.attributes.originalLanguage],
+      numberUnread: 0,
+      remoteCoverUrl,
+      userTags: [],
+    };
+    return series;
+  });
 };
 
 const _getContentRatingsStr = (settings: { [key: string]: any }) => {
@@ -394,9 +345,11 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.fetchFn(`https://api.mangadex.org/manga?ids[]=${id}`)
+    return this.fetchFn(
+      `https://api.mangadex.org/manga?ids[]=${id}&includes[]=artist&includes[]=author&includes[]=cover_art`
+    )
       .then((response: Response) => response.json())
-      .then((json: any) => _parseMangaResults(json, this.fetchFn))
+      .then((json: any) => _parseMangaResults(json))
       .then((results: any[]) => results[0]);
   };
 
@@ -425,7 +378,6 @@ export class ExtensionClient extends ExtensionClientAbstract {
     }
 
     const chapterList: Chapter[] = [];
-    const groupIdList: string[] = [];
     let gotAllChapters: boolean = false;
     offset = 0;
     while (!gotAllChapters) {
@@ -435,16 +387,19 @@ export class ExtensionClient extends ExtensionClientAbstract {
         .join("&");
 
       const response = await this.fetchFn(
-        `https://api.mangadex.org/chapter?limit=100&${chapterIdsStr}`
+        `https://api.mangadex.org/chapter?limit=100&${chapterIdsStr}&includes[]=scanlation_group`
       );
       const json = await response.json();
       json.results.forEach((result: any) => {
         const groupRelationship: any | undefined = result.relationships.find(
-          (relationship: any) => relationship.type === "scanlation_group"
+          (relationship: any) =>
+            relationship.type === "scanlation_group" &&
+            relationship.attributes !== undefined
         );
-        if (groupRelationship !== undefined) {
-          groupIdList.push(groupRelationship.id);
-        }
+        const groupName =
+          groupRelationship !== undefined
+            ? groupRelationship.attributes.name
+            : "";
 
         chapterList.push({
           id: undefined,
@@ -454,8 +409,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
           chapterNumber: result.data.attributes.chapter,
           volumeNumber: result.data.attributes.volume || "",
           languageKey: LANGUAGE_MAP[result.data.attributes.translatedLanguage],
-          groupName:
-            groupRelationship === undefined ? "" : groupRelationship.id,
+          groupName,
           time: new Date(result.data.attributes.updatedAt).getTime(),
           read: false,
         });
@@ -468,32 +422,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
       }
     }
 
-    const groupMap: { [id: string]: string } = {};
-    offset = 0;
-    while (offset < groupIdList.length) {
-      const curGroupIds: string[] = groupIdList.slice(offset, offset + 100);
-      const groupIdsStr = curGroupIds
-        .map((id: string) => `ids[]=${id}`)
-        .join("&");
-
-      const response = await this.fetchFn(
-        `https://api.mangadex.org/group?limit=100&${groupIdsStr}`
-      );
-      const json = await response.json();
-      json.results.forEach((result: any) => {
-        groupMap[result.data.id] = result.data.attributes.name;
-      });
-
-      offset += 100;
-    }
-
-    return chapterList.map((chapter: Chapter) => {
-      return {
-        ...chapter,
-        groupName:
-          chapter.groupName in groupMap ? groupMap[chapter.groupName] : "",
-      };
-    });
+    return chapterList;
   };
 
   getPageRequesterData: GetPageRequesterDataFunc = (
@@ -545,10 +474,12 @@ export class ExtensionClient extends ExtensionClientAbstract {
 
   getDirectory: GetDirectoryFunc = () => {
     return this.fetchFn(
-      `https://api.mangadex.org/manga?${_getContentRatingsStr(this.settings)}`
+      `https://api.mangadex.org/manga?${_getContentRatingsStr(
+        this.settings
+      )}&includes[]=artist&includes[]=author&includes[]=cover_art`
     )
       .then((response: Response) => response.json())
-      .then((json: any) => _parseMangaResults(json, this.fetchFn))
+      .then((json: any) => _parseMangaResults(json))
       .then((results: any[]) => results);
   };
 
@@ -559,10 +490,10 @@ export class ExtensionClient extends ExtensionClientAbstract {
     return this.fetchFn(
       `https://api.mangadex.org/manga?title=${text}&${_getContentRatingsStr(
         this.settings
-      )}`
+      )}&includes[]=artist&includes[]=author&includes[]=cover_art`
     )
       .then((response: Response) => response.json())
-      .then((json: any) => _parseMangaResults(json, this.fetchFn))
+      .then((json: any) => _parseMangaResults(json))
       .then((results: any[]) => results);
   };
 
