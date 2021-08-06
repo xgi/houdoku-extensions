@@ -255,8 +255,6 @@ const _parseMangaResults = (json: any) => {
         ? `https://uploads.mangadex.org/covers/${result.data.id}/${coverRelationship.attributes.fileName}.512.jpg`
         : "";
 
-    console.log(result.data.attributes.title.en);
-
     const series: Series = {
       id: undefined,
       extensionId: METADATA.id,
