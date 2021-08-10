@@ -16,7 +16,7 @@
     "ts"
   ],
   "dependencies": {
-    "houdoku-extension-lib": "^1.4.15",
+    "houdoku-extension-lib": "^1.5.3",
     "@types/node-fetch": "^2.5.10",
     "@types/dom-parser": "^0.1.1"
   },
