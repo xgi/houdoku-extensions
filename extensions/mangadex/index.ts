@@ -502,7 +502,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
         const results: ParsedResults = _parseMangaResults(json);
         return {
           seriesList: results.seriesList,
-          total: Math.min(results.total, 10000 - pageSize),
+          total: Math.min(results.total, 9000 - pageSize),
           hasMore: results.hasMore && results.nextOffset < 10000 - pageSize,
           nextOffset: results.nextOffset,
         };
