@@ -77,14 +77,35 @@ const DEMOGRAPHIC_MAP: { [key: string]: DemographicKey } = {
   josei: DemographicKey.JOSEI,
 };
 
-const mapSeriesData = (seriesData: any): Series => {
+type DirectoryEntry = {
+  series_id: string;
+  title: string;
+  alt_titles: string[];
+  description: string;
+  authors: string[];
+  genres: string[];
+  status: string;
+  chapters: {
+    title: string;
+    groups: string[];
+    number: number;
+    volume: number;
+  }[];
+  cover_art: {
+    source: string;
+    width: number;
+    height: number;
+  };
+};
+
+const _mapSeriesData = (directoryEntry: DirectoryEntry): Series => {
   const genres: GenreKey[] = [];
   const themes: ThemeKey[] = [];
   const formats: FormatKey[] = [];
   const contentWarnings: ContentWarningKey[] = [];
   const demographics: DemographicKey[] = [DemographicKey.UNCERTAIN];
 
-  seriesData.genres.forEach((genre: string) => {
+  directoryEntry.genres.forEach((genre: string) => {
     const tagStr = genre.trim().replace(" ", "").replace("-", "").toLowerCase();
     if (tagStr !== undefined) {
       if (tagStr in GENRE_MAP) {
@@ -108,71 +129,86 @@ const mapSeriesData = (seriesData: any): Series => {
   const series: Series = {
     id: undefined,
     extensionId: METADATA.id,
-    sourceId: seriesData.series_id,
+    sourceId: directoryEntry.series_id,
     sourceType: SeriesSourceType.STANDARD,
-    title: seriesData.title,
-    altTitles: seriesData.altTitles,
-    description: seriesData.description,
-    authors: [seriesData.authors],
+    title: directoryEntry.title,
+    altTitles: directoryEntry.alt_titles,
+    description: directoryEntry.description,
+    authors: directoryEntry.authors,
     artists: [],
     genres: genres,
     themes: themes,
     formats: formats,
     contentWarnings: contentWarnings,
     demographic: demographics.pop(),
-    status: SERIES_STATUS_MAP[seriesData.status],
+    status: SERIES_STATUS_MAP[directoryEntry.status],
     originalLanguageKey: LanguageKey.JAPANESE,
     numberUnread: 0,
-    remoteCoverUrl: seriesData.cover_art.source,
+    remoteCoverUrl: directoryEntry.cover_art.source,
     userTags: [],
   };
   return series;
 };
 
 export class ExtensionClient extends ExtensionClientAbstract {
+  fullDirectoryList: DirectoryEntry[] = [];
+
+  _getDirectoryList = async () => {
+    return this.fetchFn(`https://catmanga.org`)
+      .then((response: Response) => response.text())
+      .then((data: string) => {
+        const doc = this.domParser.parseFromString(data);
+        const nextDataText = doc.getElementById("__NEXT_DATA__").textContent;
+        const nextData = JSON.parse(nextDataText);
+
+        this.fullDirectoryList = nextData.props.pageProps
+          .series as DirectoryEntry[];
+      });
+  };
+
   getMetadata: () => ExtensionMetadata = () => {
     return METADATA;
   };
 
-  getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.fetchFn(`https://catmanga.org/series/${id}`)
-      .then((response: Response) => response.text())
-      .then((data: string) => {
-        const doc = this.domParser.parseFromString(data);
-        const nextDataText = doc.getElementById("__NEXT_DATA__").textContent;
-        const nextData = JSON.parse(nextDataText);
+  getSeries: GetSeriesFunc = async (
+    sourceType: SeriesSourceType,
+    id: string
+  ) => {
+    if (this.fullDirectoryList.length === 0) await this._getDirectoryList();
 
-        const seriesData = nextData.props.pageProps.series;
-        return mapSeriesData(seriesData);
-      });
+    const entry = this.fullDirectoryList.find(
+      (_entry) => _entry.series_id === id
+    );
+
+    return entry === undefined ? undefined : _mapSeriesData(entry);
   };
 
-  getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.fetchFn(`https://catmanga.org/series/${id}`)
-      .then((response: Response) => response.text())
-      .then((data: string) => {
-        const doc = this.domParser.parseFromString(data);
-        const nextDataText = doc.getElementById("__NEXT_DATA__").textContent;
-        const nextData = JSON.parse(nextDataText);
+  getChapters: GetChaptersFunc = async (
+    sourceType: SeriesSourceType,
+    id: string
+  ) => {
+    if (this.fullDirectoryList.length === 0) await this._getDirectoryList();
 
-        return nextData.props.pageProps.series.chapters.map(
-          (chapterData: any) => {
-            const chapter: Chapter = {
-              id: undefined,
-              seriesId: undefined,
-              sourceId: `${chapterData.number}`,
-              title: chapterData.title ? chapterData.title : "",
-              chapterNumber: `${chapterData.number}`,
-              volumeNumber: "",
-              languageKey: LanguageKey.ENGLISH,
-              groupName: chapterData.groups.length > 0 ? chapterData.groups[0] : "",
-              time: 0,
-              read: false,
-            };
-            return chapter;
-          }
-        );
-      });
+    const entry = this.fullDirectoryList.find(
+      (_entry) => _entry.series_id === id
+    );
+    if (entry === undefined) return [];
+
+    return entry.chapters.map((chapterData: any) => {
+      const chapter: Chapter = {
+        id: undefined,
+        seriesId: undefined,
+        sourceId: `${chapterData.number}`,
+        title: chapterData.title ? chapterData.title : "",
+        chapterNumber: `${chapterData.number}`,
+        volumeNumber: "",
+        languageKey: LanguageKey.ENGLISH,
+        groupName: chapterData.groups.length > 0 ? chapterData.groups[0] : "",
+        time: 0,
+        read: false,
+      };
+      return chapter;
+    });
   };
 
   getPageRequesterData: GetPageRequesterDataFunc = (
@@ -210,42 +246,36 @@ export class ExtensionClient extends ExtensionClientAbstract {
     });
   };
 
-  getDirectory: GetDirectoryFunc = () => {
-    return this.fetchFn(`https://catmanga.org`)
-      .then((response: Response) => response.text())
-      .then((data: string) => {
-        const doc = this.domParser.parseFromString(data);
-        const nextDataText = doc.getElementById("__NEXT_DATA__").textContent;
-        const nextData = JSON.parse(nextDataText);
+  getDirectory: GetDirectoryFunc = async (page: number) => {
+    if (this.fullDirectoryList.length === 0) await this._getDirectoryList();
 
-        return nextData.props.pageProps.latests.map((entry: any) => {
-          const seriesData = entry[0];
-          return mapSeriesData(seriesData);
-        });
-      });
+    return {
+      seriesList: this.fullDirectoryList.map((seriesData: any) => {
+        return _mapSeriesData(seriesData);
+      }),
+      hasMore: false,
+    };
   };
 
-  getSearch: GetSearchFunc = (
+  getSearch: GetSearchFunc = async (
     text: string,
-    params: { [key: string]: string }
+    params: { [key: string]: string },
+    page: number
   ) => {
-    return this.fetchFn(`https://catmanga.org`)
-      .then((response: Response) => response.text())
-      .then((data: string) => {
-        const doc = this.domParser.parseFromString(data);
-        const nextDataText = doc.getElementById("__NEXT_DATA__").textContent;
-        const nextData = JSON.parse(nextDataText);
+    if (this.fullDirectoryList.length === 0) await this._getDirectoryList();
 
-        const seriesList: Series[] = nextData.props.pageProps.series.map(
-          (seriesData: any) => {
-            return mapSeriesData(seriesData);
-          }
-        );
+    const seriesList: Series[] = this.fullDirectoryList.map(
+      (seriesData: any) => {
+        return _mapSeriesData(seriesData);
+      }
+    );
 
-        return seriesList.filter((series: Series) => {
-          return series.title.toLowerCase().includes(text.toLowerCase());
-        });
-      });
+    return {
+      seriesList: seriesList.filter((series: Series) => {
+        return series.title.toLowerCase().includes(text.toLowerCase());
+      }),
+      hasMore: false,
+    };
   };
 
   getSettingTypes: GetSettingTypesFunc = () => {
