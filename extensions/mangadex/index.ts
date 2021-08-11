@@ -197,11 +197,11 @@ const DEFAULT_SETTINGS = {
   [SETTING_NAMES.LANGUAGE_KEYS]: [LanguageKey.ENGLISH],
 };
 
+const PAGE_SIZE = 24;
+
 type ParsedResults = {
   seriesList: Series[];
-  total: number;
   hasMore: boolean;
-  nextOffset: number;
 };
 
 const _parseMangaResults = (json: any): ParsedResults => {
@@ -210,7 +210,7 @@ const _parseMangaResults = (json: any): ParsedResults => {
     json.results === undefined ||
     json.results.length === 0
   ) {
-    return { seriesList: [], total: 0, hasMore: false, nextOffset: 0 };
+    return { seriesList: [], hasMore: false };
   }
 
   const seriesList = json.results.map((result: any) => {
@@ -307,9 +307,7 @@ const _parseMangaResults = (json: any): ParsedResults => {
   const hasMore = json.total > json.offset + seriesList.length;
   return {
     seriesList,
-    total: json.total,
     hasMore,
-    nextOffset: json.offset + seriesList.length,
   };
 };
 
@@ -422,7 +420,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
           id: undefined,
           seriesId: undefined,
           sourceId: result.data.id,
-          title: result.data.attributes.title,
+          title: result.data.attributes.title || "",
           chapterNumber: result.data.attributes.chapter,
           volumeNumber: result.data.attributes.volume || "",
           languageKey: LANGUAGE_MAP[result.data.attributes.translatedLanguage],
@@ -489,22 +487,20 @@ export class ExtensionClient extends ExtensionClientAbstract {
     });
   };
 
-  getDirectory: GetDirectoryFunc = (pageOffset: number, pageSize: number) => {
+  getDirectory: GetDirectoryFunc = (page: number) => {
     return this.fetchFn(
       `https://api.mangadex.org/manga?${_getContentRatingsStr(
         this.settings
       )}&offset=${
-        pageOffset * pageSize
-      }&limit=24&includes[]=artist&includes[]=author&includes[]=cover_art`
+        (page - 1) * PAGE_SIZE
+      }&limit=${PAGE_SIZE}&includes[]=artist&includes[]=author&includes[]=cover_art`
     )
       .then((response: Response) => response.json())
       .then((json: any) => {
         const results: ParsedResults = _parseMangaResults(json);
         return {
           seriesList: results.seriesList,
-          total: Math.min(results.total, 9000 - pageSize),
-          hasMore: results.hasMore && results.nextOffset < 10000 - pageSize,
-          nextOffset: results.nextOffset,
+          hasMore: results.hasMore,
         };
       });
   };
@@ -512,24 +508,21 @@ export class ExtensionClient extends ExtensionClientAbstract {
   getSearch: GetSearchFunc = (
     text: string,
     params: { [key: string]: string },
-    pageOffset: number,
-    pageSize: number
+    page: number
   ) => {
     return this.fetchFn(
       `https://api.mangadex.org/manga?title=${text}&${_getContentRatingsStr(
         this.settings
       )}&offset=${
-        pageOffset * pageSize
-      }&limit=24&includes[]=artist&includes[]=author&includes[]=cover_art`
+        (page - 1) * PAGE_SIZE
+      }&limit=${PAGE_SIZE}&includes[]=artist&includes[]=author&includes[]=cover_art`
     )
       .then((response: Response) => response.json())
       .then((json: any) => {
         const results: ParsedResults = _parseMangaResults(json);
         return {
           seriesList: results.seriesList,
-          total: results.total,
           hasMore: results.hasMore,
-          nextOffset: results.nextOffset,
         };
       });
   };
