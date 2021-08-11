@@ -145,8 +145,8 @@ export class FoolSlideClient {
         const rows = doc.getElementsByClassName("element");
 
         return rows.map((row: DOMParser.Node) => {
-          const linkElement = row.getElementsByTagName("a")[0];
-          const title = linkElement.getAttribute("title");
+          const linkElement = row.getElementsByClassName("title")[0].firstChild;
+          const title = linkElement.textContent.trim();
 
           const link = linkElement.getAttribute("href");
           const sourceId = link.split(`/read/${id}/`).pop();
@@ -176,9 +176,9 @@ export class FoolSlideClient {
             id: undefined,
             seriesId: undefined,
             sourceId: sourceId,
-            title: title,
-            chapterNumber: chapterNumber,
-            volumeNumber: volumeNumber,
+            title,
+            chapterNumber,
+            volumeNumber,
             languageKey: LanguageKey.ENGLISH,
             groupName: groupName,
             time: time,
