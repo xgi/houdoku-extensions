@@ -23,9 +23,17 @@ import {
 import { Response } from "node-fetch";
 import DOMParser from "dom-parser";
 
-const _parseResults = (doc: DOMParser.Dom, extensionId: string): Series[] => {
+type ParsedResults = {
+  seriesList: Series[];
+  hasMore: boolean;
+};
+
+const _parseResults = (
+  doc: DOMParser.Dom,
+  extensionId: string
+): ParsedResults => {
   const seriesContainers = doc.getElementsByClassName("group");
-  return seriesContainers.map((node: DOMParser.Node) => {
+  const seriesList = seriesContainers.map((node: DOMParser.Node) => {
     const linkElement = node.getElementsByClassName("title")[0].firstChild;
     const title = linkElement.textContent.trim();
     const link = linkElement.getAttribute("href");
@@ -60,6 +68,12 @@ const _parseResults = (doc: DOMParser.Dom, extensionId: string): Series[] => {
     };
     return series;
   });
+
+  const nextContainer = doc.getElementsByClassName("next");
+  return {
+    seriesList,
+    hasMore: nextContainer.length > 0,
+  };
 };
 
 export class FoolSlideClient {
@@ -213,7 +227,8 @@ export class FoolSlideClient {
 
   getSearch: GetSearchFunc = (
     text: string,
-    params: { [key: string]: string }
+    params: { [key: string]: string },
+    page: number
   ) => {
     return this.fetchFn(`${this.baseUrl}/search`, {
       method: "POST",
@@ -224,21 +239,31 @@ export class FoolSlideClient {
     })
       .then((response: Response) => response.text())
       .then((data: string) => {
-        return _parseResults(
+        const parsedResults = _parseResults(
           this.domParser.parseFromString(data),
           this.extensionId
         );
+
+        return {
+          seriesList: parsedResults.seriesList,
+          hasMore: parsedResults.hasMore,
+        };
       });
   };
 
-  getDirectory: GetDirectoryFunc = () => {
-    return this.fetchFn(`${this.baseUrl}/directory`)
+  getDirectory: GetDirectoryFunc = (page: number) => {
+    return this.fetchFn(`${this.baseUrl}/directory/${page}`)
       .then((response: Response) => response.text())
       .then((data: string) => {
-        return _parseResults(
+        const parsedResults = _parseResults(
           this.domParser.parseFromString(data),
           this.extensionId
         );
+
+        return {
+          seriesList: parsedResults.seriesList,
+          hasMore: parsedResults.hasMore,
+        };
       });
   };
 
