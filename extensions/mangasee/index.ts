@@ -72,12 +72,11 @@ export class ExtensionClient extends ExtensionClientAbstract {
   getSearch: GetSearchFunc = (
     text: string,
     params: { [key: string]: string },
-    pageOffset: number,
-    pageSize: number
-  ) => this.nepClient.getSearch(text, params, pageOffset, pageSize);
+    page: number
+  ) => this.nepClient.getSearch(text, params, page);
 
-  getDirectory: GetDirectoryFunc = (pageOffset: number, pageSize: number) =>
-    this.nepClient.getDirectory(pageOffset, pageSize);
+  getDirectory: GetDirectoryFunc = (page: number) =>
+    this.nepClient.getDirectory(page);
 
   getSettingTypes: GetSettingTypesFunc = () => this.nepClient.getSettingTypes();
 

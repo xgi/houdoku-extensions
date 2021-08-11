@@ -95,6 +95,8 @@ type DirectoryEntry = {
   seriesName: string;
 };
 
+const PAGE_SIZE = 24;
+
 export class NepClient {
   fetchFn: FetchFunc;
   webviewFn: WebviewFunc;
@@ -375,8 +377,7 @@ export class NepClient {
   getSearch: GetSearchFunc = async (
     text: string,
     params: { [key: string]: string },
-    pageOffset: number,
-    pageSize: number
+    page: number
   ) => {
     if (this.fullDirectoryList.length === 0) await this._getDirectoryList();
 
@@ -384,33 +385,30 @@ export class NepClient {
       entry.seriesName.toLowerCase().includes(text.toLowerCase())
     );
 
-    const startIndex = pageOffset * pageSize;
+    const startIndex = (page - 1) * PAGE_SIZE;
     const seriesList: Series[] = this._parseDirectoryList(
-      allMatching.slice(startIndex, startIndex + pageSize)
+      allMatching.slice(startIndex, startIndex + PAGE_SIZE)
     );
 
     return {
       seriesList,
       total: allMatching.length,
-      hasMore: allMatching.length > startIndex + pageSize,
+      hasMore: allMatching.length > startIndex + PAGE_SIZE,
     };
   };
 
-  getDirectory: GetDirectoryFunc = async (
-    pageOffset: number,
-    pageSize: number
-  ) => {
+  getDirectory: GetDirectoryFunc = async (page: number) => {
     if (this.fullDirectoryList.length === 0) await this._getDirectoryList();
 
-    const startIndex = pageOffset * pageSize;
+    const startIndex = (page - 1) * PAGE_SIZE;
     const seriesList: Series[] = this._parseDirectoryList(
-      this.fullDirectoryList.slice(startIndex, startIndex + pageSize)
+      this.fullDirectoryList.slice(startIndex, startIndex + PAGE_SIZE)
     );
 
     return {
       seriesList,
       total: this.fullDirectoryList.length,
-      hasMore: this.fullDirectoryList.length > startIndex + pageSize,
+      hasMore: this.fullDirectoryList.length > startIndex + PAGE_SIZE,
     };
   };
 
