@@ -392,7 +392,6 @@ export class NepClient {
 
     return {
       seriesList,
-      total: allMatching.length,
       hasMore: allMatching.length > startIndex + PAGE_SIZE,
     };
   };
@@ -407,7 +406,6 @@ export class NepClient {
 
     return {
       seriesList,
-      total: this.fullDirectoryList.length,
       hasMore: this.fullDirectoryList.length > startIndex + PAGE_SIZE,
     };
   };
