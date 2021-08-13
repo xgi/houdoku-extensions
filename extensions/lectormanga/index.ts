@@ -29,6 +29,7 @@ import { Response } from "node-fetch";
 import DOMParser from "dom-parser";
 import metadata from "./metadata.json";
 import { parseMetadata } from "../../util/configuring";
+import DomParser from "dom-parser";
 
 export const METADATA: ExtensionMetadata = parseMetadata(metadata);
 
@@ -126,6 +127,44 @@ export class ExtensionClient extends ExtensionClientAbstract {
     });
   };
 
+  _parseSearchResults = (doc: DomParser.Dom) => {
+    const entries = doc.getElementsByClassName("col-6");
+    const seriesList: Series[] = entries.map((node) => {
+      const img = node.getElementsByTagName("img")[0];
+      const link = img.parentNode;
+
+      const sourceId = link.getAttribute("href").split("/library/").pop();
+      const isHentai = node.getElementsByClassName("hentai-icon").length > 0;
+
+      return {
+        id: undefined,
+        extensionId: metadata.id,
+        sourceId,
+        sourceType: SeriesSourceType.STANDARD,
+        title: img.getAttribute("alt").trim(),
+        altTitles: [],
+        description: "",
+        authors: [],
+        artists: [],
+        genres: [],
+        themes: [],
+        formats: [],
+        contentWarnings: isHentai ? [ContentWarningKey.PORNOGRAPHIC] : [],
+        demographic: DemographicKey.UNCERTAIN,
+        status: SeriesStatus.ONGOING,
+        originalLanguageKey: ORIGINAL_LANGUAGE_MAP[sourceId.split("/")[0]],
+        numberUnread: 0,
+        remoteCoverUrl: img.getAttribute("src"),
+        userTags: [],
+      };
+    });
+
+    return {
+      seriesList,
+      hasMore: false,
+    };
+  };
+
   getMetadata: () => ExtensionMetadata = () => {
     return METADATA;
   };
@@ -138,7 +177,9 @@ export class ExtensionClient extends ExtensionClientAbstract {
         const img = doc.getElementsByTagName("img")[0];
 
         const details = doc.getElementsByClassName("col-sm-9")[0];
-        const title = details.getElementsByTagName("h1")[0].textContent.trim();
+        const title = details
+          .getElementsByTagName("h1")[0]
+          .firstChild.textContent.trim();
 
         const headings = details.getElementsByTagName("h5");
         const type = headings[0]
@@ -295,45 +336,12 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getDirectory: GetDirectoryFunc = (page: number) => {
-    return this.fetchFn(`https://guya.moe/api/get_all_series`)
-      .then((response: Response) => response.json())
-      .then((json: any) => {
-        const seriesList: Series[] = [];
-
-        Object.keys(json).forEach((title: string) => {
-          const seriesData = json[title];
-          const series: Series = {
-            id: undefined,
-            extensionId: METADATA.id,
-            sourceId: seriesData.slug,
-            sourceType: SeriesSourceType.STANDARD,
-            title: title,
-            altTitles: [],
-            description: seriesData.description,
-            authors: [seriesData.author],
-            artists: [seriesData.artist],
-            genres: [],
-            themes: [],
-            formats: [],
-            contentWarnings: [],
-            demographic: DemographicKey.UNCERTAIN,
-            status: SeriesStatus.ONGOING,
-            originalLanguageKey: LanguageKey.JAPANESE,
-            numberUnread: 0,
-            remoteCoverUrl: `https://guya.moe/${seriesData.cover}`,
-            userTags: [],
-          };
-          seriesList.push(series);
-        });
-
-        return seriesList;
-      })
-      .then((seriesList: Series[]) => {
-        return {
-          seriesList,
-          hasMore: false,
-        };
-      });
+    return this.webviewFn(
+      `https://lectormanga.com/library?title=&order_field=title&order_item=likes_count&order_dir=desc&type=&demography=&webcomic=&yonkoma=&amateur=&erotic=`
+    ).then((response: WebviewResponse) => {
+      const doc = this.domParser.parseFromString(response.text);
+      return this._parseSearchResults(doc);
+    });
   };
 
   getSearch: GetSearchFunc = (
@@ -344,43 +352,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
     return this.webviewFn(`https://lectormanga.com/library?title=${text}`).then(
       (response: WebviewResponse) => {
         const doc = this.domParser.parseFromString(response.text);
-
-        const entries = doc.getElementsByClassName("col-6");
-        const seriesList: Series[] = entries.map((node) => {
-          const img = node.getElementsByTagName("img")[0];
-          const link = img.parentNode;
-
-          const sourceId = link.getAttribute("href").split("/library/").pop();
-          const isHentai =
-            node.getElementsByClassName("hentai-icon").length > 0;
-
-          return {
-            id: undefined,
-            extensionId: metadata.id,
-            sourceId,
-            sourceType: SeriesSourceType.STANDARD,
-            title: img.getAttribute("alt").trim(),
-            altTitles: [],
-            description: "",
-            authors: [],
-            artists: [],
-            genres: [],
-            themes: [],
-            formats: [],
-            contentWarnings: isHentai ? [ContentWarningKey.PORNOGRAPHIC] : [],
-            demographic: DemographicKey.UNCERTAIN,
-            status: SeriesStatus.ONGOING,
-            originalLanguageKey: ORIGINAL_LANGUAGE_MAP[sourceId.split("/")[0]],
-            numberUnread: 0,
-            remoteCoverUrl: img.getAttribute("src"),
-            userTags: [],
-          };
-        });
-
-        return {
-          seriesList,
-          hasMore: false,
-        };
+        return this._parseSearchResults(doc);
       }
     );
   };
