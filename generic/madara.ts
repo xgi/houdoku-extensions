@@ -13,6 +13,7 @@ import {
   GetSettingsFunc,
   SetSettingsFunc,
   GetSettingTypesFunc,
+  WebviewResponse,
 } from "houdoku-extension-lib";
 import {
   Chapter,
@@ -170,8 +171,8 @@ export class MadaraClient {
 
   getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) => {
     return this.webviewFn(`${this.baseUrl}/${id.split(":").pop()}`).then(
-      (data: string) => {
-        const doc = this.domParser.parseFromString(data);
+      (response: WebviewResponse) => {
+        const doc = this.domParser.parseFromString(response.text);
 
         try {
           const titleContainer = doc.getElementsByClassName("post-title")[0];
@@ -355,8 +356,8 @@ export class MadaraClient {
   ) => {
     return this.webviewFn(
       `${this.baseUrl}/${seriesSourceId.split(":").pop()}/${chapterSourceId}`
-    ).then((data: string) => {
-      const doc = this.domParser.parseFromString(data);
+    ).then((response: WebviewResponse) => {
+      const doc = this.domParser.parseFromString(response.text);
       const imgContainers = doc.getElementsByClassName("wp-manga-chapter-img");
 
       const pageFilenames = imgContainers.map((node: DOMParser.Node) => {

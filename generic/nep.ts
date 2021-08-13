@@ -17,6 +17,7 @@ import {
   FormatKey,
   ContentWarningKey,
   WebviewFunc,
+  WebviewResponse,
 } from "houdoku-extension-lib";
 import {
   Chapter,
@@ -123,22 +124,24 @@ export class NepClient {
   }
 
   _getDirectoryList = () => {
-    return this.webviewFn(`${this.baseUrl}/directory`).then((data: string) => {
-      let contentStr = data
-        .split("vm.FullDirectory = ")
-        .pop()
-        .split("vm.CurrLetter")[0]
-        .trim();
-      contentStr = contentStr.substr(0, contentStr.length - 1);
-      const content = JSON.parse(contentStr);
+    return this.webviewFn(`${this.baseUrl}/directory`).then(
+      (response: WebviewResponse) => {
+        let contentStr = response.text
+          .split("vm.FullDirectory = ")
+          .pop()
+          .split("vm.CurrLetter")[0]
+          .trim();
+        contentStr = contentStr.substr(0, contentStr.length - 1);
+        const content = JSON.parse(contentStr);
 
-      this.fullDirectoryList = content["Directory"].map((entry: any) => {
-        return {
-          indexName: entry.i,
-          seriesName: entry.s,
-        };
-      });
-    });
+        this.fullDirectoryList = content["Directory"].map((entry: any) => {
+          return {
+            indexName: entry.i,
+            seriesName: entry.s,
+          };
+        });
+      }
+    );
   };
 
   _parseDirectoryList = (directoryList: DirectoryEntry[]) => {
@@ -203,10 +206,10 @@ export class NepClient {
 
   getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) => {
     return this.webviewFn(`${this.baseUrl}/manga/${id}`).then(
-      (data: string) => {
+      (response: WebviewResponse) => {
         // some list item tags are incorrectly closed with </i> instead of </li>,
         // so we manually replace them here
-        const fixedData = data.replace(/\<\/i>/g, "</li>");
+        const fixedData = response.text.replace(/\<\/i>/g, "</li>");
 
         const doc = this.domParser.parseFromString(fixedData);
 
@@ -300,8 +303,11 @@ export class NepClient {
 
   getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) => {
     return this.webviewFn(`${this.baseUrl}/manga/${id}`).then(
-      (data: string) => {
-        const contentStr = data.split("vm.Chapters = ").pop().split(";")[0];
+      (response: WebviewResponse) => {
+        const contentStr = response.text
+          .split("vm.Chapters = ")
+          .pop()
+          .split(";")[0];
         const content = JSON.parse(contentStr);
 
         return content.map((entry: any) => {
@@ -329,15 +335,15 @@ export class NepClient {
   ) => {
     return this.webviewFn(
       `${this.baseUrl}/read-online/${seriesSourceId}${chapterSourceId}`
-    ).then((data: string) => {
+    ).then((response: WebviewResponse) => {
       const host = JSON.parse(
-        '"' + data.split('vm.CurPathName = "').pop().split(";")[0]
+        '"' + response.text.split('vm.CurPathName = "').pop().split(";")[0]
       );
       const curChapter = JSON.parse(
-        "{" + data.split("vm.CurChapter = {").pop().split(";")[0]
+        "{" + response.text.split("vm.CurChapter = {").pop().split(";")[0]
       );
       const indexName = JSON.parse(
-        data.split("vm.IndexName = ").pop().split(";")[0]
+        response.text.split("vm.IndexName = ").pop().split(";")[0]
       );
 
       const dir = curChapter.Directory === "" ? "" : `${curChapter.Directory}/`;
