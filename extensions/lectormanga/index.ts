@@ -16,6 +16,7 @@ import {
   ContentWarningKey,
   GenreKey,
   ThemeKey,
+  WebviewResponse,
 } from "houdoku-extension-lib";
 import {
   Chapter,
@@ -131,8 +132,8 @@ export class ExtensionClient extends ExtensionClientAbstract {
 
   getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) => {
     return this.webviewFn(`https://lectormanga.com/library/${id}`).then(
-      (data: string) => {
-        const doc = this.domParser.parseFromString(data);
+      (response: WebviewResponse) => {
+        const doc = this.domParser.parseFromString(response.text);
 
         const img = doc.getElementsByTagName("img")[0];
 
@@ -202,8 +203,8 @@ export class ExtensionClient extends ExtensionClientAbstract {
 
   getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) => {
     return this.webviewFn(`https://lectormanga.com/library/${id}`).then(
-      (data: string) => {
-        const doc = this.domParser.parseFromString(data);
+      (response: WebviewResponse) => {
+        const doc = this.domParser.parseFromString(response.text);
         const container = doc.getElementById("chapters");
 
         if (!container) {
@@ -252,28 +253,28 @@ export class ExtensionClient extends ExtensionClientAbstract {
     );
   };
 
-  getPageRequesterData: GetPageRequesterDataFunc = (
+  getPageRequesterData: GetPageRequesterDataFunc = async (
     sourceType: SeriesSourceType,
     seriesSourceId: string,
     chapterSourceId: string
   ) => {
-    return this.fetchFn(`https://guya.moe/api/series/${seriesSourceId}`)
-      .then((response: Response) => response.json())
-      .then((json: any) => {
-        const chapterNum = chapterSourceId.split(":")[0];
-        let groupNum = chapterSourceId.split("/").pop();
-        groupNum = groupNum ? groupNum : "";
+    const newUrl = await this.webviewFn(
+      `https://lectormanga.com/view_uploads/${chapterSourceId}`
+    ).then((response) => response.url);
 
-        const pageBasenames: string[] =
-          json.chapters[chapterNum].groups[groupNum];
-        const pageFilenames = pageBasenames.map((basename: string) => {
-          return `https://guya.moe/media/manga/${chapterSourceId
-            .split(":")
-            .pop()}/${basename}`;
-        });
+    return this.fetchFn(newUrl, {
+      headers: { Referer: "https://lectormanga.com/" },
+    })
+      .then((response: Response) => response.text())
+      .then((data: string) => {
+        const root = data.split(`var dirPath = '`)[1].split(`'`)[0];
+        const imgListStr = data
+          .split(`var images = JSON.parse('`)[1]
+          .split(`'`)[0];
+        const pageFilenames: string[] = JSON.parse(imgListStr);
 
         return {
-          server: "",
+          server: root,
           hash: "",
           numPages: pageFilenames.length,
           pageFilenames,
@@ -282,11 +283,13 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getPageUrls: GetPageUrlsFunc = (pageRequesterData: PageRequesterData) => {
-    return pageRequesterData.pageFilenames;
+    return pageRequesterData.pageFilenames.map(
+      (fname) => `${pageRequesterData.server}${fname}`
+    );
   };
 
   getPageData: GetPageDataFunc = (series: Series, url: string) => {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       resolve(url);
     });
   };
@@ -339,8 +342,8 @@ export class ExtensionClient extends ExtensionClientAbstract {
     page: number
   ) => {
     return this.webviewFn(`https://lectormanga.com/library?title=${text}`).then(
-      (data: string) => {
-        const doc = this.domParser.parseFromString(data);
+      (response: WebviewResponse) => {
+        const doc = this.domParser.parseFromString(response.text);
 
         const entries = doc.getElementsByClassName("col-6");
         const seriesList: Series[] = entries.map((node) => {
