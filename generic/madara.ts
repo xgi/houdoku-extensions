@@ -13,6 +13,8 @@ import {
   GetSettingsFunc,
   SetSettingsFunc,
   GetSettingTypesFunc,
+  WebviewResponse,
+  SeriesListResponse,
 } from "houdoku-extension-lib";
 import {
   Chapter,
@@ -25,8 +27,9 @@ import {
   ThemeKey,
   SeriesStatus,
 } from "houdoku-extension-lib";
-import { Response, RequestInfo, RequestInit } from "node-fetch";
+import { Response } from "node-fetch";
 import DOMParser from "dom-parser";
+import DomParser from "dom-parser";
 
 const SERIES_STATUS_MAP: { [key: string]: SeriesStatus } = {
   OnGoing: SeriesStatus.ONGOING,
@@ -76,77 +79,6 @@ const DEMOGRAPHIC_MAP: { [key: string]: DemographicKey } = {
   josei: DemographicKey.JOSEI,
 };
 
-const _getSearch = (
-  baseUrl: string,
-  extensionId: string,
-  text: string,
-  fetchFn: (
-    url: RequestInfo,
-    init?: RequestInit | undefined
-  ) => Promise<Response>,
-  domParser: DOMParser
-) => {
-  return fetchFn(`${baseUrl}/?s=${text}&post_type=wp-manga`)
-    .then((response: Response) => response.text())
-    .then((data: string) => {
-      const doc = domParser.parseFromString(data);
-
-      const searchContainers = doc.getElementsByClassName(
-        "c-tabs-item__content"
-      );
-      if (!searchContainers) return [];
-
-      const seriesList: Series[] = [];
-      for (let i = 0; i < searchContainers.length; i += 1) {
-        const item = searchContainers[i];
-        if (!item) continue;
-
-        const linkElements = item.getElementsByTagName("a");
-        if (!linkElements) continue;
-
-        const link = linkElements[0];
-        if (!link) continue;
-
-        const title = link.getAttribute("title");
-        const href = link.getAttribute("href").split(`${baseUrl}`).pop();
-        const sourceId = href.substr(0, href.length - 1);
-        if (title === null || sourceId === undefined) continue;
-
-        const image = item.getElementsByClassName("img-responsive")[0];
-
-        const coverUrl = (
-          image.attributes.find((attrib: any) => attrib.name === "data-src") !==
-          undefined
-            ? image.getAttribute("data-src")
-            : image.getAttribute("srcset")
-        ).split(" ")[0];
-
-        seriesList.push({
-          id: undefined,
-          extensionId: extensionId,
-          sourceId: `x:${sourceId}`,
-          sourceType: SeriesSourceType.STANDARD,
-          title,
-          altTitles: [],
-          description: "",
-          authors: [],
-          artists: [],
-          genres: [],
-          themes: [],
-          contentWarnings: [],
-          formats: [],
-          demographic: DemographicKey.UNCERTAIN,
-          status: SeriesStatus.ONGOING,
-          originalLanguageKey: LanguageKey.JAPANESE,
-          numberUnread: 0,
-          remoteCoverUrl: coverUrl || "",
-          userTags: [],
-        });
-      }
-      return seriesList;
-    });
-};
-
 export class MadaraClient {
   fetchFn: FetchFunc;
   webviewFn: WebviewFunc;
@@ -168,16 +100,72 @@ export class MadaraClient {
     this.domParser = domParser;
   }
 
+  _parseSearch = (doc: DomParser.Dom): SeriesListResponse => {
+    const searchContainers = doc.getElementsByClassName("c-tabs-item__content");
+    if (!searchContainers) return { seriesList: [], hasMore: false };
+
+    const seriesList: Series[] = [];
+    for (let i = 0; i < searchContainers.length; i += 1) {
+      const item = searchContainers[i];
+      if (!item) continue;
+
+      const linkElements = item.getElementsByTagName("a");
+      if (!linkElements) continue;
+
+      const link = linkElements[0];
+      if (!link) continue;
+
+      const title = link.getAttribute("title");
+      const href = link.getAttribute("href").split(`${this.baseUrl}`).pop();
+      const sourceId = href.substr(0, href.length - 1);
+      if (title === null || sourceId === undefined) continue;
+
+      const image = item.getElementsByClassName("img-responsive")[0];
+
+      const coverUrl = (
+        image.attributes.find((attrib: any) => attrib.name === "data-src") !==
+        undefined
+          ? image.getAttribute("data-src")
+          : image.getAttribute("srcset")
+      ).split(" ")[0];
+
+      seriesList.push({
+        id: undefined,
+        extensionId: this.extensionId,
+        sourceId: `x:${sourceId}`,
+        sourceType: SeriesSourceType.STANDARD,
+        title,
+        altTitles: [],
+        description: "",
+        authors: [],
+        artists: [],
+        genres: [],
+        themes: [],
+        contentWarnings: [],
+        formats: [],
+        demographic: DemographicKey.UNCERTAIN,
+        status: SeriesStatus.ONGOING,
+        originalLanguageKey: LanguageKey.JAPANESE,
+        numberUnread: 0,
+        remoteCoverUrl: coverUrl || "",
+        userTags: [],
+      });
+    }
+
+    const prevLink = doc.getElementsByClassName("nav-previous");
+    return { seriesList, hasMore: prevLink.length > 0 };
+  };
+
   getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) => {
     return this.webviewFn(`${this.baseUrl}/${id.split(":").pop()}`).then(
-      (data: string) => {
-        const doc = this.domParser.parseFromString(data);
+      (response: WebviewResponse) => {
+        const doc = this.domParser.parseFromString(response.text);
 
         try {
           const titleContainer = doc.getElementsByClassName("post-title")[0];
           const title = titleContainer
             .getElementsByTagName("h1")[0]
-            .textContent.trim();
+            .lastChild.textContent.trim();
 
           const detailsContainer = doc.getElementsByClassName("tab-summary")[0];
           const link = detailsContainer.getElementsByTagName("a")[0];
@@ -355,8 +343,8 @@ export class MadaraClient {
   ) => {
     return this.webviewFn(
       `${this.baseUrl}/${seriesSourceId.split(":").pop()}/${chapterSourceId}`
-    ).then((data: string) => {
-      const doc = this.domParser.parseFromString(data);
+    ).then((response: WebviewResponse) => {
+      const doc = this.domParser.parseFromString(response.text);
       const imgContainers = doc.getElementsByClassName("wp-manga-chapter-img");
 
       const pageFilenames = imgContainers.map((node: DOMParser.Node) => {
@@ -388,24 +376,25 @@ export class MadaraClient {
 
   getSearch: GetSearchFunc = (
     text: string,
-    params: { [key: string]: string }
-  ) =>
-    _getSearch(
-      this.baseUrl,
-      this.extensionId,
-      text,
-      this.fetchFn,
-      this.domParser
-    );
+    params: { [key: string]: string },
+    page: number
+  ) => {
+    return this.fetchFn(
+      `${this.baseUrl}/page/${page}/?s=${text}&post_type=wp-manga`
+    )
+      .then((response: Response) => response.text())
+      .then((data: string) =>
+        this._parseSearch(this.domParser.parseFromString(data))
+      );
+  };
 
-  getDirectory: GetDirectoryFunc = () =>
-    _getSearch(
-      this.baseUrl,
-      this.extensionId,
-      "",
-      this.fetchFn,
-      this.domParser
-    );
+  getDirectory: GetDirectoryFunc = (page: number) => {
+    return this.fetchFn(`${this.baseUrl}/page/${page}/?s=&post_type=wp-manga`)
+      .then((response: Response) => response.text())
+      .then((data: string) =>
+        this._parseSearch(this.domParser.parseFromString(data))
+      );
+  };
 
   getSettingTypes: GetSettingTypesFunc = () => {
     return {};

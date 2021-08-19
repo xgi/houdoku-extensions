@@ -19,13 +19,13 @@ import {
 } from "houdoku-extension-lib";
 import DOMParser from "dom-parser";
 import metadata from "./metadata.json";
-import { MadaraClient } from "../../generic/madara";
 import { parseMetadata } from "../../util/configuring";
+import { WeebReaderClient } from "../../generic/weebreader";
 
 export const METADATA: ExtensionMetadata = parseMetadata(metadata);
 
 export class ExtensionClient extends ExtensionClientAbstract {
-  madaraClient: MadaraClient;
+  weebReaderClient: WeebReaderClient;
 
   constructor(
     fetchFn: FetchFunc,
@@ -33,12 +33,12 @@ export class ExtensionClient extends ExtensionClientAbstract {
     domParser: DOMParser
   ) {
     super(fetchFn, webviewFn, domParser);
-    this.madaraClient = new MadaraClient(
+    this.weebReaderClient = new WeebReaderClient(
       METADATA.id,
       METADATA.url,
       fetchFn,
-      webviewFn,
-      domParser
+      METADATA.name,
+      METADATA.translatedLanguage
     );
   }
 
@@ -47,40 +47,42 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) =>
-    this.madaraClient.getSeries(sourceType, id);
+    this.weebReaderClient.getSeries(sourceType, id);
 
   getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) =>
-    this.madaraClient.getChapters(sourceType, id);
+    this.weebReaderClient.getChapters(sourceType, id);
 
   getPageRequesterData: GetPageRequesterDataFunc = (
     sourceType: SeriesSourceType,
     seriesSourceId: string,
     chapterSourceId: string
   ) =>
-    this.madaraClient.getPageRequesterData(
+    this.weebReaderClient.getPageRequesterData(
       sourceType,
       seriesSourceId,
       chapterSourceId
     );
 
   getPageUrls: GetPageUrlsFunc = (pageRequesterData: PageRequesterData) =>
-    this.madaraClient.getPageUrls(pageRequesterData);
+    this.weebReaderClient.getPageUrls(pageRequesterData);
 
   getPageData: GetPageDataFunc = (series: Series, url: string) =>
-    this.madaraClient.getPageData(series, url);
+    this.weebReaderClient.getPageData(series, url);
 
   getSearch: GetSearchFunc = (
     text: string,
-    params: { [key: string]: string }
-  ) => this.madaraClient.getSearch(text, params);
+    params: { [key: string]: string },
+    page: number
+  ) => this.weebReaderClient.getSearch(text, params, page);
 
-  getDirectory: GetDirectoryFunc = () => this.madaraClient.getDirectory();
+  getDirectory: GetDirectoryFunc = (page: number) =>
+    this.weebReaderClient.getDirectory(page);
 
   getSettingTypes: GetSettingTypesFunc = () =>
-    this.madaraClient.getSettingTypes();
+    this.weebReaderClient.getSettingTypes();
 
-  getSettings: GetSettingsFunc = () => this.madaraClient.getSettings();
+  getSettings: GetSettingsFunc = () => this.weebReaderClient.getSettings();
 
   setSettings: SetSettingsFunc = (newSettings: { [key: string]: any }) =>
-    this.madaraClient.setSettings(newSettings);
+    this.weebReaderClient.setSettings(newSettings);
 }

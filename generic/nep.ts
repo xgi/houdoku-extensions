@@ -17,6 +17,7 @@ import {
   FormatKey,
   ContentWarningKey,
   WebviewFunc,
+  WebviewResponse,
 } from "houdoku-extension-lib";
 import {
   Chapter,
@@ -90,6 +91,13 @@ const DEMOGRAPHIC_MAP: { [key: string]: DemographicKey } = {
   Josei: DemographicKey.JOSEI,
 };
 
+type DirectoryEntry = {
+  indexName: string;
+  seriesName: string;
+};
+
+const PAGE_SIZE = 24;
+
 export class NepClient {
   fetchFn: FetchFunc;
   webviewFn: WebviewFunc;
@@ -97,7 +105,7 @@ export class NepClient {
   extensionId: string;
   baseUrl: string;
 
-  fullDirectoryList: { indexName: string; seriesName: string }[];
+  fullDirectoryList: DirectoryEntry[];
 
   constructor(
     extensionId: string,
@@ -116,17 +124,49 @@ export class NepClient {
   }
 
   _getDirectoryList = () => {
-    return this.webviewFn(`${this.baseUrl}/directory`).then((data: string) => {
-      let contentStr = data.split("vm.FullDirectory = ").pop().split("vm.CurrLetter")[0].trim();
-      contentStr = contentStr.substr(0, contentStr.length - 1);
-      const content = JSON.parse(contentStr);
+    return this.webviewFn(`${this.baseUrl}/directory`).then(
+      (response: WebviewResponse) => {
+        let contentStr = response.text
+          .split("vm.FullDirectory = ")
+          .pop()
+          .split("vm.CurrLetter")[0]
+          .trim();
+        contentStr = contentStr.substr(0, contentStr.length - 1);
+        const content = JSON.parse(contentStr);
 
-      this.fullDirectoryList = content['Directory'].map((entry: any) => {
-        return {
-          indexName: entry.i,
-          seriesName: entry.s,
-        };
-      });
+        this.fullDirectoryList = content["Directory"].map((entry: any) => {
+          return {
+            indexName: entry.i,
+            seriesName: entry.s,
+          };
+        });
+      }
+    );
+  };
+
+  _parseDirectoryList = (directoryList: DirectoryEntry[]) => {
+    return directoryList.map((entry) => {
+      return {
+        id: undefined,
+        extensionId: this.extensionId,
+        sourceId: entry.indexName,
+        sourceType: SeriesSourceType.STANDARD,
+        title: entry.seriesName,
+        altTitles: [],
+        description: "",
+        authors: [],
+        artists: [],
+        genres: [],
+        themes: [],
+        contentWarnings: [],
+        formats: [],
+        demographic: DemographicKey.UNCERTAIN,
+        status: SeriesStatus.ONGOING,
+        originalLanguageKey: LanguageKey.JAPANESE,
+        numberUnread: 0,
+        remoteCoverUrl: `https://cover.nep.li/cover/${entry.indexName}.jpg`,
+        userTags: [],
+      };
     });
   };
 
@@ -166,10 +206,10 @@ export class NepClient {
 
   getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) => {
     return this.webviewFn(`${this.baseUrl}/manga/${id}`).then(
-      (data: string) => {
+      (response: WebviewResponse) => {
         // some list item tags are incorrectly closed with </i> instead of </li>,
         // so we manually replace them here
-        const fixedData = data.replace(/\<\/i>/g, "</li>");
+        const fixedData = response.text.replace(/\<\/i>/g, "</li>");
 
         const doc = this.domParser.parseFromString(fixedData);
 
@@ -263,8 +303,11 @@ export class NepClient {
 
   getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) => {
     return this.webviewFn(`${this.baseUrl}/manga/${id}`).then(
-      (data: string) => {
-        const contentStr = data.split("vm.Chapters = ").pop().split(";")[0];
+      (response: WebviewResponse) => {
+        const contentStr = response.text
+          .split("vm.Chapters = ")
+          .pop()
+          .split(";")[0];
         const content = JSON.parse(contentStr);
 
         return content.map((entry: any) => {
@@ -292,15 +335,15 @@ export class NepClient {
   ) => {
     return this.webviewFn(
       `${this.baseUrl}/read-online/${seriesSourceId}${chapterSourceId}`
-    ).then((data: string) => {
+    ).then((response: WebviewResponse) => {
       const host = JSON.parse(
-        '"' + data.split('vm.CurPathName = "').pop().split(";")[0]
+        '"' + response.text.split('vm.CurPathName = "').pop().split(";")[0]
       );
       const curChapter = JSON.parse(
-        "{" + data.split("vm.CurChapter = {").pop().split(";")[0]
+        "{" + response.text.split("vm.CurChapter = {").pop().split(";")[0]
       );
       const indexName = JSON.parse(
-        data.split("vm.IndexName = ").pop().split(";")[0]
+        response.text.split("vm.IndexName = ").pop().split(";")[0]
       );
 
       const dir = curChapter.Directory === "" ? "" : `${curChapter.Directory}/`;
@@ -339,68 +382,38 @@ export class NepClient {
 
   getSearch: GetSearchFunc = async (
     text: string,
-    params: { [key: string]: string }
+    params: { [key: string]: string },
+    page: number
   ) => {
     if (this.fullDirectoryList.length === 0) await this._getDirectoryList();
 
-    return this.fullDirectoryList
-      .filter((entry: { indexName: string; seriesName: string }) =>
-        entry.seriesName.toLowerCase().includes(text.toLowerCase())
-      )
-      .slice(0, 12)
-      .map((entry: { indexName: string; seriesName: string }) => {
-        return {
-          id: undefined,
-          extensionId: this.extensionId,
-          sourceId: entry.indexName,
-          sourceType: SeriesSourceType.STANDARD,
-          title: entry.seriesName,
-          altTitles: [],
-          description: "",
-          authors: [],
-          artists: [],
-          genres: [],
-          themes: [],
-          contentWarnings: [],
-          formats: [],
-          demographic: DemographicKey.UNCERTAIN,
-          status: SeriesStatus.ONGOING,
-          originalLanguageKey: LanguageKey.JAPANESE,
-          numberUnread: 0,
-          remoteCoverUrl: `https://cover.nep.li/cover/${entry.indexName}.jpg`,
-          userTags: [],
-        };
-      });
+    const allMatching = this.fullDirectoryList.filter((entry) =>
+      entry.seriesName.toLowerCase().includes(text.toLowerCase())
+    );
+
+    const startIndex = (page - 1) * PAGE_SIZE;
+    const seriesList: Series[] = this._parseDirectoryList(
+      allMatching.slice(startIndex, startIndex + PAGE_SIZE)
+    );
+
+    return {
+      seriesList,
+      hasMore: allMatching.length > startIndex + PAGE_SIZE,
+    };
   };
 
-  getDirectory: GetDirectoryFunc = async () => {
+  getDirectory: GetDirectoryFunc = async (page: number) => {
     if (this.fullDirectoryList.length === 0) await this._getDirectoryList();
 
-    return this.fullDirectoryList
-      .slice(0, 12)
-      .map((entry: { indexName: string; seriesName: string }) => {
-        return {
-          id: undefined,
-          extensionId: this.extensionId,
-          sourceId: entry.indexName,
-          sourceType: SeriesSourceType.STANDARD,
-          title: entry.seriesName,
-          altTitles: [],
-          description: "",
-          authors: [],
-          artists: [],
-          genres: [],
-          themes: [],
-          contentWarnings: [],
-          formats: [],
-          demographic: DemographicKey.UNCERTAIN,
-          status: SeriesStatus.ONGOING,
-          originalLanguageKey: LanguageKey.JAPANESE,
-          numberUnread: 0,
-          remoteCoverUrl: `https://cover.nep.li/cover/${entry.indexName}.jpg`,
-          userTags: [],
-        };
-      });
+    const startIndex = (page - 1) * PAGE_SIZE;
+    const seriesList: Series[] = this._parseDirectoryList(
+      this.fullDirectoryList.slice(startIndex, startIndex + PAGE_SIZE)
+    );
+
+    return {
+      seriesList,
+      hasMore: this.fullDirectoryList.length > startIndex + PAGE_SIZE,
+    };
   };
 
   getSettingTypes: GetSettingTypesFunc = () => {

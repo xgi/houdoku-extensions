@@ -131,7 +131,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
     });
   };
 
-  getDirectory: GetDirectoryFunc = () => {
+  getDirectory: GetDirectoryFunc = (page: number) => {
     return this.fetchFn(`https://guya.moe/api/get_all_series`)
       .then((response: Response) => response.json())
       .then((json: any) => {
@@ -164,14 +164,21 @@ export class ExtensionClient extends ExtensionClientAbstract {
         });
 
         return seriesList;
+      })
+      .then((seriesList: Series[]) => {
+        return {
+          seriesList,
+          hasMore: false,
+        };
       });
   };
 
   getSearch: GetSearchFunc = (
     text: string,
-    params: { [key: string]: string }
+    params: { [key: string]: string },
+    page: number
   ) => {
-    return this.getDirectory();
+    return this.getDirectory(page);
   };
 
   getSettingTypes: GetSettingTypesFunc = () => {
