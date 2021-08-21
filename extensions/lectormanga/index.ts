@@ -272,12 +272,14 @@ export class ExtensionClient extends ExtensionClientAbstract {
               .textContent.trim();
             const btn = chapterRow.getElementsByClassName("btn-sm")[0];
 
+            const chapterNumStr = title.split(" ")[1].split(" ")[0];
+
             const chapter: Chapter = {
               id: undefined,
               seriesId: undefined,
               sourceId: btn.getAttribute("href").split("/").pop(),
               title,
-              chapterNumber: title.split(" ")[1].split(" ")[0],
+              chapterNumber: parseFloat(chapterNumStr).toString(),
               volumeNumber: "",
               languageKey: LanguageKey.SPANISH_ES,
               groupName: groupContainer.textContent.trim(),
