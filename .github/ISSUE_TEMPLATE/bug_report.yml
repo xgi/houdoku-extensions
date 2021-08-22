@@ -12,7 +12,7 @@ body:
           required: true
         - label: Check that there is not an existing ticket for this issue, and that it is not related to an existing ticket.
           required: true
-        - label: If this is an issue with Houdoku itself, open a ticket in the [Houdoku repo](https://github.com/xgi/houdoku) instead.
+        - label: If this is an issue with Houdoku itself, open a ticket in the [Houdoku repo](https://github.com/xgi/houdoku/issues/new/choose) instead.
           required: true
         - label: Write a concise title for this ticket in the field above. 
           required: true
