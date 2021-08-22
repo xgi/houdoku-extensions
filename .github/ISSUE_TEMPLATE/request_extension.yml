@@ -12,7 +12,7 @@ body:
           required: true
         - label: Check whether there is another ticket requesting this source.
           required: true
-        - label: Write a concise title for this ticket in the field above. 
+        - label: Write a concise title for this ticket in the field above.
           required: true
 
   - type: input
@@ -33,7 +33,7 @@ body:
     validations:
       required: true
 
-  - type: textarea
+  - type: input
     id: source-language
     attributes:
       label: Source language(s)

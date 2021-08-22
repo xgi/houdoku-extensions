@@ -14,7 +14,7 @@ body:
           required: true
         - label: If this is an request for Houdoku itself, open a ticket in the [Houdoku repo](https://github.com/xgi/houdoku/issues/new/choose) instead.
           required: true
-        - label: Write a concise title for this ticket in the field above. 
+        - label: Write a concise title for this ticket in the field above.
           required: true
 
   - type: input
