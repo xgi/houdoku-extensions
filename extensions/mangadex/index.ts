@@ -421,7 +421,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
           seriesId: undefined,
           sourceId: result.data.id,
           title: result.data.attributes.title || "",
-          chapterNumber: result.data.attributes.chapter,
+          chapterNumber: result.data.attributes.chapter || "0",
           volumeNumber: result.data.attributes.volume || "",
           languageKey: LANGUAGE_MAP[result.data.attributes.translatedLanguage],
           groupName,
