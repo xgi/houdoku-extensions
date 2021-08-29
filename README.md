@@ -69,23 +69,26 @@ and may be out-of-date; the only authoritative source is the
 
 | Name                  | URL                               | Version | Notes |
 | --------------------- | --------------------------------- | ------- | ----- |
-| Arang Scans           | <https://arangscans.com>          | 1.1.0   |       |
-| CatManga              | <https://catmanga.org>            | 1.1.0   |       |
-| Death Toll Scans      | <https://www.deathtollscans.net>  | 1.0.0   |       |
-| Disaster Scans        | <https://disasterscans.com>       | 1.1.0   |       |
-| Guya                  | <https://guya.moe>                | 1.1.0   |       |
-| Immortal Updates      | <https://immortalupdates.com>     | 1.1.0   |       |
-| IsekaiScan            | <https://isekaiscan.com>          | 1.1.0   |       |
-| Kirei Cake            | <https://kireicake.com>           | 1.0.0   |       |
-| LeviatanScans         | <https://leviatanscans.com>       | 1.1.0   |       |
-| Lilyreader            | <https://manga.smuglo.li>         | 1.0.0   |       |
-| Manga347              | <https://manga347.com>            | 1.1.0   |       |
-| MangaDex              | <https://mangadex.org>            | 1.0.0   |       |
-| MangaKik              | <https://mangakik.com>            | 1.1.0   |       |
-| Mangarave             | <https://mangarave.com>           | 1.1.0   |       |
-| MangaTellers          | <https://mangatellers.gr/>        | 1.0.0   |       |
-| Sense-Scans           | <https://www.sensescans.com>      | 1.0.0   |       |
-| Silent Sky            | <https://www.silentsky-scans.net> | 1.0.0   |       |
-| Sleeping Knight Scans | <https://skscans.com>             | 1.1.0   |       |
-| Toonily               | <https://toonily.com>             | 1.1.0   |       |
-| Tritinia Scans        | <https://tritinia.com>            | 1.1.0   |       |
+| Arang Scans           | <https://arangscans.com>          | 1.2.0   |       |
+| CatManga              | <https://catmanga.org>            | 1.2.0   |       |
+| Death Toll Scans      | <https://www.deathtollscans.net>  | 1.1.0   |       |
+| Disaster Scans        | <https://disasterscans.com>       | 1.2.0   |       |
+| Guya                  | <https://guya.moe>                | 1.2.0   |       |
+| Immortal Updates      | <https://immortalupdates.com>     | 1.2.0   |       |
+| IsekaiScan            | <https://isekaiscan.com>          | 1.2.0   |       |
+| Kirei Cake            | <https://kireicake.com>           | 1.1.0   |       |
+| LectorManga           | <https://lectormanga.com>         | 1.1.1   |       |
+| LeviatanScans         | <https://leviatanscans.com>       | 1.2.0   |       |
+| Lilyreader            | <https://manga.smuglo.li>         | 1.1.0   |       |
+| Manga347              | <https://manga347.com>            | 1.2.0   |       |
+| MangaDex              | <https://mangadex.org>            | 1.2.1   |       |
+| MangaKik              | <https://mangakik.com>            | 1.2.0   |       |
+| MangaLife             | <https://manga4life.com>          | 1.1.0   |       |
+| Mangarave             | <https://mangarave.com>           | 1.2.0   |       |
+| MangaSee              | <https://mangasee123.com>         | 1.1.0   |       |
+| MangaTellers          | <https://mangatellers.gr>         | 1.1.0   |       |
+| Sense-Scans           | <https://www.sensescans.com>      | 1.1.0   |       |
+| Silent Sky            | <https://www.silentsky-scans.net> | 1.1.0   |       |
+| Sleeping Knight Scans | <https://skscans.com>             | 1.2.0   |       |
+| Toonily               | <https://toonily.com>             | 1.2.0   |       |
+| Tritinia Scans        | <https://tritinia.com>            | 1.2.0   |       |
