@@ -37,7 +37,8 @@ export class ExtensionClient extends ExtensionClientAbstract {
       METADATA.id,
       "http://pignaquegna.altervista.org",
       fetchFn,
-      domParser
+      domParser,
+      METADATA.translatedLanguage
     );
   }
 

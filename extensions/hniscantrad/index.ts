@@ -37,7 +37,8 @@ export class ExtensionClient extends ExtensionClientAbstract {
       METADATA.id,
       "http://hni-scantrad.com/lel",
       fetchFn,
-      domParser
+      domParser,
+      METADATA.translatedLanguage
     );
   }
 

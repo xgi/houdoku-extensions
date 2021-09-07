@@ -37,7 +37,8 @@ export class ExtensionClient extends ExtensionClientAbstract {
       METADATA.id,
       "http://zandynofansub.aishiteru.org/reader",
       fetchFn,
-      domParser
+      domParser,
+      METADATA.translatedLanguage
     );
   }
 

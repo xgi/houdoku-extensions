@@ -37,7 +37,8 @@ export class ExtensionClient extends ExtensionClientAbstract {
       METADATA.id,
       "https://reader.letitgo.scans.today",
       fetchFn,
-      domParser
+      domParser,
+      METADATA.translatedLanguage
     );
   }
 

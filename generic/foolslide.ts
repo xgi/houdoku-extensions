@@ -81,17 +81,20 @@ export class FoolSlideClient {
   domParser: DOMParser;
   extensionId: string;
   baseUrl: string;
+  translatedLanguageKey: LanguageKey;
 
   constructor(
     extensionId: string,
     baseUrl: string,
     fetchFn: FetchFunc,
-    domParser: DOMParser
+    domParser: DOMParser,
+    translatedLanguageKey: LanguageKey
   ) {
     this.extensionId = extensionId;
     this.baseUrl = baseUrl;
     this.fetchFn = fetchFn;
     this.domParser = domParser;
+    this.translatedLanguageKey = translatedLanguageKey;
   }
 
   getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) => {
@@ -179,7 +182,7 @@ export class FoolSlideClient {
             title,
             chapterNumber,
             volumeNumber,
-            languageKey: LanguageKey.ENGLISH,
+            languageKey: this.translatedLanguageKey,
             groupName: groupName,
             time: time,
             read: false,
