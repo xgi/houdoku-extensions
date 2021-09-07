@@ -153,20 +153,12 @@ export class FoolSlideClient {
 
           const link = linkElement.getAttribute("href");
           const sourceId = link.split(`/read/${id}/`).pop();
-          const linkParts = link.split("/");
 
-          let volumeNumber: string;
-          let chapterNumber: string;
-
-          if (linkParts.length === 9) {
-            volumeNumber = linkParts[linkParts.length - 3];
-            chapterNumber = linkParts[linkParts.length - 2];
-          } else {
-            volumeNumber = linkParts[linkParts.length - 4];
-            chapterNumber = `${linkParts[linkParts.length - 3]}.${
-              linkParts[linkParts.length - 2]
-            }`;
-          }
+          const linkNumbers = link
+            .split("/")
+            .filter((part: string) => part && !Number.isNaN(+part));
+          const volumeNumber: string = linkNumbers[0];
+          const chapterNumber: string = linkNumbers[1];
 
           const metaContainer = row.getElementsByClassName("meta_r")[0];
           const groupName = metaContainer
