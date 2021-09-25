@@ -206,20 +206,20 @@ type ParsedResults = {
 
 const _parseMangaResults = (json: any): ParsedResults => {
   if (
-    !("results" in json) ||
-    json.results === undefined ||
-    json.results.length === 0
+    !("data" in json) ||
+    json.data === undefined ||
+    json.data.length === 0
   ) {
     return { seriesList: [], hasMore: false };
   }
 
-  const seriesList = json.results.map((result: any) => {
+  const seriesList = json.data.map((result: any) => {
     const genres: GenreKey[] = [];
     const themes: ThemeKey[] = [];
     const formats: FormatKey[] = [];
     const contentWarnings: ContentWarningKey[] = [];
 
-    result.data.attributes.tags.forEach((tag: any) => {
+    result.attributes.tags.forEach((tag: any) => {
       const tagId: string = tag.id;
       if (tagId in GENRE_MAP) {
         genres.push(GENRE_MAP[tagId]);
@@ -235,7 +235,7 @@ const _parseMangaResults = (json: any): ParsedResults => {
       }
     });
 
-    switch (result.data.attributes.contentRating) {
+    switch (result.attributes.contentRating) {
       case "suggestive":
         contentWarnings.push(ContentWarningKey.ECCHI);
         break;
@@ -248,9 +248,9 @@ const _parseMangaResults = (json: any): ParsedResults => {
     }
 
     const title =
-      result.data.attributes.title.en !== undefined
-        ? result.data.attributes.title.en
-        : Object.values(result.data.attributes.title)[0];
+      result.attributes.title.en !== undefined
+        ? result.attributes.title.en
+        : Object.values(result.attributes.title)[0];
 
     const coverRelationship = result.relationships.find(
       (relationship: any) =>
@@ -259,19 +259,19 @@ const _parseMangaResults = (json: any): ParsedResults => {
     );
     const remoteCoverUrl =
       coverRelationship !== undefined
-        ? `https://uploads.mangadex.org/covers/${result.data.id}/${coverRelationship.attributes.fileName}.512.jpg`
+        ? `https://uploads.mangadex.org/covers/${result.id}/${coverRelationship.attributes.fileName}.512.jpg`
         : "";
 
     const series: Series = {
       id: undefined,
       extensionId: METADATA.id,
-      sourceId: result.data.id,
+      sourceId: result.id,
       sourceType: SeriesSourceType.STANDARD,
       title,
-      altTitles: result.data.attributes.altTitles.map(
+      altTitles: result.attributes.altTitles.map(
         (altTitleCont: any) => altTitleCont.en
       ),
-      description: result.data.attributes.description.en,
+      description: result.attributes.description.en,
       authors: result.relationships
         .filter(
           (relationship: any) =>
@@ -291,12 +291,12 @@ const _parseMangaResults = (json: any): ParsedResults => {
       formats: formats,
       contentWarnings: contentWarnings,
       demographic:
-        result.data.attributes.publicationDemographic === null
+        result.attributes.publicationDemographic === null
           ? DemographicKey.UNCERTAIN
-          : DEMOGRAPHIC_MAP[result.data.attributes.publicationDemographic],
-      status: SERIES_STATUS_MAP[result.data.attributes.status],
+          : DEMOGRAPHIC_MAP[result.attributes.publicationDemographic],
+      status: SERIES_STATUS_MAP[result.attributes.status],
       originalLanguageKey:
-        LANGUAGE_MAP[result.data.attributes.originalLanguage],
+        LANGUAGE_MAP[result.attributes.originalLanguage],
       numberUnread: 0,
       remoteCoverUrl,
       userTags: [],
@@ -382,8 +382,8 @@ export class ExtensionClient extends ExtensionClientAbstract {
         )}`
       );
       const json = await response.json();
-      if (!json.results || json.results.length === 0) return [];
-      json.results.forEach((result: any) => chapterIdList.push(result.data.id));
+      if (!json.data || json.data.length === 0) return [];
+      json.data.forEach((result: any) => chapterIdList.push(result.id));
 
       if (json.total > offset + 500) {
         offset += 500;
@@ -405,7 +405,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
         `https://api.mangadex.org/chapter?limit=100&${chapterIdsStr}&includes[]=scanlation_group`
       );
       const json = await response.json();
-      json.results.forEach((result: any) => {
+      json.data.forEach((result: any) => {
         const groupRelationship: any | undefined = result.relationships.find(
           (relationship: any) =>
             relationship.type === "scanlation_group" &&
@@ -419,13 +419,13 @@ export class ExtensionClient extends ExtensionClientAbstract {
         chapterList.push({
           id: undefined,
           seriesId: undefined,
-          sourceId: result.data.id,
-          title: result.data.attributes.title || "",
-          chapterNumber: result.data.attributes.chapter || "0",
-          volumeNumber: result.data.attributes.volume || "",
-          languageKey: LANGUAGE_MAP[result.data.attributes.translatedLanguage],
+          sourceId: result.id,
+          title: result.attributes.title || "",
+          chapterNumber: result.attributes.chapter || "0",
+          volumeNumber: result.attributes.volume || "",
+          languageKey: LANGUAGE_MAP[result.attributes.translatedLanguage],
           groupName,
-          time: new Date(result.data.attributes.updatedAt).getTime(),
+          time: new Date(result.attributes.updatedAt).getTime(),
           read: false,
         });
       });
