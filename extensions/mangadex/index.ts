@@ -205,11 +205,7 @@ type ParsedResults = {
 };
 
 const _parseMangaResults = (json: any): ParsedResults => {
-  if (
-    !("data" in json) ||
-    json.data === undefined ||
-    json.data.length === 0
-  ) {
+  if (!("data" in json) || json.data === undefined || json.data.length === 0) {
     return { seriesList: [], hasMore: false };
   }
 
@@ -295,8 +291,7 @@ const _parseMangaResults = (json: any): ParsedResults => {
           ? DemographicKey.UNCERTAIN
           : DEMOGRAPHIC_MAP[result.attributes.publicationDemographic],
       status: SERIES_STATUS_MAP[result.attributes.status],
-      originalLanguageKey:
-        LANGUAGE_MAP[result.attributes.originalLanguage],
+      originalLanguageKey: LANGUAGE_MAP[result.attributes.originalLanguage],
       numberUnread: 0,
       remoteCoverUrl,
       userTags: [],
@@ -372,37 +367,12 @@ export class ExtensionClient extends ExtensionClientAbstract {
     sourceType: SeriesSourceType,
     id: string
   ) => {
-    const chapterIdList: string[] = [];
-    let gotAllChapterIds: boolean = false;
-    let offset = 0;
-    while (!gotAllChapterIds) {
-      const response = await this.fetchFn(
-        `https://api.mangadex.org/manga/${id}/feed?limit=500&offset=${offset}${_getTranslatedLanguagesStr(
-          this.settings
-        )}`
-      );
-      const json = await response.json();
-      if (!json.data || json.data.length === 0) return [];
-      json.data.forEach((result: any) => chapterIdList.push(result.id));
-
-      if (json.total > offset + 500) {
-        offset += 500;
-      } else {
-        gotAllChapterIds = true;
-      }
-    }
-
     const chapterList: Chapter[] = [];
     let gotAllChapters: boolean = false;
-    offset = 0;
+    let offset = 0;
     while (!gotAllChapters) {
-      const curChapterIds: string[] = chapterIdList.slice(offset, offset + 100);
-      const chapterIdsStr = curChapterIds
-        .map((id: string) => `ids[]=${id}`)
-        .join("&");
-
       const response = await this.fetchFn(
-        `https://api.mangadex.org/chapter?limit=100&${chapterIdsStr}&includes[]=scanlation_group`
+        `https://api.mangadex.org/manga/${id}/feed?offset=${offset}&limit=500&includes[]=scanlation_group`
       );
       const json = await response.json();
       json.data.forEach((result: any) => {
@@ -430,8 +400,8 @@ export class ExtensionClient extends ExtensionClientAbstract {
         });
       });
 
-      if (json.total > offset + 100) {
-        offset += 100;
+      if (json.total > offset + 500) {
+        offset += 500;
       } else {
         gotAllChapters = true;
       }
