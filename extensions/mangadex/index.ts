@@ -176,7 +176,6 @@ enum SETTING_NAMES {
   INCLUDE_ECCHI = "Include ecchi (suggestive) content",
   INCLUDE_SMUT = "Include smut (erotica) content",
   INCLUDE_PORNOGRAPHIC = "Include pornographic content",
-  LANGUAGE_KEYS = "Languages (leave empty for all)",
 }
 
 const SETTING_TYPES = {
@@ -185,7 +184,6 @@ const SETTING_TYPES = {
   [SETTING_NAMES.INCLUDE_ECCHI]: SettingType.BOOLEAN,
   [SETTING_NAMES.INCLUDE_SMUT]: SettingType.BOOLEAN,
   [SETTING_NAMES.INCLUDE_PORNOGRAPHIC]: SettingType.BOOLEAN,
-  [SETTING_NAMES.LANGUAGE_KEYS]: SettingType.LANGUAGE_KEY_ARRAY,
 };
 
 const DEFAULT_SETTINGS = {
@@ -194,7 +192,6 @@ const DEFAULT_SETTINGS = {
   [SETTING_NAMES.INCLUDE_ECCHI]: true,
   [SETTING_NAMES.INCLUDE_SMUT]: false,
   [SETTING_NAMES.INCLUDE_PORNOGRAPHIC]: false,
-  [SETTING_NAMES.LANGUAGE_KEYS]: [LanguageKey.ENGLISH],
 };
 
 const PAGE_SIZE = 24;
@@ -317,23 +314,6 @@ const _getContentRatingsStr = (settings: { [key: string]: any }) => {
   return contentRatings
     .map((rating: string) => `contentRating[]=${rating}`)
     .join("&");
-};
-
-const _getTranslatedLanguagesStr = (settings: { [key: string]: any }) => {
-  if (settings[SETTING_NAMES.LANGUAGE_KEYS].length === 0) return "";
-
-  return (
-    "&" +
-    settings[SETTING_NAMES.LANGUAGE_KEYS]
-      .map((languageKey: LanguageKey) => {
-        const langMapKey: string | null = Object.keys(LANGUAGE_MAP).find(
-          (key: string) => LANGUAGE_MAP[key] === languageKey
-        );
-
-        return langMapKey === null ? "" : `translatedLanguage[]=${langMapKey}`;
-      })
-      .join("&")
-  );
 };
 
 export class ExtensionClient extends ExtensionClientAbstract {
