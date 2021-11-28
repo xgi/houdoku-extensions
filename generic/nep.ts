@@ -170,7 +170,7 @@ export class NepClient {
     });
   };
 
-  _decodeChapterId = (id: string): { path: string; number: string } => {
+  _decodeChapterId = (id: string): { path: string; number: number } => {
     let index = "";
     let t = id.substring(0, 1);
     if (t !== "1") {
@@ -190,7 +190,7 @@ export class NepClient {
 
     return {
       path: `-chapter-${n}${suffix}${index}.html`,
-      number: n,
+      number: parseFloat(`${n}${suffix}`),
     };
   };
 
@@ -316,7 +316,7 @@ export class NepClient {
             seriesId: undefined,
             sourceId: this._decodeChapterId(entry.Chapter).path,
             title: entry.ChapterName || "",
-            chapterNumber: this._decodeChapterId(entry.Chapter).number,
+            chapterNumber: this._decodeChapterId(entry.Chapter).number.toString(),
             volumeNumber: "",
             languageKey: LanguageKey.ENGLISH,
             groupName: "",
