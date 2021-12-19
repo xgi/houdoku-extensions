@@ -18,6 +18,9 @@ import {
   ThemeKey,
   FormatKey,
   ContentWarningKey,
+  SettingType,
+  FetchFunc,
+  WebviewFunc,
 } from "houdoku-extension-lib";
 import {
   LanguageKey,
@@ -73,6 +76,18 @@ const SERIES_STATUS_MAP: { [key: string]: SeriesStatus } = {
   Completed: SeriesStatus.COMPLETED,
 };
 
+enum SETTING_NAMES {
+  USE_HIGH_QUALITY = "Use high quality images",
+}
+
+const SETTING_TYPES = {
+  [SETTING_NAMES.USE_HIGH_QUALITY]: SettingType.BOOLEAN,
+};
+
+const DEFAULT_SETTINGS = {
+  [SETTING_NAMES.USE_HIGH_QUALITY]: true,
+};
+
 const getDetailsRowFields = (
   rows: DOMParser.Node[],
   text: string
@@ -126,6 +141,15 @@ const parseDirectoryResponse = (doc: DOMParser.Dom): SeriesListResponse => {
 };
 
 export class ExtensionClient extends ExtensionClientAbstract {
+  constructor(
+    fetchFn: FetchFunc,
+    webviewFn: WebviewFunc,
+    domParser: DOMParser
+  ) {
+    super(fetchFn, webviewFn, domParser);
+    this.settings = DEFAULT_SETTINGS;
+  }
+
   getMetadata: () => ExtensionMetadata = () => {
     return METADATA;
   };
@@ -250,11 +274,13 @@ export class ExtensionClient extends ExtensionClientAbstract {
     seriesSourceId: string,
     chapterSourceId: string
   ) => {
-    return this.fetchFn(`${BASE_URL}${chapterSourceId}}`)
+    const qualityStr = this.settings[SETTING_NAMES.USE_HIGH_QUALITY]
+      ? "hq"
+      : "lq";
+
+    return this.fetchFn(`${BASE_URL}${chapterSourceId}}&quality=${qualityStr}`)
       .then((response: Response) => response.text())
       .then((data: string) => {
-        // const doc = this.domParser.parseFromString(data);
-
         const snippetRegexp = /lstImages\.push\(\"http.*\)/g;
         const snippets = [...data.matchAll(snippetRegexp)];
 
@@ -310,12 +336,21 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getSettingTypes: GetSettingTypesFunc = () => {
-    return {};
+    return SETTING_TYPES;
   };
 
   getSettings: GetSettingsFunc = () => {
-    return {};
+    return this.settings;
   };
 
-  setSettings: SetSettingsFunc = () => {};
+  setSettings: SetSettingsFunc = (newSettings: { [key: string]: any }) => {
+    Object.keys(newSettings).forEach((key: string) => {
+      if (
+        key in this.settings &&
+        typeof (this.settings[key] === newSettings[key])
+      ) {
+        this.settings[key] = newSettings[key];
+      }
+    });
+  };
 }
