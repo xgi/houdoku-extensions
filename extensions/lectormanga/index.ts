@@ -332,8 +332,15 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getPageData: GetPageDataFunc = (series: Series, url: string) => {
-    return new Promise((resolve) => {
-      resolve(url);
+    const referer = url.split("/uploads/")[0].replace("img1.", "");
+    return this.fetchFn(url, {
+      headers: { Referer: referer },
+    }).then(async (response) => {
+      const contentType = response.headers.get("content-type");
+      const buffer = await response.arrayBuffer();
+      return (
+        `data:${contentType};base64,` + Buffer.from(buffer).toString("base64")
+      );
     });
   };
 
