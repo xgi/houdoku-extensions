@@ -395,27 +395,17 @@ export class ExtensionClient extends ExtensionClientAbstract {
     seriesSourceId: string,
     chapterSourceId: string
   ) => {
-    let baseUrl: string;
-
     return this.fetchFn(
       `https://api.mangadex.org/at-home/server/${chapterSourceId}`
     )
       .then((response: Response) => response.json())
       .then((json: any) => {
-        baseUrl = json.baseUrl;
-
-        return this.fetchFn(
-          `https://api.mangadex.org/chapter/${chapterSourceId}`
-        );
-      })
-      .then((response: Response) => response.json())
-      .then((json: any) => {
         const pageFilenames = this.settings[SETTING_NAMES.USE_DATA_SAVER]
-          ? json.data.attributes.dataSaver
-          : json.data.attributes.data;
+          ? json.chapter.dataSaver
+          : json.chapter.data;
         return {
-          server: baseUrl,
-          hash: json.data.attributes.hash,
+          server: json.baseUrl,
+          hash: json.chapter.hash,
           numPages: pageFilenames.length,
           pageFilenames,
         };
