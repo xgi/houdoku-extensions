@@ -39,6 +39,9 @@ const ORIGINAL_LANGUAGE_MAP: { [key: string]: LanguageKey } = {
   Manga: LanguageKey.JAPANESE,
   Manhua: LanguageKey.CHINESE_SIMP,
   Manhwa: LanguageKey.KOREAN,
+  Doujinshi: LanguageKey.JAPANESE,
+  OEL: LanguageKey.ENGLISH,
+  "One-shot": LanguageKey.JAPANESE,
 };
 
 const GENRE_MAP: { [key: string]: GenreKey } = {
@@ -316,7 +319,9 @@ export class NepClient {
             seriesId: undefined,
             sourceId: this._decodeChapterId(entry.Chapter).path,
             title: entry.ChapterName || "",
-            chapterNumber: this._decodeChapterId(entry.Chapter).number.toString(),
+            chapterNumber: this._decodeChapterId(
+              entry.Chapter
+            ).number.toString(),
             volumeNumber: "",
             languageKey: LanguageKey.ENGLISH,
             groupName: "",
