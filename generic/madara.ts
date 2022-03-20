@@ -272,19 +272,12 @@ export class MadaraClient {
   };
 
   getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.fetchFn(`${this.baseUrl}/wp-admin/admin-ajax.php`, {
+    return this.fetchFn(`${this.baseUrl}${id.split(":")[1]}/ajax/chapters`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-      },
-      body: ["action=manga_get_chapters", `manga=${id.split(":")[0]}`].join(
-        "&"
-      ),
     })
       .then((response: Response) => response.text())
       .then((data: string) => {
         const chapters: Chapter[] = [];
-
         const doc = this.domParser.parseFromString(data);
 
         try {
