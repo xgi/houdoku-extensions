@@ -27,7 +27,6 @@ import {
   ThemeKey,
   SeriesStatus,
 } from "houdoku-extension-lib";
-import { Response } from "node-fetch";
 import DOMParser from "dom-parser";
 import DomParser from "dom-parser";
 
@@ -272,61 +271,64 @@ export class MadaraClient {
   };
 
   getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.fetchFn(`${this.baseUrl}${id.split(":")[1]}/ajax/chapters`, {
-      method: "POST",
-    })
-      .then((response: Response) => response.text())
-      .then((data: string) => {
-        const chapters: Chapter[] = [];
-        const doc = this.domParser.parseFromString(data);
+    return this.webviewFn(`${this.baseUrl}${id.split(":")[1]}/ajax/chapters`, {
+      postData: [
+        {
+          type: "rawData",
+          bytes: Buffer.from(""),
+        },
+      ],
+    }).then((response: WebviewResponse) => {
+      const chapters: Chapter[] = [];
+      const doc = this.domParser.parseFromString(response.text);
 
-        try {
-          const chapterContainers =
-            doc.getElementsByClassName("wp-manga-chapter");
+      try {
+        const chapterContainers =
+          doc.getElementsByClassName("wp-manga-chapter");
 
-          chapterContainers.forEach((node: DOMParser.Node) => {
-            const dateStr = node
-              .getElementsByClassName("chapter-release-date")[0]
-              .textContent.trim();
-            const date = new Date(dateStr);
-            const link = node.getElementsByTagName("a")[0];
-            const title = link.textContent.trim();
+        chapterContainers.forEach((node: DOMParser.Node) => {
+          const dateStr = node
+            .getElementsByClassName("chapter-release-date")[0]
+            .textContent.trim();
+          const date = new Date(dateStr);
+          const link = node.getElementsByTagName("a")[0];
+          const title = link.textContent.trim();
 
-            let href = link.getAttribute("href");
-            href =
-              href?.charAt(href.length - 1) === "/"
-                ? href.substr(0, href.length - 1)
-                : href;
-            const sourceId = href?.split("/").pop();
+          let href = link.getAttribute("href");
+          href =
+            href?.charAt(href.length - 1) === "/"
+              ? href.substr(0, href.length - 1)
+              : href;
+          const sourceId = href?.split("/").pop();
 
-            const matchChapterNum: RegExpMatchArray | null = title.match(
-              new RegExp(/(^|\s)(\d)+/g)
-            );
+          const matchChapterNum: RegExpMatchArray | null = title.match(
+            new RegExp(/(^|\s)(\d)+/g)
+          );
 
-            if (matchChapterNum === null) return;
-            const chapterNumber = matchChapterNum[0].trim();
+          if (matchChapterNum === null) return;
+          const chapterNumber = matchChapterNum[0].trim();
 
-            const chapter: Chapter = {
-              id: undefined,
-              seriesId: undefined,
-              sourceId: sourceId || "",
-              title: title || "",
-              chapterNumber: chapterNumber || "",
-              volumeNumber: "",
-              languageKey: LanguageKey.ENGLISH,
-              groupName: "",
-              time: date.getTime(),
-              read: false,
-            };
-            chapters.push(chapter);
-          });
+          const chapter: Chapter = {
+            id: undefined,
+            seriesId: undefined,
+            sourceId: sourceId || "",
+            title: title || "",
+            chapterNumber: chapterNumber || "",
+            volumeNumber: "",
+            languageKey: LanguageKey.ENGLISH,
+            groupName: "",
+            time: date.getTime(),
+            read: false,
+          };
+          chapters.push(chapter);
+        });
 
-          return chapters;
-        } catch (err) {
-          console.error(err);
-          return [];
-        }
-      });
+        return chapters;
+      } catch (err) {
+        console.error(err);
+        return [];
+      }
+    });
   };
 
   getPageRequesterData: GetPageRequesterDataFunc = (
@@ -372,21 +374,19 @@ export class MadaraClient {
     params: { [key: string]: string },
     page: number
   ) => {
-    return this.fetchFn(
+    return this.webviewFn(
       `${this.baseUrl}/page/${page}/?s=${text}&post_type=wp-manga`
-    )
-      .then((response: Response) => response.text())
-      .then((data: string) =>
-        this._parseSearch(this.domParser.parseFromString(data))
-      );
+    ).then((response: WebviewResponse) =>
+      this._parseSearch(this.domParser.parseFromString(response.text))
+    );
   };
 
   getDirectory: GetDirectoryFunc = (page: number) => {
-    return this.fetchFn(`${this.baseUrl}/page/${page}/?s=&post_type=wp-manga`)
-      .then((response: Response) => response.text())
-      .then((data: string) =>
-        this._parseSearch(this.domParser.parseFromString(data))
-      );
+    return this.webviewFn(
+      `${this.baseUrl}/page/${page}/?s=&post_type=wp-manga`
+    ).then((response: WebviewResponse) =>
+      this._parseSearch(this.domParser.parseFromString(response.text))
+    );
   };
 
   getSettingTypes: GetSettingTypesFunc = () => {
