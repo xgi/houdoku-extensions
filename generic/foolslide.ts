@@ -7,7 +7,7 @@ import {
   GetPageDataFunc,
   PageRequesterData,
   GetDirectoryFunc,
-  DemographicKey,
+  SeriesTagKey,
   FetchFunc,
   GetSettingsFunc,
   SetSettingsFunc,
@@ -32,18 +32,18 @@ const _parseResults = (
   doc: DOMParser.Dom,
   extensionId: string
 ): ParsedResults => {
-  const seriesContainers = doc.getElementsByClassName("group");
+  const seriesContainers = doc.getElementsByClassName("group")!;
   const seriesList = seriesContainers.map((node: DOMParser.Node) => {
-    const linkElement = node.getElementsByClassName("title")[0].firstChild;
+    const linkElement = node.getElementsByClassName("title")![0].firstChild!;
     const title = linkElement.textContent.trim();
-    const link = linkElement.getAttribute("href");
+    const link = linkElement.getAttribute("href")!;
     const sourceId = link
       .substr(0, link.length - 1)
       .split("/")
-      .pop();
+      .pop()!;
 
-    const imgs = node.getElementsByTagName("img");
-    const remoteCoverUrl = imgs.length > 0 ? imgs[0].getAttribute("src") : "";
+    const imgs = node.getElementsByTagName("img")!;
+    const remoteCoverUrl = imgs.length > 0 ? imgs[0].getAttribute("src")! : "";
 
     const series: Series = {
       id: undefined,
@@ -55,21 +55,16 @@ const _parseResults = (
       description: "",
       authors: [],
       artists: [],
-      genres: [],
-      themes: [],
-      formats: [],
-      contentWarnings: [],
-      demographic: DemographicKey.UNCERTAIN,
+      tagKeys: [],
       status: SeriesStatus.ONGOING,
       originalLanguageKey: LanguageKey.JAPANESE,
       numberUnread: 0,
       remoteCoverUrl: remoteCoverUrl,
-      userTags: [],
     };
     return series;
   });
 
-  const nextContainer = doc.getElementsByClassName("next");
+  const nextContainer = doc.getElementsByClassName("next")!;
   return {
     seriesList,
     hasMore: nextContainer.length > 0,
@@ -102,18 +97,19 @@ export class FoolSlideClient {
       .then((response: Response) => response.text())
       .then((data: string) => {
         const doc = this.domParser.parseFromString(data);
-        const articleContainer = doc.getElementById("content");
+        const articleContainer = doc.getElementById("content")!;
         const infoContainer =
-          articleContainer.getElementsByClassName("large comic")[0];
+          articleContainer.getElementsByClassName("large comic")![0];
 
         const title = infoContainer
-          .getElementsByClassName("title")[0]
+          .getElementsByClassName("title")![0]
           .textContent.trim();
 
-        const thumbnails = articleContainer.getElementsByClassName("thumbnail");
+        const thumbnails =
+          articleContainer.getElementsByClassName("thumbnail")!;
         const remoteCoverUrl =
           thumbnails.length > 0
-            ? thumbnails[0].getElementsByTagName("img")[0].getAttribute("src")
+            ? thumbnails[0].getElementsByTagName("img")![0].getAttribute("src")!
             : "";
 
         return {
@@ -126,16 +122,11 @@ export class FoolSlideClient {
           description: "",
           authors: [],
           artists: [],
-          genres: [],
-          themes: [],
-          formats: [],
-          contentWarnings: [],
-          demographic: DemographicKey.UNCERTAIN,
+          tagKeys: [],
           status: SeriesStatus.ONGOING,
           originalLanguageKey: LanguageKey.JAPANESE,
           numberUnread: 0,
           remoteCoverUrl: remoteCoverUrl,
-          userTags: [],
         };
       });
   };
@@ -145,14 +136,15 @@ export class FoolSlideClient {
       .then((response: Response) => response.text())
       .then((data: string) => {
         const doc = this.domParser.parseFromString(data);
-        const rows = doc.getElementsByClassName("element");
+        const rows = doc.getElementsByClassName("element")!;
 
         return rows.map((row: DOMParser.Node) => {
-          const linkElement = row.getElementsByClassName("title")[0].firstChild;
+          const linkElement =
+            row.getElementsByClassName("title")![0].firstChild!;
           const title = linkElement.textContent.trim();
 
-          const link = linkElement.getAttribute("href");
-          const sourceId = link.split(`/read/${id}/`).pop();
+          const link = linkElement.getAttribute("href")!;
+          const sourceId = link.split(`/read/${id}/`).pop()!;
 
           const linkNumbers = link
             .split("/")
@@ -160,11 +152,11 @@ export class FoolSlideClient {
           const volumeNumber: string = linkNumbers[0];
           const chapterNumber: string = linkNumbers[1];
 
-          const metaContainer = row.getElementsByClassName("meta_r")[0];
+          const metaContainer = row.getElementsByClassName("meta_r")![0];
           const groupName = metaContainer
-            .getElementsByTagName("a")[0]
-            .getAttribute("title");
-          const dateStr = metaContainer.textContent.split(", ").pop().trim();
+            .getElementsByTagName("a")![0]
+            .getAttribute("title")!;
+          const dateStr = metaContainer.textContent.split(", ").pop()!.trim();
           const time = new Date(dateStr).getTime();
 
           const chapter: Chapter = {
@@ -194,7 +186,7 @@ export class FoolSlideClient {
     )
       .then((response: Response) => response.text())
       .then((data: string) => {
-        const contentStr = data.split("var pages = ").pop().split(";")[0];
+        const contentStr = data.split("var pages = ").pop()!.split(";")[0];
         const content = JSON.parse(contentStr);
 
         const pageFilenames = content.map((pageData: any) => {

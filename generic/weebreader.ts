@@ -7,16 +7,13 @@ import {
   GetPageDataFunc,
   PageRequesterData,
   GetDirectoryFunc,
-  DemographicKey,
+  SeriesTagKey,
   WebviewFunc,
   FetchFunc,
   GetSettingsFunc,
   SetSettingsFunc,
   GetSettingTypesFunc,
   Chapter,
-} from "houdoku-extension-lib";
-import {
-  ContentWarningKey,
   LanguageKey,
   Series,
   SeriesSourceType,
@@ -67,16 +64,11 @@ export class WeebReaderClient {
           description: "",
           authors: [entry.author.trim()],
           artists: [entry.artist.trim()],
-          genres: [],
-          themes: [],
-          contentWarnings: entry.nsfw ? [ContentWarningKey.PORNOGRAPHIC] : [],
-          formats: [],
-          demographic: DemographicKey.UNCERTAIN,
+          tagKeys: entry.nsfw ? [SeriesTagKey.PORNOGRAPHIC] : [],
           status: SERIES_STATUS_MAP[entry.status],
           originalLanguageKey: LanguageKey.JAPANESE,
           numberUnread: 0,
           remoteCoverUrl: `${this.baseUrl}/${entry.coverUrl}`,
-          userTags: [],
         } as Series)
     );
   };
@@ -95,16 +87,11 @@ export class WeebReaderClient {
           description: data.synopsis,
           authors: [data.author.trim()],
           artists: [data.artist.trim()],
-          genres: [],
-          themes: [],
-          contentWarnings: data.nsfw ? [ContentWarningKey.PORNOGRAPHIC] : [],
-          formats: [],
-          demographic: DemographicKey.UNCERTAIN,
+          tagKeys: data.nsfw ? [SeriesTagKey.PORNOGRAPHIC] : [],
           status: SERIES_STATUS_MAP[data.status],
           originalLanguageKey: LanguageKey.JAPANESE,
           numberUnread: 0,
           remoteCoverUrl: `${this.baseUrl}/${data.coverUrl}`,
-          userTags: [],
         } as Series;
       });
   };

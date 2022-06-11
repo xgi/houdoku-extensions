@@ -7,19 +7,13 @@ import {
   GetPageDataFunc,
   PageRequesterData,
   GetDirectoryFunc,
-  DemographicKey,
+  SeriesTagKey,
   FetchFunc,
   GetSettingsFunc,
   SetSettingsFunc,
   GetSettingTypesFunc,
-  GenreKey,
-  ThemeKey,
-  FormatKey,
-  ContentWarningKey,
   WebviewFunc,
   WebviewResponse,
-} from "houdoku-extension-lib";
-import {
   Chapter,
   LanguageKey,
   Series,
@@ -44,54 +38,42 @@ const ORIGINAL_LANGUAGE_MAP: { [key: string]: LanguageKey } = {
   "One-shot": LanguageKey.JAPANESE,
 };
 
-const GENRE_MAP: { [key: string]: GenreKey } = {
-  Action: GenreKey.ACTION,
-  Adventure: GenreKey.ADVENTURE,
-  Comedy: GenreKey.COMEDY,
-  Drama: GenreKey.DRAMA,
-  Fantasy: GenreKey.FANTASY,
-  Historical: GenreKey.HISTORICAL,
-  Horror: GenreKey.HORROR,
-  Isekai: GenreKey.ISEKAI,
-  Mecha: GenreKey.MECHA,
-  Mystery: GenreKey.MYSTERY,
-  Psychological: GenreKey.PSYCHOLOGICAL,
-  Romance: GenreKey.ROMANCE,
-  "Sci-fi": GenreKey.SCI_FI,
-  "Shoujo Ai": GenreKey.SHOUJO_AI,
-  "Shounen Ai": GenreKey.SHOUNEN_AI,
-  "Slice of Life": GenreKey.SLICE_OF_LIFE,
-  Sports: GenreKey.SPORTS,
-  Tragedy: GenreKey.TRAGEDY,
-  Yaoi: GenreKey.YAOI,
-  Yuri: GenreKey.YURI,
-};
-
-const THEME_MAP: { [key: string]: ThemeKey } = {
-  "Gender Bender": ThemeKey.GENDERSWAP,
-  Harem: ThemeKey.HAREM,
-  Lolicon: ThemeKey.LOLI,
-  "Martial Arts": ThemeKey.MARTIAL_ARTS,
-  "School Life": ThemeKey.SCHOOL_LIFE,
-  Shotacon: ThemeKey.SHOTA,
-  Supernatural: ThemeKey.SUPERNATURAL,
-};
-
-const FORMAT_MAP: { [key: string]: FormatKey } = {
-  Doujinshi: FormatKey.DOUJINSHI,
-};
-
-const CONTENT_WARNING_MAP: { [key: string]: ContentWarningKey } = {
-  Adult: ContentWarningKey.PORNOGRAPHIC,
-  Ecchi: ContentWarningKey.ECCHI,
-  Smut: ContentWarningKey.SMUT,
-};
-
-const DEMOGRAPHIC_MAP: { [key: string]: DemographicKey } = {
-  Shounen: DemographicKey.SHOUNEN,
-  Seinen: DemographicKey.SEINEN,
-  Shoujo: DemographicKey.SHOUJO,
-  Josei: DemographicKey.JOSEI,
+const TAG_MAP: { [key: string]: SeriesTagKey } = {
+  Action: SeriesTagKey.ACTION,
+  Adventure: SeriesTagKey.ADVENTURE,
+  Comedy: SeriesTagKey.COMEDY,
+  Drama: SeriesTagKey.DRAMA,
+  Fantasy: SeriesTagKey.FANTASY,
+  Historical: SeriesTagKey.HISTORICAL,
+  Horror: SeriesTagKey.HORROR,
+  Isekai: SeriesTagKey.ISEKAI,
+  Mecha: SeriesTagKey.MECHA,
+  Mystery: SeriesTagKey.MYSTERY,
+  Psychological: SeriesTagKey.PSYCHOLOGICAL,
+  Romance: SeriesTagKey.ROMANCE,
+  "Sci-fi": SeriesTagKey.SCI_FI,
+  "Shoujo Ai": SeriesTagKey.SHOUJO_AI,
+  "Shounen Ai": SeriesTagKey.SHOUNEN_AI,
+  "Slice of Life": SeriesTagKey.SLICE_OF_LIFE,
+  Sports: SeriesTagKey.SPORTS,
+  Tragedy: SeriesTagKey.TRAGEDY,
+  Yaoi: SeriesTagKey.YAOI,
+  Yuri: SeriesTagKey.YURI,
+  "Gender Bender": SeriesTagKey.GENDERSWAP,
+  Harem: SeriesTagKey.HAREM,
+  Lolicon: SeriesTagKey.LOLI,
+  "Martial Arts": SeriesTagKey.MARTIAL_ARTS,
+  "School Life": SeriesTagKey.SCHOOL_LIFE,
+  Shotacon: SeriesTagKey.SHOTA,
+  Supernatural: SeriesTagKey.SUPERNATURAL,
+  Doujinshi: SeriesTagKey.DOUJINSHI,
+  Adult: SeriesTagKey.PORNOGRAPHIC,
+  Ecchi: SeriesTagKey.ECCHI,
+  Smut: SeriesTagKey.SMUT,
+  Shounen: SeriesTagKey.SHOUNEN,
+  Seinen: SeriesTagKey.SEINEN,
+  Shoujo: SeriesTagKey.SHOUJO,
+  Josei: SeriesTagKey.JOSEI,
 };
 
 type DirectoryEntry = {
@@ -131,7 +113,7 @@ export class NepClient {
       (response: WebviewResponse) => {
         let contentStr = response.text
           .split("vm.FullDirectory = ")
-          .pop()
+          .pop()!
           .split("vm.CurrLetter")[0]
           .trim();
         contentStr = contentStr.substr(0, contentStr.length - 1);
@@ -147,7 +129,7 @@ export class NepClient {
     );
   };
 
-  _parseDirectoryList = (directoryList: DirectoryEntry[]) => {
+  _parseDirectoryList = (directoryList: DirectoryEntry[]): Series[] => {
     return directoryList.map((entry) => {
       return {
         id: undefined,
@@ -159,16 +141,11 @@ export class NepClient {
         description: "",
         authors: [],
         artists: [],
-        genres: [],
-        themes: [],
-        contentWarnings: [],
-        formats: [],
-        demographic: DemographicKey.UNCERTAIN,
+        tagKeys: [],
         status: SeriesStatus.ONGOING,
         originalLanguageKey: LanguageKey.JAPANESE,
         numberUnread: 0,
         remoteCoverUrl: `https://cover.nep.li/cover/${entry.indexName}.jpg`,
-        userTags: [],
       };
     });
   };
@@ -218,63 +195,47 @@ export class NepClient {
 
         const detailContainer = doc.getElementsByClassName(
           "list-group list-group-flush"
-        )[0];
-        const detailLabels = detailContainer.getElementsByClassName("mlabel");
+        )![0];
+        const detailLabels = detailContainer.getElementsByClassName("mlabel")!;
 
         const title = detailContainer
-          .getElementsByTagName("h1")[0]
+          .getElementsByTagName("h1")![0]
           .textContent.trim();
 
-        const authors: string[] = findNodeWithText(detailLabels, "Author(s)")
-          .parentNode.getElementsByTagName("a")
+        const authors: string[] = findNodeWithText(detailLabels, "Author(s)")!
+          .parentNode!.getElementsByTagName("a")!
           .map((node: DOMParser.Node) => node.textContent.trim());
 
         const genreStrings: string[] = findNodeWithText(
           detailLabels,
           "Genre(s)"
-        )
-          .parentNode.getElementsByTagName("a")
+        )!
+          .parentNode!.getElementsByTagName("a")!
           .map((node: DOMParser.Node) => node.textContent.trim());
 
-        const typeStr = findNodeWithText(detailLabels, "Type")
-          .parentNode.getElementsByTagName("a")[0]
-          .getAttribute("href")
+        const typeStr = findNodeWithText(detailLabels, "Type")!
+          .parentNode!.getElementsByTagName("a")![0]
+          .getAttribute("href")!
           .split("=")
-          .pop();
+          .pop()!;
         const originalLanguage = ORIGINAL_LANGUAGE_MAP[typeStr];
 
-        const statusStr = findNodeWithText(detailLabels, "Status")
-          .parentNode.getElementsByTagName("a")[0]
-          .getAttribute("href")
+        const statusStr = findNodeWithText(detailLabels, "Status")!
+          .parentNode!.getElementsByTagName("a")![0]
+          .getAttribute("href")!
           .split("=")
-          .pop();
+          .pop()!;
         const status = SERIES_STATUS_MAP[statusStr];
 
-        const description = findNodeWithText(detailLabels, "Description")
-          .parentNode.getElementsByClassName("Content")[0]
+        const description = findNodeWithText(detailLabels, "Description")!
+          .parentNode!.getElementsByClassName("Content")![0]
           .textContent.trim();
 
-        const genres: GenreKey[] = [];
-        const themes: ThemeKey[] = [];
-        const formats: FormatKey[] = [];
-        const contentWarnings: ContentWarningKey[] = [];
-        const demographics: DemographicKey[] = [DemographicKey.UNCERTAIN];
+        const tagKeys: SeriesTagKey[] = [];
 
         genreStrings.forEach((genreStr: string) => {
-          if (genreStr in GENRE_MAP) {
-            genres.push(GENRE_MAP[genreStr]);
-          }
-          if (genreStr in THEME_MAP) {
-            themes.push(THEME_MAP[genreStr]);
-          }
-          if (genreStr in FORMAT_MAP) {
-            formats.push(FORMAT_MAP[genreStr]);
-          }
-          if (genreStr in CONTENT_WARNING_MAP) {
-            contentWarnings.push(CONTENT_WARNING_MAP[genreStr]);
-          }
-          if (genreStr in DEMOGRAPHIC_MAP) {
-            demographics.push(DEMOGRAPHIC_MAP[genreStr]);
+          if (genreStr in TAG_MAP) {
+            tagKeys.push(TAG_MAP[genreStr]);
           }
         });
 
@@ -288,16 +249,11 @@ export class NepClient {
           description: description,
           authors: authors,
           artists: [],
-          genres,
-          themes,
-          formats,
-          contentWarnings,
-          demographic: demographics.pop(),
+          tagKeys: tagKeys,
           status: status,
           originalLanguageKey: originalLanguage,
           numberUnread: 0,
           remoteCoverUrl: `https://cover.nep.li/cover/${id}.jpg`,
-          userTags: [],
         };
         return series;
       }
@@ -309,7 +265,7 @@ export class NepClient {
       (response: WebviewResponse) => {
         const contentStr = response.text
           .split("vm.Chapters = ")
-          .pop()
+          .pop()!
           .split(";")[0];
         const content = JSON.parse(contentStr);
 
@@ -342,20 +298,20 @@ export class NepClient {
       `${this.baseUrl}/read-online/${seriesSourceId}${chapterSourceId}`
     ).then((response: WebviewResponse) => {
       const host = JSON.parse(
-        '"' + response.text.split('vm.CurPathName = "').pop().split(";")[0]
+        '"' + response.text.split('vm.CurPathName = "').pop()!.split(";")[0]
       );
       const curChapter = JSON.parse(
-        "{" + response.text.split("vm.CurChapter = {").pop().split(";")[0]
+        "{" + response.text.split("vm.CurChapter = {").pop()!.split(";")[0]
       );
       const indexName = JSON.parse(
-        response.text.split("vm.IndexName = ").pop().split(";")[0]
+        response.text.split("vm.IndexName = ").pop()!.split(";")[0]
       );
 
       const dir = curChapter.Directory === "" ? "" : `${curChapter.Directory}/`;
       const chNum = this._chapterImage(curChapter.Chapter);
 
       const numPages = parseInt(curChapter.Page);
-      const pageFilenames = [];
+      const pageFilenames: string[] = [];
       for (let i = 1; i <= numPages; i++) {
         const iStr = i.toLocaleString("en-US", {
           minimumIntegerDigits: 3,

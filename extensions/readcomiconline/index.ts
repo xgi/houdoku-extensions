@@ -8,16 +8,12 @@ import {
   ExtensionMetadata,
   PageRequesterData,
   GetDirectoryFunc,
-  DemographicKey,
+  SeriesTagKey,
   ExtensionClientAbstract,
   GetSettingsFunc,
   SetSettingsFunc,
   GetSettingTypesFunc,
   SeriesListResponse,
-  GenreKey,
-  ThemeKey,
-  FormatKey,
-  ContentWarningKey,
   SettingType,
   FetchFunc,
   WebviewFunc,
@@ -37,38 +33,33 @@ const BASE_URL = "https://readcomiconline.li";
 export const METADATA: ExtensionMetadata = parseMetadata(metadata);
 
 const TAG_KEY_MAP: {
-  [key: string]:
-    | GenreKey
-    | ThemeKey
-    | FormatKey
-    | ContentWarningKey
-    | DemographicKey;
+  [key: string]: SeriesTagKey;
 } = {
-  Action: GenreKey.ACTION,
-  Adventure: GenreKey.ADVENTURE,
-  Anthology: FormatKey.ANTHOLOGY,
-  Comedy: GenreKey.COMEDY,
-  Crime: GenreKey.DRAMA,
-  Fantasy: GenreKey.FANTASY,
-  Historical: GenreKey.HISTORICAL,
-  Horror: GenreKey.HORROR,
-  "Martial Arts": ThemeKey.MARTIAL_ARTS,
-  Military: ThemeKey.MILITARY,
-  Music: ThemeKey.MUSIC,
-  Mystery: GenreKey.MYSTERY,
-  "Post-Apocalyptic": ThemeKey.POST_APOCALYPTIC,
-  Psychological: GenreKey.PSYCHOLOGICAL,
-  Romance: GenreKey.ROMANCE,
-  "School Life": ThemeKey.SCHOOL_LIFE,
-  "Sci-Fi": GenreKey.SCI_FI,
-  "Slice of Life": GenreKey.SLICE_OF_LIFE,
-  Sport: GenreKey.SPORTS,
-  Superhero: GenreKey.SUPERHERO,
-  Supernatural: ThemeKey.SUPERNATURAL,
-  Thriller: GenreKey.THRILLER,
-  Vampires: ThemeKey.VAMPIRES,
-  "Video Games": ThemeKey.VIDEO_GAMES,
-  Zombies: ThemeKey.ZOMBIES,
+  Action: SeriesTagKey.ACTION,
+  Adventure: SeriesTagKey.ADVENTURE,
+  Anthology: SeriesTagKey.ANTHOLOGY,
+  Comedy: SeriesTagKey.COMEDY,
+  Crime: SeriesTagKey.DRAMA,
+  Fantasy: SeriesTagKey.FANTASY,
+  Historical: SeriesTagKey.HISTORICAL,
+  Horror: SeriesTagKey.HORROR,
+  "Martial Arts": SeriesTagKey.MARTIAL_ARTS,
+  Military: SeriesTagKey.MILITARY,
+  Music: SeriesTagKey.MUSIC,
+  Mystery: SeriesTagKey.MYSTERY,
+  "Post-Apocalyptic": SeriesTagKey.POST_APOCALYPTIC,
+  Psychological: SeriesTagKey.PSYCHOLOGICAL,
+  Romance: SeriesTagKey.ROMANCE,
+  "School Life": SeriesTagKey.SCHOOL_LIFE,
+  "Sci-Fi": SeriesTagKey.SCI_FI,
+  "Slice of Life": SeriesTagKey.SLICE_OF_LIFE,
+  Sport: SeriesTagKey.SPORTS,
+  Superhero: SeriesTagKey.SUPERHERO,
+  Supernatural: SeriesTagKey.SUPERNATURAL,
+  Thriller: SeriesTagKey.THRILLER,
+  Vampires: SeriesTagKey.VAMPIRES,
+  "Video Games": SeriesTagKey.VIDEO_GAMES,
+  Zombies: SeriesTagKey.ZOMBIES,
 };
 
 const SERIES_STATUS_MAP: { [key: string]: SeriesStatus } = {
@@ -98,38 +89,33 @@ const getDetailsRowFields = (
   if (!row) return [];
 
   return row
-    .getElementsByTagName("a")
+    .getElementsByTagName("a")!
     .map((node: DOMParser.Node) => node.textContent.trim());
 };
 
 const parseDirectoryResponse = (doc: DOMParser.Dom): SeriesListResponse => {
-  const rows = doc.getElementsByClassName("section group list");
-  const hasMore = doc.getElementsByClassName("right_bt next_bt").length > 0;
+  const rows = doc.getElementsByClassName("section group list")!;
+  const hasMore = doc.getElementsByClassName("right_bt next_bt")!.length > 0;
 
   const seriesList = rows.map((row: DOMParser.Node) => {
-    const link = row.getElementsByTagName("a")[0];
-    const img = link.getElementsByTagName("img")[0];
+    const link = row.getElementsByTagName("a")![0];
+    const img = link.getElementsByTagName("img")![0];
 
     const series: Series = {
       id: undefined,
       extensionId: METADATA.id,
-      sourceId: link.getAttribute("href").replace("/Comic/", ""),
+      sourceId: link.getAttribute("href")!.replace("/Comic/", ""),
       sourceType: SeriesSourceType.STANDARD,
-      title: img.getAttribute("title").trim(),
+      title: img.getAttribute("title")!.trim(),
       altTitles: [],
       description: "",
       authors: [],
       artists: [],
-      genres: [],
-      themes: [],
-      formats: [],
-      contentWarnings: [],
-      demographic: DemographicKey.UNCERTAIN,
+      tagKeys: [],
       status: SeriesStatus.ONGOING,
       originalLanguageKey: LanguageKey.ENGLISH,
       numberUnread: 0,
       remoteCoverUrl: `${BASE_URL}/${img.getAttribute("src")}`,
-      userTags: [],
     };
     return series;
   });
@@ -159,16 +145,16 @@ export class ExtensionClient extends ExtensionClientAbstract {
       .then((response: Response) => response.text())
       .then((data: string) => {
         const doc = this.domParser.parseFromString(data);
-        const parent = doc.getElementsByClassName("section group")[0];
+        const parent = doc.getElementsByClassName("section group")![0];
         const description = doc
-          .getElementsByClassName("section group")[1]
+          .getElementsByClassName("section group")![1]
           .textContent.trim();
 
-        const img = parent.getElementsByTagName("img")[0];
-        const rows = parent.getElementsByTagName("p");
+        const img = parent.getElementsByTagName("img")![0];
+        const rows = parent.getElementsByTagName("p")!;
 
         const altNames = getDetailsRowFields(rows, "Other name:");
-        const tags = getDetailsRowFields(rows, "Genres:");
+        const sourceTags = getDetailsRowFields(rows, "Genres:");
         const authors = getDetailsRowFields(rows, "Writer:");
         const artists = getDetailsRowFields(rows, "Artist:");
 
@@ -177,62 +163,33 @@ export class ExtensionClient extends ExtensionClientAbstract {
         );
         const statusStr =
           statusRow && false
-            ? statusRow.textContent.replace("Status:&nbsp;", "").trim()
+            ? statusRow!.textContent.replace("Status:&nbsp;", "").trim()
             : "";
 
-        const mapped_tags: (
-          | GenreKey
-          | ThemeKey
-          | FormatKey
-          | ContentWarningKey
-          | DemographicKey
-        )[] = [];
-        tags.forEach((source_tag: string) => {
+        const mapped_tags: SeriesTagKey[] = [];
+        sourceTags.forEach((source_tag: string) => {
           if (Object.keys(TAG_KEY_MAP).includes(source_tag)) {
             mapped_tags.push(TAG_KEY_MAP[source_tag]);
           }
         });
-
-        // @ts-expect-error
-        const genres: GenreKey[] = mapped_tags.filter(
-          (tag: any) => tag in GenreKey
-        );
-        // @ts-expect-error
-        const themes: ThemeKey[] = mapped_tags.filter(
-          (tag: any) => tag in ThemeKey
-        );
-        // @ts-expect-error
-        const formats: FormatKey[] = mapped_tags.filter(
-          (tag: any) => tag in FormatKey
-        );
-        // @ts-expect-error
-        const contentWarnings: ContentWarningKey[] = mapped_tags.filter(
-          (tag: any) => tag in ContentWarningKey
-        );
-        // @ts-expect-error
-        const demographicKeys: DemographicKey[] = mapped_tags.filter(
-          (tag: any) => tag in DemographicKey
+        const tagKeys: SeriesTagKey[] = mapped_tags.filter(
+          (tag: any) => tag in SeriesTagKey
         );
 
         const series: Series = {
           extensionId: METADATA.id,
           sourceId: id,
           sourceType: SeriesSourceType.STANDARD,
-          title: img.getAttribute("title").trim(),
+          title: img.getAttribute("title")!.trim(),
           altTitles: altNames,
           description: description,
           authors: authors,
           artists: artists,
-          genres: genres,
-          themes: themes,
-          formats: formats,
-          contentWarnings: contentWarnings,
-          demographic: DemographicKey.UNCERTAIN,
+          tagKeys: tagKeys,
           status: SERIES_STATUS_MAP[statusStr] || SeriesStatus.ONGOING,
           originalLanguageKey: LanguageKey.ENGLISH,
           numberUnread: 0,
           remoteCoverUrl: `${BASE_URL}/${img.getAttribute("src")}`,
-          userTags: [],
         };
         return series;
       });
@@ -243,11 +200,11 @@ export class ExtensionClient extends ExtensionClientAbstract {
       .then((response: Response) => response.text())
       .then((data: string) => {
         const doc = this.domParser.parseFromString(data);
-        const parent = doc.getElementsByClassName("section group")[2];
-        const rows = parent.getElementsByTagName("li");
+        const parent = doc.getElementsByClassName("section group")![2];
+        const rows = parent.getElementsByTagName("li")!;
 
         return rows.map((row: DOMParser.Node) => {
-          const link = row.getElementsByTagName("a")[0];
+          const link = row.getElementsByTagName("a")![0];
           const title = link.textContent.trim();
           const chapterNum = title.startsWith("Issue #")
             ? title.split("Issue #")[1]
@@ -256,7 +213,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
           return {
             id: undefined,
             seriesId: undefined,
-            sourceId: link.getAttribute("href"),
+            sourceId: link.getAttribute("href")!,
             title: title,
             chapterNumber: chapterNum,
             volumeNumber: "",

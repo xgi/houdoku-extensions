@@ -38,7 +38,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
       "https://reader.silentsky-scans.net",
       fetchFn,
       domParser,
-      METADATA.translatedLanguage
+      METADATA.translatedLanguage!
     );
   }
 

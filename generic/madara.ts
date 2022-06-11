@@ -7,7 +7,7 @@ import {
   GetPageDataFunc,
   PageRequesterData,
   GetDirectoryFunc,
-  DemographicKey,
+  SeriesTagKey,
   WebviewFunc,
   FetchFunc,
   GetSettingsFunc,
@@ -15,16 +15,10 @@ import {
   GetSettingTypesFunc,
   WebviewResponse,
   SeriesListResponse,
-} from "houdoku-extension-lib";
-import {
   Chapter,
-  ContentWarningKey,
-  FormatKey,
-  GenreKey,
   LanguageKey,
   Series,
   SeriesSourceType,
-  ThemeKey,
   SeriesStatus,
 } from "houdoku-extension-lib";
 import DOMParser from "dom-parser";
@@ -35,47 +29,36 @@ const SERIES_STATUS_MAP: { [key: string]: SeriesStatus } = {
   Completed: SeriesStatus.COMPLETED,
 };
 
-const GENRE_MAP: { [key: string]: GenreKey } = {
-  action: GenreKey.ACTION,
-  adventure: GenreKey.ADVENTURE,
-  comedy: GenreKey.COMEDY,
-  crime: GenreKey.CRIME,
-  drama: GenreKey.DRAMA,
-  fantasy: GenreKey.FANTASY,
-  historical: GenreKey.HISTORICAL,
-  horror: GenreKey.HORROR,
-  isekai: GenreKey.ISEKAI,
-  mystery: GenreKey.MYSTERY,
-  psychological: GenreKey.PSYCHOLOGICAL,
-  romance: GenreKey.ROMANCE,
-  scifi: GenreKey.SCI_FI,
-  sliceoflife: GenreKey.SLICE_OF_LIFE,
-  sports: GenreKey.SPORTS,
-  thriller: GenreKey.THRILLER,
-  tragedy: GenreKey.TRAGEDY,
-  yaoi: GenreKey.YAOI,
-  yuri: GenreKey.YURI,
-};
-
-const THEME_MAP: { [key: string]: ThemeKey } = {
-  harem: ThemeKey.HAREM,
-  incest: ThemeKey.INCEST,
-  office: ThemeKey.OFFICE_WORKERS,
-  schoollife: ThemeKey.SCHOOL_LIFE,
-  supernatural: ThemeKey.SUPERNATURAL,
-};
-
-const FORMAT_MAP: { [key: string]: FormatKey } = {};
-
-const CONTENT_WARNING_MAP: { [key: string]: ContentWarningKey } = {
-  adult: ContentWarningKey.PORNOGRAPHIC,
-};
-
-const DEMOGRAPHIC_MAP: { [key: string]: DemographicKey } = {
-  shounen: DemographicKey.SHOUNEN,
-  seinen: DemographicKey.SEINEN,
-  shoujo: DemographicKey.SHOUJO,
-  josei: DemographicKey.JOSEI,
+const TAG_MAP: { [key: string]: SeriesTagKey } = {
+  action: SeriesTagKey.ACTION,
+  adventure: SeriesTagKey.ADVENTURE,
+  comedy: SeriesTagKey.COMEDY,
+  crime: SeriesTagKey.CRIME,
+  drama: SeriesTagKey.DRAMA,
+  fantasy: SeriesTagKey.FANTASY,
+  historical: SeriesTagKey.HISTORICAL,
+  horror: SeriesTagKey.HORROR,
+  isekai: SeriesTagKey.ISEKAI,
+  mystery: SeriesTagKey.MYSTERY,
+  psychological: SeriesTagKey.PSYCHOLOGICAL,
+  romance: SeriesTagKey.ROMANCE,
+  scifi: SeriesTagKey.SCI_FI,
+  sliceoflife: SeriesTagKey.SLICE_OF_LIFE,
+  sports: SeriesTagKey.SPORTS,
+  thriller: SeriesTagKey.THRILLER,
+  tragedy: SeriesTagKey.TRAGEDY,
+  yaoi: SeriesTagKey.YAOI,
+  yuri: SeriesTagKey.YURI,
+  harem: SeriesTagKey.HAREM,
+  incest: SeriesTagKey.INCEST,
+  office: SeriesTagKey.OFFICE_WORKERS,
+  schoollife: SeriesTagKey.SCHOOL_LIFE,
+  supernatural: SeriesTagKey.SUPERNATURAL,
+  adult: SeriesTagKey.PORNOGRAPHIC,
+  shounen: SeriesTagKey.SHOUNEN,
+  seinen: SeriesTagKey.SEINEN,
+  shoujo: SeriesTagKey.SHOUJO,
+  josei: SeriesTagKey.JOSEI,
 };
 
 export class MadaraClient {
@@ -115,17 +98,17 @@ export class MadaraClient {
       if (!link) continue;
 
       const title = link.getAttribute("title");
-      const href = link.getAttribute("href").split(`${this.baseUrl}`).pop();
+      const href = link.getAttribute("href")!.split(`${this.baseUrl}`).pop()!;
       const sourceId = href.substr(0, href.length - 1);
       if (title === null || sourceId === undefined) continue;
 
-      const image = item.getElementsByClassName("img-responsive")[0];
+      const image = item.getElementsByClassName("img-responsive")![0];
 
       const coverUrl = (
         image.attributes.find((attrib: any) => attrib.name === "data-src") !==
         undefined
-          ? image.getAttribute("data-src")
-          : image.getAttribute("srcset")
+          ? image.getAttribute("data-src")!
+          : image.getAttribute("srcset")!
       ).split(" ")[0];
 
       seriesList.push({
@@ -138,20 +121,15 @@ export class MadaraClient {
         description: "",
         authors: [],
         artists: [],
-        genres: [],
-        themes: [],
-        contentWarnings: [],
-        formats: [],
-        demographic: DemographicKey.UNCERTAIN,
+        tagKeys: [],
         status: SeriesStatus.ONGOING,
         originalLanguageKey: LanguageKey.JAPANESE,
         numberUnread: 0,
         remoteCoverUrl: coverUrl || "",
-        userTags: [],
       });
     }
 
-    const prevLink = doc.getElementsByClassName("nav-previous");
+    const prevLink = doc.getElementsByClassName("nav-previous")!;
     return { seriesList, hasMore: prevLink.length > 0 };
   };
 
@@ -161,57 +139,56 @@ export class MadaraClient {
         const doc = this.domParser.parseFromString(response.text);
 
         try {
-          const titleContainer = doc.getElementsByClassName("post-title")[0];
+          const titleContainer = doc.getElementsByClassName("post-title")![0];
           const title = titleContainer
-            .getElementsByTagName("h1")[0]
-            .lastChild.textContent.trim();
+            .getElementsByTagName("h1")![0]
+            .lastChild!.textContent.trim();
 
-          const detailsContainer = doc.getElementsByClassName("tab-summary")[0];
-          const link = detailsContainer.getElementsByTagName("a")[0];
+          const detailsContainer =
+            doc.getElementsByClassName("tab-summary")![0];
+          const link = detailsContainer.getElementsByTagName("a")![0];
 
-          const href = link.getAttribute("href").split(`${this.baseUrl}`).pop();
+          const href = link
+            .getAttribute("href")!
+            .split(`${this.baseUrl}`)
+            .pop()!;
           const pageId = href.substr(0, href.length - 1);
           const dataId = doc
-            .getElementsByClassName("wp-manga-action-button")[0]
-            .getAttribute("data-post");
+            .getElementsByClassName("wp-manga-action-button")![0]
+            .getAttribute("data-post")!;
           const sourceId = `${dataId}:${pageId}`;
 
-          const image = link.getElementsByTagName("img")[0];
+          const image = link.getElementsByTagName("img")![0];
           const remoteCoverUrl = (
             image.attributes.find(
               (attrib: any) => attrib.name === "data-src"
             ) !== undefined
-              ? image.getAttribute("data-src")
-              : image.getAttribute("srcset")
+              ? image.getAttribute("data-src")!
+              : image.getAttribute("srcset")!
           ).split(" ")[0];
 
           const description = doc
-            .getElementsByClassName("description-summary")[0]
+            .getElementsByClassName("description-summary")![0]
             .textContent.trim();
 
           const author = detailsContainer
-            ?.getElementsByClassName("author-content")[0]
+            ?.getElementsByClassName("author-content")![0]
             ?.textContent.trim();
           const artist = detailsContainer
-            ?.getElementsByClassName("artist-content")[0]
+            ?.getElementsByClassName("artist-content")![0]
             ?.textContent.trim();
 
           const statusContainer =
-            detailsContainer.getElementsByClassName("post-status")[0];
+            detailsContainer.getElementsByClassName("post-status")![0];
           const statusText = statusContainer
-            .getElementsByClassName("summary-content")
-            .pop()
+            .getElementsByClassName("summary-content")!
+            .pop()!
             .textContent.trim();
 
-          const genres: GenreKey[] = [];
-          const themes: ThemeKey[] = [];
-          const formats: FormatKey[] = [];
-          const contentWarnings: ContentWarningKey[] = [];
-          const demographics: DemographicKey[] = [DemographicKey.UNCERTAIN];
-
+          const tagKeys: SeriesTagKey[] = [];
           const tagLinks = detailsContainer
-            .getElementsByClassName("genres-content")[0]
-            .getElementsByTagName("a");
+            .getElementsByClassName("genres-content")![0]
+            .getElementsByTagName("a")!;
 
           Object.values(tagLinks).forEach((tagLink: DOMParser.Node) => {
             const tagStr = tagLink.textContent
@@ -219,22 +196,8 @@ export class MadaraClient {
               .replace(" ", "")
               .replace("-", "")
               .toLowerCase();
-            if (tagStr !== undefined) {
-              if (tagStr in GENRE_MAP) {
-                genres.push(GENRE_MAP[tagStr]);
-              }
-              if (tagStr in THEME_MAP) {
-                themes.push(THEME_MAP[tagStr]);
-              }
-              if (tagStr in FORMAT_MAP) {
-                formats.push(FORMAT_MAP[tagStr]);
-              }
-              if (tagStr in CONTENT_WARNING_MAP) {
-                contentWarnings.push(CONTENT_WARNING_MAP[tagStr]);
-              }
-              if (tagStr in DEMOGRAPHIC_MAP) {
-                demographics.push(DEMOGRAPHIC_MAP[tagStr]);
-              }
+            if (tagStr !== undefined && tagStr in TAG_MAP) {
+              tagKeys.push(TAG_MAP[tagStr]);
             }
           });
 
@@ -248,18 +211,13 @@ export class MadaraClient {
             description: description || "",
             authors: author ? [author] : [],
             artists: artist ? [artist] : [],
-            genres,
-            themes,
-            formats,
-            contentWarnings,
-            demographic: demographics.pop(),
+            tagKeys: tagKeys,
             status: statusText
               ? SERIES_STATUS_MAP[statusText]
               : SeriesStatus.ONGOING,
             originalLanguageKey: LanguageKey.KOREAN,
             numberUnread: 0,
             remoteCoverUrl: remoteCoverUrl || "",
-            userTags: [],
           };
           return series;
         } catch (err) {
@@ -284,14 +242,14 @@ export class MadaraClient {
 
       try {
         const chapterContainers =
-          doc.getElementsByClassName("wp-manga-chapter");
+          doc.getElementsByClassName("wp-manga-chapter")!;
 
         chapterContainers.forEach((node: DOMParser.Node) => {
           const dateStr = node
-            .getElementsByClassName("chapter-release-date")[0]
+            .getElementsByClassName("chapter-release-date")![0]
             .textContent.trim();
           const date = new Date(dateStr);
-          const link = node.getElementsByTagName("a")[0];
+          const link = node.getElementsByTagName("a")![0];
           const title = link.textContent.trim();
 
           let href = link.getAttribute("href");
@@ -340,14 +298,14 @@ export class MadaraClient {
       `${this.baseUrl}/${seriesSourceId.split(":").pop()}/${chapterSourceId}`
     ).then((response: WebviewResponse) => {
       const doc = this.domParser.parseFromString(response.text);
-      const imgContainers = doc.getElementsByClassName("wp-manga-chapter-img");
+      const imgContainers = doc.getElementsByClassName("wp-manga-chapter-img")!;
 
       const pageFilenames = imgContainers.map((node: DOMParser.Node) => {
         return node.attributes.find(
           (attrib: any) => attrib.name === "data-src"
         ) !== undefined
-          ? node.getAttribute("data-src")
-          : node.getAttribute("src");
+          ? node.getAttribute("data-src")!
+          : node.getAttribute("src")!;
       });
 
       return {

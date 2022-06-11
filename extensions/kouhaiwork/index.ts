@@ -8,15 +8,11 @@ import {
   ExtensionMetadata,
   PageRequesterData,
   GetDirectoryFunc,
-  DemographicKey,
   ExtensionClientAbstract,
   GetSettingsFunc,
   SetSettingsFunc,
   GetSettingTypesFunc,
-  GenreKey,
-  ContentWarningKey,
-  ThemeKey,
-  FormatKey,
+  SeriesTagKey,
 } from "houdoku-extension-lib";
 import {
   Chapter,
@@ -35,48 +31,43 @@ const API_URL = "https://api.kouhai.work/v3";
 const STORAGE_URL = "https://api.kouhai.work/storage";
 
 const TAG_KEY_MAP: {
-  [key: string]:
-    | GenreKey
-    | ThemeKey
-    | FormatKey
-    | ContentWarningKey
-    | DemographicKey;
+  [key: string]: SeriesTagKey;
 } = {
-  Romance: GenreKey.ROMANCE,
-  Comedy: GenreKey.COMEDY,
-  "Slice of Life": GenreKey.SLICE_OF_LIFE,
-  Fantasy: GenreKey.FANTASY,
-  "Sci-Fi": GenreKey.SCI_FI,
-  Psychological: GenreKey.PSYCHOLOGICAL,
-  Horror: GenreKey.HORROR,
-  Mystery: GenreKey.MYSTERY,
-  "Girls' Love": GenreKey.SHOUJO_AI,
-  Drama: GenreKey.DRAMA,
-  Action: GenreKey.ACTION,
-  Ecchi: ContentWarningKey.ECCHI,
-  Adventure: GenreKey.ADVENTURE,
-  Thriller: GenreKey.THRILLER,
-  Crime: GenreKey.CRIME,
-  Isekai: GenreKey.ISEKAI,
-  Historical: GenreKey.HISTORICAL,
-  Tragedy: GenreKey.TRAGEDY,
-  Sports: GenreKey.SPORTS,
-  "Office Workers": ThemeKey.OFFICE_WORKERS,
+  Romance: SeriesTagKey.ROMANCE,
+  Comedy: SeriesTagKey.COMEDY,
+  "Slice of Life": SeriesTagKey.SLICE_OF_LIFE,
+  Fantasy: SeriesTagKey.FANTASY,
+  "Sci-Fi": SeriesTagKey.SCI_FI,
+  Psychological: SeriesTagKey.PSYCHOLOGICAL,
+  Horror: SeriesTagKey.HORROR,
+  Mystery: SeriesTagKey.MYSTERY,
+  "Girls' Love": SeriesTagKey.SHOUJO_AI,
+  Drama: SeriesTagKey.DRAMA,
+  Action: SeriesTagKey.ACTION,
+  Ecchi: SeriesTagKey.ECCHI,
+  Adventure: SeriesTagKey.ADVENTURE,
+  Thriller: SeriesTagKey.THRILLER,
+  Crime: SeriesTagKey.CRIME,
+  Isekai: SeriesTagKey.ISEKAI,
+  Historical: SeriesTagKey.HISTORICAL,
+  Tragedy: SeriesTagKey.TRAGEDY,
+  Sports: SeriesTagKey.SPORTS,
+  "Office Workers": SeriesTagKey.OFFICE_WORKERS,
   // Family: ThemeKey.FAMILY,
-  Supernatural: ThemeKey.SUPERNATURAL,
-  Demons: ThemeKey.DEMONS,
-  Magic: ThemeKey.MAGIC,
-  Aliens: ThemeKey.ALIENS,
-  Suggestive: ContentWarningKey.ECCHI,
-  Doujinshi: FormatKey.DOUJINSHI,
-  "School Life": ThemeKey.SCHOOL_LIFE,
-  Police: ThemeKey.POLICE,
-  Mafia: ThemeKey.MAFIA,
-  Shota: ThemeKey.SHOTA,
-  Animals: GenreKey.ROMANCE,
-  Shounen: DemographicKey.SHOUNEN,
-  Shoujo: DemographicKey.SHOUJO,
-  Seinen: DemographicKey.SEINEN,
+  Supernatural: SeriesTagKey.SUPERNATURAL,
+  Demons: SeriesTagKey.DEMONS,
+  Magic: SeriesTagKey.MAGIC,
+  Aliens: SeriesTagKey.ALIENS,
+  Suggestive: SeriesTagKey.ECCHI,
+  Doujinshi: SeriesTagKey.DOUJINSHI,
+  "School Life": SeriesTagKey.SCHOOL_LIFE,
+  Police: SeriesTagKey.POLICE,
+  Mafia: SeriesTagKey.MAFIA,
+  Shota: SeriesTagKey.SHOTA,
+  Animals: SeriesTagKey.ROMANCE,
+  Shounen: SeriesTagKey.SHOUNEN,
+  Shoujo: SeriesTagKey.SHOUJO,
+  Seinen: SeriesTagKey.SEINEN,
 };
 
 const STATUS_MAP: { [key: string]: SeriesStatus } = {
@@ -95,38 +86,14 @@ export class ExtensionClient extends ExtensionClientAbstract {
       );
     // .map(([_id, name]: [number, string]) => name);
 
-    const mapped_tags: (
-      | GenreKey
-      | ThemeKey
-      | FormatKey
-      | ContentWarningKey
-      | DemographicKey
-    )[] = [];
+    const mapped_tags: SeriesTagKey[] = [];
     source_tags.forEach((source_tag: string) => {
       if (Object.keys(TAG_KEY_MAP).includes(source_tag)) {
         mapped_tags.push(TAG_KEY_MAP[source_tag]);
       }
     });
-
-    // @ts-expect-error
-    const genres: GenreKey[] = mapped_tags.filter(
-      (tag: any) => tag in GenreKey
-    );
-    // @ts-expect-error
-    const themes: ThemeKey[] = mapped_tags.filter(
-      (tag: any) => tag in ThemeKey
-    );
-    // @ts-expect-error
-    const formats: FormatKey[] = mapped_tags.filter(
-      (tag: any) => tag in FormatKey
-    );
-    // @ts-expect-error
-    const contentWarnings: ContentWarningKey[] = mapped_tags.filter(
-      (tag: any) => tag in ContentWarningKey
-    );
-    // @ts-expect-error
-    const demographicKeys: DemographicKey[] = mapped_tags.filter(
-      (tag: any) => tag in DemographicKey
+    const tags: SeriesTagKey[] = mapped_tags.filter(
+      (tag: any) => tag in SeriesTagKey
     );
 
     const authors = data.authors
@@ -146,19 +113,11 @@ export class ExtensionClient extends ExtensionClientAbstract {
       description: data.synopsis,
       authors: authors,
       artists: artists,
-      genres: genres,
-      themes: themes,
-      formats: formats,
-      contentWarnings: contentWarnings,
-      demographic:
-        demographicKeys.length > 0
-          ? demographicKeys[0]
-          : DemographicKey.UNCERTAIN,
+      tagKeys: tags,
       status: STATUS_MAP[data.status] || SeriesStatus.ONGOING,
       originalLanguageKey: LanguageKey.JAPANESE,
       numberUnread: 0,
       remoteCoverUrl: `${STORAGE_URL}/${data.cover}`,
-      userTags: [],
     };
     return series;
   };
@@ -272,16 +231,11 @@ export class ExtensionClient extends ExtensionClientAbstract {
             description: data[2],
             authors: [],
             artists: [],
-            genres: [],
-            themes: [],
-            formats: [],
-            contentWarnings: [],
-            demographic: DemographicKey.UNCERTAIN,
+            tagKeys: [],
             status: SeriesStatus.ONGOING,
             originalLanguageKey: LanguageKey.JAPANESE,
             numberUnread: 0,
             remoteCoverUrl: `${STORAGE_URL}/${data[4]}`,
-            userTags: [],
           };
           return series;
         });

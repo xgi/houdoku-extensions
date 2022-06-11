@@ -26,6 +26,52 @@ import { parseMetadata } from "../../util/configuring";
 
 export const METADATA: ExtensionMetadata = parseMetadata(metadata);
 
+const LANGUAGE_MAP: { [key: string]: LanguageKey } = {
+  "": LanguageKey.JAPANESE,
+  "ar-SA": LanguageKey.ARABIC,
+  "cs-CZ": LanguageKey.CZECH,
+  "da-DK": LanguageKey.DANISH,
+  "de-DE": LanguageKey.GERMAN,
+  "el-GR": LanguageKey.GREEK,
+  "en-AU": LanguageKey.ENGLISH,
+  "en-GB": LanguageKey.ENGLISH,
+  "en-IE": LanguageKey.ENGLISH,
+  "en-US": LanguageKey.ENGLISH,
+  "en-ZA": LanguageKey.ENGLISH,
+  "es-ES": LanguageKey.SPANISH_ES,
+  "es-MX": LanguageKey.SPANISH_LATAM,
+  "fi-FI": LanguageKey.FINNISH,
+  "fr-CA": LanguageKey.FRENCH,
+  "fr-FR": LanguageKey.FRENCH,
+  "he-IL": LanguageKey.HEBREW,
+  "hi-IN": LanguageKey.HINDI,
+  "hu-HU": LanguageKey.HUNGARIAN,
+  "id-ID": LanguageKey.INDONESIAN,
+  "it-IT": LanguageKey.ITALIAN,
+  "ja-JP": LanguageKey.JAPANESE,
+  "ko-KR": LanguageKey.KOREAN,
+  "nl-BE": LanguageKey.DUTCH,
+  "nl-NL": LanguageKey.DUTCH,
+  "pl-PL": LanguageKey.POLISH,
+  "pt-BR": LanguageKey.PORTUGUESE_BR,
+  "pt-PT": LanguageKey.PORTUGUESE_PT,
+  "ro-RO": LanguageKey.ROMANIAN,
+  "ru-RU": LanguageKey.RUSSIAN,
+  "sv-SE": LanguageKey.SWEDISH,
+  "th-TH": LanguageKey.THAI,
+  "tr-TR": LanguageKey.TURKISH,
+  "zh-CN": LanguageKey.CHINESE_SIMP,
+  "zh-HK": LanguageKey.CHINESE_SIMP,
+  "zh-TW": LanguageKey.CHINESE_SIMP,
+};
+
+const STATUS_MAP: { [key: string]: SeriesStatus } = {
+  ENDED: SeriesStatus.COMPLETED,
+  ONGOING: SeriesStatus.ONGOING,
+  ABANDONED: SeriesStatus.CANCELLED,
+  HIATUS: SeriesStatus.ONGOING,
+};
+
 export class ExtensionClient extends ExtensionClientAbstract {
   getMetadata: () => ExtensionMetadata = () => {
     return METADATA;
@@ -126,40 +172,47 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getDirectory: GetDirectoryFunc = (page: number) => {
-    return this.fetchFn(`https://guya.moe/api/get_all_series`)
-      .then((response: Response) => response.json())
-      .then((json: any) => {
-        const seriesList: Series[] = [];
+    return (
+      this.fetchFn(
+        `http://192.168.0.120:8080/api/v1/series?search=&page=0`,
+        {
+          method: "GET",
+          headers: { Authorization: "Basic " + btoa("a@a.com:a") },
+        }
+        // {
+        //   extraHeaders: `Authorization: Basic ${btoa("a@a.com:a")}`,
+        // }
+      )
+        // .then((thing) => console.log(thing))
+        .then((response: Response) => response.json())
+        .then((json: any) => {
+          const seriesList: Series[] = json.content.map((element: any) => {
+            return {
+              id: undefined,
+              extensionId: METADATA.id,
+              sourceId: element.id,
+              sourceType: SeriesSourceType.STANDARD,
+              title: element.name,
+              altTitles: [],
+              description: element.metadata.summary,
+              authors: [],
+              artists: [],
+              tagKeys: [],
+              status: STATUS_MAP[element.metadata.status],
+              originalLanguageKey: LANGUAGE_MAP[element.metadata.language],
+              numberUnread: 0,
+              remoteCoverUrl: `http://192.168.0.120:8080/api/v1/series/${element.id}/thumbnail`,
+            };
+          });
 
-        Object.keys(json).forEach((title: string) => {
-          const seriesData = json[title];
-          const series: Series = {
-            id: undefined,
-            extensionId: METADATA.id,
-            sourceId: seriesData.slug,
-            sourceType: SeriesSourceType.STANDARD,
-            title: title,
-            altTitles: [],
-            description: seriesData.description,
-            authors: [seriesData.author],
-            artists: [seriesData.artist],
-            tagKeys: [],
-            status: SeriesStatus.ONGOING,
-            originalLanguageKey: LanguageKey.JAPANESE,
-            numberUnread: 0,
-            remoteCoverUrl: `https://guya.moe/${seriesData.cover}`,
+          console.log(seriesList);
+
+          return {
+            seriesList,
+            hasMore: json.last,
           };
-          seriesList.push(series);
-        });
-
-        return seriesList;
-      })
-      .then((seriesList: Series[]) => {
-        return {
-          seriesList,
-          hasMore: false,
-        };
-      });
+        })
+    );
   };
 
   getSearch: GetSearchFunc = (

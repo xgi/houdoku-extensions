@@ -8,14 +8,11 @@ import {
   ExtensionMetadata,
   PageRequesterData,
   GetDirectoryFunc,
-  DemographicKey,
+  SeriesTagKey,
   ExtensionClientAbstract,
   GetSettingsFunc,
   SetSettingsFunc,
   GetSettingTypesFunc,
-  ContentWarningKey,
-  GenreKey,
-  ThemeKey,
   WebviewResponse,
 } from "houdoku-extension-lib";
 import {
@@ -33,61 +30,55 @@ import DomParser from "dom-parser";
 
 export const METADATA: ExtensionMetadata = parseMetadata(metadata);
 
-const GENRE_MAP: { [key: string]: GenreKey } = {
-  1: GenreKey.ACTION,
-  2: GenreKey.ADVENTURE,
-  3: GenreKey.COMEDY,
-  4: GenreKey.DRAMA,
-  5: GenreKey.SLICE_OF_LIFE,
-  7: GenreKey.FANTASY,
-  10: GenreKey.HORROR,
-  11: GenreKey.MYSTERY,
-  12: GenreKey.PSYCHOLOGICAL,
-  13: GenreKey.ROMANCE,
-  14: GenreKey.SCI_FI,
-  15: GenreKey.THRILLER,
-  16: GenreKey.SPORTS,
-  17: GenreKey.SHOUJO_AI,
-  18: GenreKey.SHOUNEN_AI,
-  20: GenreKey.MECHA,
-  25: GenreKey.TRAGEDY,
-  27: GenreKey.HISTORICAL,
-  30: GenreKey.CRIME,
-  31: GenreKey.SUPERHERO,
+const TAG_MAP: { [key: string]: SeriesTagKey } = {
+  1: SeriesTagKey.ACTION,
+  2: SeriesTagKey.ADVENTURE,
+  3: SeriesTagKey.COMEDY,
+  4: SeriesTagKey.DRAMA,
+  5: SeriesTagKey.SLICE_OF_LIFE,
+  6: SeriesTagKey.ECCHI,
+  7: SeriesTagKey.FANTASY,
+  8: SeriesTagKey.MAGIC,
+  9: SeriesTagKey.SUPERNATURAL,
+  10: SeriesTagKey.HORROR,
+  11: SeriesTagKey.MYSTERY,
+  12: SeriesTagKey.PSYCHOLOGICAL,
+  13: SeriesTagKey.ROMANCE,
+  14: SeriesTagKey.SCI_FI,
+  15: SeriesTagKey.THRILLER,
+  16: SeriesTagKey.SPORTS,
+  17: SeriesTagKey.SHOUJO_AI,
+  18: SeriesTagKey.SHOUNEN_AI,
+  19: SeriesTagKey.HAREM,
+  20: SeriesTagKey.MECHA,
+  21: SeriesTagKey.SURVIVAL,
+  22: SeriesTagKey.REINCARNATION,
+  23: SeriesTagKey.GORE,
+  24: SeriesTagKey.POST_APOCALYPTIC,
+  25: SeriesTagKey.TRAGEDY,
+  26: SeriesTagKey.SCHOOL_LIFE,
+  27: SeriesTagKey.HISTORICAL,
+  28: SeriesTagKey.MILITARY,
+  29: SeriesTagKey.POLICE,
+  30: SeriesTagKey.CRIME,
+  31: SeriesTagKey.SUPERHERO,
+  32: SeriesTagKey.VAMPIRES,
+  33: SeriesTagKey.MARTIAL_ARTS,
+  34: SeriesTagKey.SAMURAI,
+  35: SeriesTagKey.GENDERSWAP,
+  36: SeriesTagKey.VIRTUAL_REALITY,
   // 37: , cyberpunk
+  38: SeriesTagKey.MUSIC,
   // 39: , parody
   // 40: , animation
+  41: SeriesTagKey.DEMONS,
   // 42: , family
   // 43: , foreign
   // 44: , children
   // 45: , reality
   // 46: , telenovel
+  47: SeriesTagKey.MILITARY,
   // 48: , west
-};
-
-const THEME_MAP: { [key: string]: ThemeKey } = {
-  8: ThemeKey.MAGIC,
-  9: ThemeKey.SUPERNATURAL,
-  19: ThemeKey.HAREM,
-  21: ThemeKey.SURVIVAL,
-  22: ThemeKey.REINCARNATION,
-  24: ThemeKey.POST_APOCALYPTIC,
-  26: ThemeKey.SCHOOL_LIFE,
-  28: ThemeKey.MILITARY,
-  29: ThemeKey.POLICE,
-  32: ThemeKey.VAMPIRES,
-  33: ThemeKey.MARTIAL_ARTS,
-  34: ThemeKey.SAMURAI,
-  35: ThemeKey.GENDERSWAP,
-  36: ThemeKey.VIRTUAL_REALITY,
-  38: ThemeKey.MUSIC,
-  41: ThemeKey.DEMONS,
-  47: ThemeKey.MILITARY,
-};
-
-const CONTENT_WARNING_MAP: { [key: string]: ContentWarningKey } = {
-  6: ContentWarningKey.ECCHI,
-  23: ContentWarningKey.GORE,
 };
 
 const ORIGINAL_LANGUAGE_MAP: { [key: string]: LanguageKey } = {
@@ -102,20 +93,20 @@ const ORIGINAL_LANGUAGE_MAP: { [key: string]: LanguageKey } = {
 
 export class ExtensionClient extends ExtensionClientAbstract {
   _parseOneshotChapter = (doc: DOMParser.Dom): Chapter[] => {
-    const chapterList = doc.getElementsByClassName("chapter-list")[0];
-    const chapterRows = chapterList.getElementsByClassName("list-group-item");
+    const chapterList = doc.getElementsByClassName("chapter-list")![0];
+    const chapterRows = chapterList.getElementsByClassName("list-group-item")!;
 
     return chapterRows.map((chapterRow) => {
-      const groupContainer = chapterRow.getElementsByTagName("span")[0];
+      const groupContainer = chapterRow.getElementsByTagName("span")![0];
       const dateStr = chapterRow
-        .getElementsByClassName("badge-primary")[0]
+        .getElementsByClassName("badge-primary")![0]
         .textContent.trim();
-      const btn = chapterRow.getElementsByClassName("btn-sm")[0];
+      const btn = chapterRow.getElementsByClassName("btn-sm")![0];
 
       return {
         id: undefined,
         seriesId: undefined,
-        sourceId: btn.getAttribute("href").split("/").pop(),
+        sourceId: btn.getAttribute("href")!.split("/").pop()!,
         title: "",
         chapterNumber: "1",
         volumeNumber: "",
@@ -128,34 +119,29 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   _parseSearchResults = (doc: DomParser.Dom) => {
-    const entries = doc.getElementsByClassName("col-6");
+    const entries = doc.getElementsByClassName("col-6")!;
     const seriesList: Series[] = entries.map((node) => {
-      const img = node.getElementsByTagName("img")[0];
+      const img = node.getElementsByTagName("img")![0];
       const link = img.parentNode;
 
-      const sourceId = link.getAttribute("href").split("/library/").pop();
-      const isHentai = node.getElementsByClassName("hentai-icon").length > 0;
+      const sourceId = link!.getAttribute("href")!.split("/library/").pop()!;
+      const isHentai = node.getElementsByClassName("hentai-icon")!.length > 0;
 
       return {
         id: undefined,
         extensionId: metadata.id,
         sourceId,
         sourceType: SeriesSourceType.STANDARD,
-        title: img.getAttribute("alt").trim(),
+        title: img.getAttribute("alt")!.trim(),
         altTitles: [],
         description: "",
         authors: [],
         artists: [],
-        genres: [],
-        themes: [],
-        formats: [],
-        contentWarnings: isHentai ? [ContentWarningKey.PORNOGRAPHIC] : [],
-        demographic: DemographicKey.UNCERTAIN,
+        tagKeys: isHentai ? [SeriesTagKey.PORNOGRAPHIC] : [],
         status: SeriesStatus.ONGOING,
         originalLanguageKey: ORIGINAL_LANGUAGE_MAP[sourceId.split("/")[0]],
         numberUnread: 0,
-        remoteCoverUrl: img.getAttribute("src"),
-        userTags: [],
+        remoteCoverUrl: img.getAttribute("src")!,
       };
     });
 
@@ -174,46 +160,37 @@ export class ExtensionClient extends ExtensionClientAbstract {
       (response: WebviewResponse) => {
         const doc = this.domParser.parseFromString(response.text);
 
-        const img = doc.getElementsByTagName("img")[0];
+        const img = doc.getElementsByTagName("img")![0];
 
-        const details = doc.getElementsByClassName("col-sm-9")[0];
+        const details = doc.getElementsByClassName("col-sm-9")![0];
         const title = details
-          .getElementsByTagName("h1")[0]
-          .firstChild.textContent.trim();
+          .getElementsByTagName("h1")![0]
+          .firstChild!.textContent.trim();
 
-        const headings = details.getElementsByTagName("h5");
+        const headings = details.getElementsByTagName("h5")!;
         const type = headings[0]
-          .getElementsByTagName("span")[0]
-          .getAttribute("class")
+          .getElementsByTagName("span")![0]
+          .getAttribute("class")!
           .split("text-")
-          .pop();
+          .pop()!;
 
         const publishingNodes =
-          details.getElementsByClassName("status-publishing");
+          details.getElementsByClassName("status-publishing")!;
         const status =
           publishingNodes.length > 0
             ? SeriesStatus.ONGOING
             : SeriesStatus.COMPLETED;
 
         const description = doc
-          .getElementsByClassName("mt-2")[1]
-          .getElementsByTagName("p")[0]
+          .getElementsByClassName("mt-2")![1]
+          .getElementsByTagName("p")![0]
           .textContent.trim();
 
-        const tagNodes = details.getElementsByClassName("badge-primary");
-        const genres: GenreKey[] = [];
-        const themes: ThemeKey[] = [];
-        const contentWarnings: ContentWarningKey[] = [];
-        tagNodes.forEach((tagNode) => {
-          const tagId = tagNode.getAttribute("href").split("=").pop();
-          if (tagId in GENRE_MAP) {
-            genres.push(GENRE_MAP[tagId]);
-          }
-          if (tagId in THEME_MAP) {
-            themes.push(THEME_MAP[tagId]);
-          }
-          if (tagId in CONTENT_WARNING_MAP) {
-            contentWarnings.push(CONTENT_WARNING_MAP[tagId]);
+        const tagKeys: SeriesTagKey[] = [];
+        details.getElementsByClassName("badge-primary")!.forEach((tagNode) => {
+          const tagId = tagNode.getAttribute("href")!.split("=").pop()!;
+          if (tagId in TAG_MAP) {
+            tagKeys.push(TAG_MAP[tagId]);
           }
         });
 
@@ -227,16 +204,11 @@ export class ExtensionClient extends ExtensionClientAbstract {
           description,
           authors: [],
           artists: [],
-          genres,
-          themes,
-          formats: [],
-          contentWarnings,
-          demographic: DemographicKey.UNCERTAIN,
+          tagKeys: tagKeys,
           status,
           originalLanguageKey: ORIGINAL_LANGUAGE_MAP[type],
           numberUnread: 0,
-          remoteCoverUrl: img.getAttribute("src"),
-          userTags: [],
+          remoteCoverUrl: img.getAttribute("src")!,
         };
       }
     );
@@ -253,8 +225,8 @@ export class ExtensionClient extends ExtensionClientAbstract {
         }
 
         const titleHeadings =
-          container.getElementsByClassName("mt-2 text-truncate");
-        const chapterLists = container.getElementsByClassName("chapter-list");
+          container.getElementsByClassName("mt-2 text-truncate")!;
+        const chapterLists = container.getElementsByClassName("chapter-list")!;
 
         const chapters: Chapter[] = [];
         for (let i = 0; i < chapterLists.length; i++) {
@@ -262,22 +234,22 @@ export class ExtensionClient extends ExtensionClientAbstract {
           const heading = titleHeadings[i];
 
           const chapterRows =
-            chapterList.getElementsByClassName("list-group-item");
+            chapterList.getElementsByClassName("list-group-item")!;
 
           const newChapters: Chapter[] = chapterRows.map((chapterRow) => {
-            const title = heading.getAttribute("title");
-            const groupContainer = chapterRow.getElementsByTagName("span")[0];
+            const title = heading.getAttribute("title")!;
+            const groupContainer = chapterRow.getElementsByTagName("span")![0];
             const dateStr = chapterRow
-              .getElementsByClassName("badge-primary")[0]
+              .getElementsByClassName("badge-primary")![0]
               .textContent.trim();
-            const btn = chapterRow.getElementsByClassName("btn-sm")[0];
+            const btn = chapterRow.getElementsByClassName("btn-sm")![0];
 
             const chapterNumStr = title.split(" ")[1].split(" ")[0];
 
             const chapter: Chapter = {
               id: undefined,
               seriesId: undefined,
-              sourceId: btn.getAttribute("href").split("/").pop(),
+              sourceId: btn.getAttribute("href")!.split("/").pop()!,
               title,
               chapterNumber: parseFloat(chapterNumStr).toString(),
               volumeNumber: "",
