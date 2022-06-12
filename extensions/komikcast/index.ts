@@ -152,7 +152,8 @@ export class ExtensionClient extends ExtensionClientAbstract {
 
         const title = infoContainer
           .getElementsByClassName("komik_info-content-body-title")![0]
-          .textContent.trim();
+          .textContent.trim()
+          .split(" Bahasa Indonesia")[0];
         const altTitles = infoContainer
           .getElementsByClassName("komik_info-content-native")![0]
           .textContent.trim()
