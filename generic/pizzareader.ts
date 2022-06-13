@@ -17,6 +17,7 @@ import {
   Series,
   SeriesSourceType,
   SeriesStatus,
+  SeriesTagKey,
 } from "houdoku-extension-lib";
 import { Response } from "node-fetch";
 
@@ -62,6 +63,44 @@ const SERIES_STATUS_MAP: { [key: string]: SeriesStatus } = {
   Conclud: SeriesStatus.COMPLETED,
 };
 
+const TAG_KEY_MAP: { [key: string]: SeriesTagKey } = {
+  "gender-bender": SeriesTagKey.GENDERSWAP,
+  "slice-of-life": SeriesTagKey.SLICE_OF_LIFE,
+  "vita-quotidiana": SeriesTagKey.SLICE_OF_LIFE,
+  "vita-scolastica": SeriesTagKey.SCHOOL_LIFE,
+  avventura: SeriesTagKey.ADVENTURE,
+  azione: SeriesTagKey.ACTION,
+  combattimento: SeriesTagKey.ACTION,
+  comedia: SeriesTagKey.COMEDY,
+  comedy: SeriesTagKey.COMEDY,
+  commedia: SeriesTagKey.COMEDY,
+  crimine: SeriesTagKey.CRIME,
+  drama: SeriesTagKey.DRAMA,
+  drammatico: SeriesTagKey.DRAMA,
+  ecchi: SeriesTagKey.ECCHI,
+  fantas: SeriesTagKey.FANTASY,
+  fantastico: SeriesTagKey.FANTASY,
+  fantasy: SeriesTagKey.FANTASY,
+  harem: SeriesTagKey.HAREM,
+  horror: SeriesTagKey.HORROR,
+  magia: SeriesTagKey.MAGIC,
+  medicina: SeriesTagKey.MEDICAL,
+  mistero: SeriesTagKey.MYSTERY,
+  mystero: SeriesTagKey.MYSTERY,
+  psicologico: SeriesTagKey.PSYCHOLOGICAL,
+  romance: SeriesTagKey.ROMANCE,
+  romantico: SeriesTagKey.ROMANCE,
+  scolastico: SeriesTagKey.SCHOOL_LIFE,
+  sentimentale: SeriesTagKey.TRAGEDY,
+  soprannaturale: SeriesTagKey.SUPERNATURAL,
+  sovrannaturale: SeriesTagKey.SUPERNATURAL,
+  sport: SeriesTagKey.SPORTS,
+  sportivo: SeriesTagKey.SPORTS,
+  thriller: SeriesTagKey.THRILLER,
+  tragedia: SeriesTagKey.TRAGEDY,
+  tragico: SeriesTagKey.TRAGEDY,
+};
+
 export class PizzaReaderClient {
   fetchFn: FetchFunc;
   webviewFn: WebviewFunc;
@@ -75,6 +114,13 @@ export class PizzaReaderClient {
   }
 
   _parseSeries = (entry: any): Series => {
+    const tagKeys: SeriesTagKey[] = [];
+    entry.genres.forEach((genre: { name: string; slug: string }) => {
+      if (genre.slug in TAG_KEY_MAP) {
+        tagKeys.push(TAG_KEY_MAP[genre.slug]);
+      }
+    });
+
     return {
       id: undefined,
       extensionId: this.extensionId,
@@ -85,7 +131,7 @@ export class PizzaReaderClient {
       description: entry.description,
       authors: [entry.author],
       artists: [entry.artist],
-      tagKeys: [], // TODO, also use entry.target
+      tagKeys: tagKeys,
       status:
         SERIES_STATUS_MAP[entry.status.substr(0, 7)] || SeriesStatus.ONGOING,
       originalLanguageKey: LanguageKey.JAPANESE,
