@@ -158,11 +158,14 @@ export class PizzaReaderClient {
               id: undefined,
               seriesId: undefined,
               sourceId: entry.url,
-              title: entry.title,
-              chapterNumber: entry.chapter,
-              volumeNumber: entry.volume,
+              title: entry.title || "",
+              chapterNumber: entry.chapter || "",
+              volumeNumber: entry.volume || "",
               languageKey: LANGUAGE_MAP[entry.language],
-              groupName: entry.teams[0].name,
+              groupName:
+                entry.teams && entry.teams.length > 0
+                  ? entry.teams[0].name
+                  : "",
               time: new Date(entry.published_on).getTime(),
               read: false,
             } as Chapter)
