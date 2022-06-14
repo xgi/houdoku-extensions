@@ -194,7 +194,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
       ? "hq"
       : "lq";
 
-    return this.fetchFn(`${BASE_URL}${chapterSourceId}}&quality=${qualityStr}`)
+    return this.fetchFn(`${BASE_URL}${chapterSourceId}&quality=${qualityStr}`)
       .then((response: Response) => response.text())
       .then((data: string) => {
         const snippetRegexp = /lstImages\.push\(\"http.*\)/g;
