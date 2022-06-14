@@ -85,7 +85,7 @@ export class PizzaReaderClient {
       description: entry.description,
       authors: [entry.author],
       artists: [entry.artist],
-      tags: entry.genres ? entry.genres.map((genre) => genre.name),
+      tags: entry.genres ? entry.genres.map((genre) => genre.name) : [],
       status:
         SERIES_STATUS_MAP[entry.status.substr(0, 7)] || SeriesStatus.ONGOING,
       originalLanguageKey: LanguageKey.JAPANESE,
