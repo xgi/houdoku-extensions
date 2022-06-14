@@ -8,7 +8,6 @@ import {
   ExtensionMetadata,
   PageRequesterData,
   GetDirectoryFunc,
-  SeriesTagKey,
   ExtensionClientAbstract,
   GetSettingsFunc,
   SetSettingsFunc,
@@ -31,36 +30,6 @@ import { parseMetadata } from "../../util/configuring";
 
 const BASE_URL = "https://readcomiconline.li";
 export const METADATA: ExtensionMetadata = parseMetadata(metadata);
-
-const TAG_KEY_MAP: {
-  [key: string]: SeriesTagKey;
-} = {
-  Action: SeriesTagKey.ACTION,
-  Adventure: SeriesTagKey.ADVENTURE,
-  Anthology: SeriesTagKey.ANTHOLOGY,
-  Comedy: SeriesTagKey.COMEDY,
-  Crime: SeriesTagKey.DRAMA,
-  Fantasy: SeriesTagKey.FANTASY,
-  Historical: SeriesTagKey.HISTORICAL,
-  Horror: SeriesTagKey.HORROR,
-  "Martial Arts": SeriesTagKey.MARTIAL_ARTS,
-  Military: SeriesTagKey.MILITARY,
-  Music: SeriesTagKey.MUSIC,
-  Mystery: SeriesTagKey.MYSTERY,
-  "Post-Apocalyptic": SeriesTagKey.POST_APOCALYPTIC,
-  Psychological: SeriesTagKey.PSYCHOLOGICAL,
-  Romance: SeriesTagKey.ROMANCE,
-  "School Life": SeriesTagKey.SCHOOL_LIFE,
-  "Sci-Fi": SeriesTagKey.SCI_FI,
-  "Slice of Life": SeriesTagKey.SLICE_OF_LIFE,
-  Sport: SeriesTagKey.SPORTS,
-  Superhero: SeriesTagKey.SUPERHERO,
-  Supernatural: SeriesTagKey.SUPERNATURAL,
-  Thriller: SeriesTagKey.THRILLER,
-  Vampires: SeriesTagKey.VAMPIRES,
-  "Video Games": SeriesTagKey.VIDEO_GAMES,
-  Zombies: SeriesTagKey.ZOMBIES,
-};
 
 const SERIES_STATUS_MAP: { [key: string]: SeriesStatus } = {
   Ongoing: SeriesStatus.ONGOING,
@@ -111,7 +80,7 @@ const parseDirectoryResponse = (doc: DOMParser.Dom): SeriesListResponse => {
       description: "",
       authors: [],
       artists: [],
-      tagKeys: [],
+      tags: [],
       status: SeriesStatus.ONGOING,
       originalLanguageKey: LanguageKey.ENGLISH,
       numberUnread: 0,
@@ -166,16 +135,6 @@ export class ExtensionClient extends ExtensionClientAbstract {
             ? statusRow!.textContent.replace("Status:&nbsp;", "").trim()
             : "";
 
-        const mapped_tags: SeriesTagKey[] = [];
-        sourceTags.forEach((source_tag: string) => {
-          if (Object.keys(TAG_KEY_MAP).includes(source_tag)) {
-            mapped_tags.push(TAG_KEY_MAP[source_tag]);
-          }
-        });
-        const tagKeys: SeriesTagKey[] = mapped_tags.filter(
-          (tag: any) => tag in SeriesTagKey
-        );
-
         const series: Series = {
           extensionId: METADATA.id,
           sourceId: id,
@@ -185,7 +144,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
           description: description,
           authors: authors,
           artists: artists,
-          tagKeys: tagKeys,
+          tags: sourceTags,
           status: SERIES_STATUS_MAP[statusStr] || SeriesStatus.ONGOING,
           originalLanguageKey: LanguageKey.ENGLISH,
           numberUnread: 0,

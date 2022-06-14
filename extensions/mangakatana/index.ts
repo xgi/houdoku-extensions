@@ -8,7 +8,6 @@ import {
   ExtensionMetadata,
   PageRequesterData,
   GetDirectoryFunc,
-  SeriesTagKey,
   ExtensionClientAbstract,
   GetSettingsFunc,
   SetSettingsFunc,
@@ -29,8 +28,6 @@ import { parseMetadata } from "../../util/configuring";
 
 const BASE_URL = "https://mangakatana.com";
 export const METADATA: ExtensionMetadata = parseMetadata(metadata);
-
-const TAG_KEY_MAP: { [key: string]: SeriesTagKey } = {};
 
 const SERIES_STATUS_MAP: { [key: string]: SeriesStatus } = {};
 
@@ -57,7 +54,7 @@ const parseDirectoryResponse = (doc: DOMParser.Dom): SeriesListResponse => {
       description: "",
       authors: [],
       artists: [],
-      tagKeys: [],
+      tags: [],
       status: SeriesStatus.ONGOING,
       originalLanguageKey: LanguageKey.JAPANESE,
       numberUnread: 0,
@@ -119,16 +116,10 @@ export class ExtensionClient extends ExtensionClientAbstract {
           .getElementsByTagName("a")!
           .map((link) => link.textContent);
 
-        const tagKeys: SeriesTagKey[] = [];
-        infoContainer
+        const tags = infoContainer
           .getElementsByClassName("genres")![0]
           .getElementsByTagName("a")!
-          .forEach((genreLink) => {
-            const sourceTag = genreLink.textContent;
-            if (Object.keys(TAG_KEY_MAP).includes(sourceTag)) {
-              tagKeys.push(TAG_KEY_MAP[sourceTag]);
-            }
-          });
+          .map((genreLink) => genreLink.textContent);
 
         const series: Series = {
           extensionId: METADATA.id,
@@ -139,7 +130,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
           description: description,
           authors: authors,
           artists: [],
-          tagKeys: tagKeys,
+          tags: tags,
           status: SERIES_STATUS_MAP[statusStr],
           originalLanguageKey: LanguageKey.JAPANESE,
           numberUnread: 0,

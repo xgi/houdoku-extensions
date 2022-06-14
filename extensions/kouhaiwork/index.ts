@@ -12,7 +12,6 @@ import {
   GetSettingsFunc,
   SetSettingsFunc,
   GetSettingTypesFunc,
-  SeriesTagKey,
 } from "houdoku-extension-lib";
 import {
   Chapter,
@@ -30,46 +29,6 @@ export const METADATA: ExtensionMetadata = parseMetadata(metadata);
 const API_URL = "https://api.kouhai.work/v3";
 const STORAGE_URL = "https://api.kouhai.work/storage";
 
-const TAG_KEY_MAP: {
-  [key: string]: SeriesTagKey;
-} = {
-  Romance: SeriesTagKey.ROMANCE,
-  Comedy: SeriesTagKey.COMEDY,
-  "Slice of Life": SeriesTagKey.SLICE_OF_LIFE,
-  Fantasy: SeriesTagKey.FANTASY,
-  "Sci-Fi": SeriesTagKey.SCI_FI,
-  Psychological: SeriesTagKey.PSYCHOLOGICAL,
-  Horror: SeriesTagKey.HORROR,
-  Mystery: SeriesTagKey.MYSTERY,
-  "Girls' Love": SeriesTagKey.SHOUJO_AI,
-  Drama: SeriesTagKey.DRAMA,
-  Action: SeriesTagKey.ACTION,
-  Ecchi: SeriesTagKey.ECCHI,
-  Adventure: SeriesTagKey.ADVENTURE,
-  Thriller: SeriesTagKey.THRILLER,
-  Crime: SeriesTagKey.CRIME,
-  Isekai: SeriesTagKey.ISEKAI,
-  Historical: SeriesTagKey.HISTORICAL,
-  Tragedy: SeriesTagKey.TRAGEDY,
-  Sports: SeriesTagKey.SPORTS,
-  "Office Workers": SeriesTagKey.OFFICE_WORKERS,
-  // Family: ThemeKey.FAMILY,
-  Supernatural: SeriesTagKey.SUPERNATURAL,
-  Demons: SeriesTagKey.DEMONS,
-  Magic: SeriesTagKey.MAGIC,
-  Aliens: SeriesTagKey.ALIENS,
-  Suggestive: SeriesTagKey.ECCHI,
-  Doujinshi: SeriesTagKey.DOUJINSHI,
-  "School Life": SeriesTagKey.SCHOOL_LIFE,
-  Police: SeriesTagKey.POLICE,
-  Mafia: SeriesTagKey.MAFIA,
-  Shota: SeriesTagKey.SHOTA,
-  Animals: SeriesTagKey.ROMANCE,
-  Shounen: SeriesTagKey.SHOUNEN,
-  Shoujo: SeriesTagKey.SHOUJO,
-  Seinen: SeriesTagKey.SEINEN,
-};
-
 const STATUS_MAP: { [key: string]: SeriesStatus } = {
   ongoing: SeriesStatus.ONGOING,
   finished: SeriesStatus.COMPLETED,
@@ -78,23 +37,12 @@ const STATUS_MAP: { [key: string]: SeriesStatus } = {
 
 export class ExtensionClient extends ExtensionClientAbstract {
   _parseSeries = (data: any) => {
-    const source_tags = (data.genres || [])
+    const sourceTags = (data.genres || [])
       .concat(data.themes || [])
       .concat(data.demographics || [])
       .map((tag: [number, string] | { id: number; name: string }) =>
         "name" in tag ? tag.name : tag[1]
       );
-    // .map(([_id, name]: [number, string]) => name);
-
-    const mapped_tags: SeriesTagKey[] = [];
-    source_tags.forEach((source_tag: string) => {
-      if (Object.keys(TAG_KEY_MAP).includes(source_tag)) {
-        mapped_tags.push(TAG_KEY_MAP[source_tag]);
-      }
-    });
-    const tags: SeriesTagKey[] = mapped_tags.filter(
-      (tag: any) => tag in SeriesTagKey
-    );
 
     const authors = data.authors
       ? data.authors.map((author: { id: Number; name: string }) => author.name)
@@ -113,7 +61,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
       description: data.synopsis,
       authors: authors,
       artists: artists,
-      tagKeys: tags,
+      tags: sourceTags,
       status: STATUS_MAP[data.status] || SeriesStatus.ONGOING,
       originalLanguageKey: LanguageKey.JAPANESE,
       numberUnread: 0,
@@ -231,7 +179,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
             description: data[2],
             authors: [],
             artists: [],
-            tagKeys: [],
+            tags: [],
             status: SeriesStatus.ONGOING,
             originalLanguageKey: LanguageKey.JAPANESE,
             numberUnread: 0,

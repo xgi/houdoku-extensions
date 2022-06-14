@@ -8,7 +8,6 @@ import {
   ExtensionMetadata,
   PageRequesterData,
   GetDirectoryFunc,
-  SeriesTagKey,
   ExtensionClientAbstract,
   GetSettingsFunc,
   SetSettingsFunc,
@@ -30,57 +29,6 @@ import { parseMetadata } from "../../util/configuring";
 
 const BASE_URL = "https://komikcast.me";
 export const METADATA: ExtensionMetadata = parseMetadata(metadata);
-
-const TAG_KEY_MAP: { [key: string]: SeriesTagKey } = {
-  "4-Koma": SeriesTagKey.YONKOMA,
-  Action: SeriesTagKey.ACTION,
-  Adventure: SeriesTagKey.ADVENTURE,
-  Comedy: SeriesTagKey.COMEDY,
-  Cooking: SeriesTagKey.COOKING,
-  Demons: SeriesTagKey.DEMONS,
-  Drama: SeriesTagKey.DRAMA,
-  Ecchi: SeriesTagKey.ECCHI,
-  Fantasy: SeriesTagKey.FANTASY,
-  Game: SeriesTagKey.VIDEO_GAMES,
-  "Gender Bender": SeriesTagKey.GENDERSWAP,
-  Gore: SeriesTagKey.GORE,
-  Harem: SeriesTagKey.HAREM,
-  Historical: SeriesTagKey.HISTORICAL,
-  Horror: SeriesTagKey.HORROR,
-  Isekai: SeriesTagKey.ISEKAI,
-  Josei: SeriesTagKey.JOSEI,
-  Magic: SeriesTagKey.MAGIC,
-  "Martial Arts": SeriesTagKey.MARTIAL_ARTS,
-  "Matrial Arts": SeriesTagKey.MARTIAL_ARTS,
-  // Mature: SeriesTagKey.,
-  Mecha: SeriesTagKey.MECHA,
-  Medical: SeriesTagKey.MEDICAL,
-  Military: SeriesTagKey.MILITARY,
-  Music: SeriesTagKey.MUSIC,
-  Mystery: SeriesTagKey.MYSTERY,
-  "One-Shot": SeriesTagKey.ONESHOT,
-  Police: SeriesTagKey.POLICE,
-  Psychological: SeriesTagKey.PSYCHOLOGICAL,
-  Reincarnation: SeriesTagKey.REINCARNATION,
-  Romance: SeriesTagKey.ROMANCE,
-  School: SeriesTagKey.SCHOOL_LIFE,
-  "School Life": SeriesTagKey.SCHOOL_LIFE,
-  "Sci-Fi": SeriesTagKey.SCI_FI,
-  Seinen: SeriesTagKey.SEINEN,
-  Shoujo: SeriesTagKey.SHOUJO,
-  "Shoujo Ai": SeriesTagKey.SHOUJO_AI,
-  Shounen: SeriesTagKey.SHOUNEN,
-  "Shounen Ai": SeriesTagKey.SHOUNEN_AI,
-  "Slice of Life": SeriesTagKey.SLICE_OF_LIFE,
-  Sports: SeriesTagKey.SPORTS,
-  "Super Power": SeriesTagKey.SUPERHERO,
-  Supernatural: SeriesTagKey.SUPERNATURAL,
-  Thriller: SeriesTagKey.THRILLER,
-  Tragedy: SeriesTagKey.TRAGEDY,
-  Vampire: SeriesTagKey.VAMPIRES,
-  Webtoons: SeriesTagKey.WEB_COMIC,
-  Yuri: SeriesTagKey.YURI,
-};
 
 const ORIGINAL_LANGUAGE_MAP: { [key: string]: LanguageKey } = {
   Manga: LanguageKey.JAPANESE,
@@ -114,7 +62,7 @@ const parseDirectoryResponse = (doc: DOMParser.Dom): SeriesListResponse => {
       description: "",
       authors: [],
       artists: [],
-      tagKeys: [],
+      tags: [],
       status: SeriesStatus.ONGOING,
       originalLanguageKey: LanguageKey.JAPANESE,
       numberUnread: 0,
@@ -179,13 +127,9 @@ export class ExtensionClient extends ExtensionClientAbstract {
         );
         const statusStr = statusRow?.textContent.split("Status: ")[1]!;
 
-        const tagKeys: SeriesTagKey[] = [];
-        infoContainer.getElementsByClassName("genre-item")!.forEach((node) => {
-          const sourceTag = node.textContent;
-          if (Object.keys(TAG_KEY_MAP).includes(sourceTag)) {
-            tagKeys.push(TAG_KEY_MAP[sourceTag]);
-          }
-        });
+        const tags = infoContainer
+          .getElementsByClassName("genre-item")!
+          .map((node) => node.textContent);
 
         const typeStr = infoContainer
           .getElementsByClassName("komik_info-content-info-type")![0]
@@ -200,7 +144,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
           description: description,
           authors: authors,
           artists: [],
-          tagKeys: tagKeys,
+          tags: tags,
           status: SERIES_STATUS_MAP[statusStr],
           originalLanguageKey: ORIGINAL_LANGUAGE_MAP[typeStr],
           numberUnread: 0,

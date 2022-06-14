@@ -8,7 +8,6 @@ import {
   ExtensionMetadata,
   PageRequesterData,
   GetDirectoryFunc,
-  SeriesTagKey,
   ExtensionClientAbstract,
   GetSettingsFunc,
   SetSettingsFunc,
@@ -30,55 +29,55 @@ import DomParser from "dom-parser";
 
 export const METADATA: ExtensionMetadata = parseMetadata(metadata);
 
-const TAG_MAP: { [key: string]: SeriesTagKey } = {
-  1: SeriesTagKey.ACTION,
-  2: SeriesTagKey.ADVENTURE,
-  3: SeriesTagKey.COMEDY,
-  4: SeriesTagKey.DRAMA,
-  5: SeriesTagKey.SLICE_OF_LIFE,
-  6: SeriesTagKey.ECCHI,
-  7: SeriesTagKey.FANTASY,
-  8: SeriesTagKey.MAGIC,
-  9: SeriesTagKey.SUPERNATURAL,
-  10: SeriesTagKey.HORROR,
-  11: SeriesTagKey.MYSTERY,
-  12: SeriesTagKey.PSYCHOLOGICAL,
-  13: SeriesTagKey.ROMANCE,
-  14: SeriesTagKey.SCI_FI,
-  15: SeriesTagKey.THRILLER,
-  16: SeriesTagKey.SPORTS,
-  17: SeriesTagKey.SHOUJO_AI,
-  18: SeriesTagKey.SHOUNEN_AI,
-  19: SeriesTagKey.HAREM,
-  20: SeriesTagKey.MECHA,
-  21: SeriesTagKey.SURVIVAL,
-  22: SeriesTagKey.REINCARNATION,
-  23: SeriesTagKey.GORE,
-  24: SeriesTagKey.POST_APOCALYPTIC,
-  25: SeriesTagKey.TRAGEDY,
-  26: SeriesTagKey.SCHOOL_LIFE,
-  27: SeriesTagKey.HISTORICAL,
-  28: SeriesTagKey.MILITARY,
-  29: SeriesTagKey.POLICE,
-  30: SeriesTagKey.CRIME,
-  31: SeriesTagKey.SUPERHERO,
-  32: SeriesTagKey.VAMPIRES,
-  33: SeriesTagKey.MARTIAL_ARTS,
-  34: SeriesTagKey.SAMURAI,
-  35: SeriesTagKey.GENDERSWAP,
-  36: SeriesTagKey.VIRTUAL_REALITY,
-  // 37: , cyberpunk
-  38: SeriesTagKey.MUSIC,
-  // 39: , parody
-  // 40: , animation
-  41: SeriesTagKey.DEMONS,
-  // 42: , family
-  // 43: , foreign
-  // 44: , children
-  // 45: , reality
-  // 46: , telenovel
-  47: SeriesTagKey.MILITARY,
-  // 48: , west
+const TAG_MAP: { [key: string]: string } = {
+  1: "ACTION",
+  2: "ADVENTURE",
+  3: "COMEDY",
+  4: "DRAMA",
+  5: "SLICE_OF_LIFE",
+  6: "ECCHI",
+  7: "FANTASY",
+  8: "MAGIC",
+  9: "SUPERNATURAL",
+  10: "HORROR",
+  11: "MYSTERY",
+  12: "PSYCHOLOGICAL",
+  13: "ROMANCE",
+  14: "SCI_FI",
+  15: "THRILLER",
+  16: "SPORTS",
+  17: "SHOUJO_AI",
+  18: "SHOUNEN_AI",
+  19: "HAREM",
+  20: "MECHA",
+  21: "SURVIVAL",
+  22: "REINCARNATION",
+  23: "GORE",
+  24: "POST_APOCALYPTIC",
+  25: "TRAGEDY",
+  26: "SCHOOL_LIFE",
+  27: "HISTORICAL",
+  28: "MILITARY",
+  29: "POLICE",
+  30: "CRIME",
+  31: "SUPERHERO",
+  32: "VAMPIRES",
+  33: "MARTIAL_ARTS",
+  34: "SAMURAI",
+  35: "GENDERSWAP",
+  36: "VIRTUAL_REALITY",
+  37: "Cyberpunk",
+  38: "MUSIC",
+  39: "Parody",
+  40: "Animation",
+  41: "DEMONS",
+  42: "Family",
+  43: "Foreign",
+  44: "Children",
+  45: "Reality",
+  46: "Telenovel",
+  47: "MILITARY",
+  48: "West",
 };
 
 const ORIGINAL_LANGUAGE_MAP: { [key: string]: LanguageKey } = {
@@ -123,9 +122,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
     const seriesList: Series[] = entries.map((node) => {
       const img = node.getElementsByTagName("img")![0];
       const link = img.parentNode;
-
       const sourceId = link!.getAttribute("href")!.split("/library/").pop()!;
-      const isHentai = node.getElementsByClassName("hentai-icon")!.length > 0;
 
       return {
         id: undefined,
@@ -137,7 +134,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
         description: "",
         authors: [],
         artists: [],
-        tagKeys: isHentai ? [SeriesTagKey.PORNOGRAPHIC] : [],
+        tags: [],
         status: SeriesStatus.ONGOING,
         originalLanguageKey: ORIGINAL_LANGUAGE_MAP[sourceId.split("/")[0]],
         numberUnread: 0,
@@ -186,11 +183,11 @@ export class ExtensionClient extends ExtensionClientAbstract {
           .getElementsByTagName("p")![0]
           .textContent.trim();
 
-        const tagKeys: SeriesTagKey[] = [];
+        const tags: string[] = [];
         details.getElementsByClassName("badge-primary")!.forEach((tagNode) => {
           const tagId = tagNode.getAttribute("href")!.split("=").pop()!;
           if (tagId in TAG_MAP) {
-            tagKeys.push(TAG_MAP[tagId]);
+            tags.push(TAG_MAP[tagId]);
           }
         });
 
@@ -204,7 +201,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
           description,
           authors: [],
           artists: [],
-          tagKeys: tagKeys,
+          tags: tags,
           status,
           originalLanguageKey: ORIGINAL_LANGUAGE_MAP[type],
           numberUnread: 0,

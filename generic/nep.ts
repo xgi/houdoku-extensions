@@ -7,7 +7,6 @@ import {
   GetPageDataFunc,
   PageRequesterData,
   GetDirectoryFunc,
-  SeriesTagKey,
   FetchFunc,
   GetSettingsFunc,
   SetSettingsFunc,
@@ -36,44 +35,6 @@ const ORIGINAL_LANGUAGE_MAP: { [key: string]: LanguageKey } = {
   Doujinshi: LanguageKey.JAPANESE,
   OEL: LanguageKey.ENGLISH,
   "One-shot": LanguageKey.JAPANESE,
-};
-
-const TAG_MAP: { [key: string]: SeriesTagKey } = {
-  Action: SeriesTagKey.ACTION,
-  Adventure: SeriesTagKey.ADVENTURE,
-  Comedy: SeriesTagKey.COMEDY,
-  Drama: SeriesTagKey.DRAMA,
-  Fantasy: SeriesTagKey.FANTASY,
-  Historical: SeriesTagKey.HISTORICAL,
-  Horror: SeriesTagKey.HORROR,
-  Isekai: SeriesTagKey.ISEKAI,
-  Mecha: SeriesTagKey.MECHA,
-  Mystery: SeriesTagKey.MYSTERY,
-  Psychological: SeriesTagKey.PSYCHOLOGICAL,
-  Romance: SeriesTagKey.ROMANCE,
-  "Sci-fi": SeriesTagKey.SCI_FI,
-  "Shoujo Ai": SeriesTagKey.SHOUJO_AI,
-  "Shounen Ai": SeriesTagKey.SHOUNEN_AI,
-  "Slice of Life": SeriesTagKey.SLICE_OF_LIFE,
-  Sports: SeriesTagKey.SPORTS,
-  Tragedy: SeriesTagKey.TRAGEDY,
-  Yaoi: SeriesTagKey.YAOI,
-  Yuri: SeriesTagKey.YURI,
-  "Gender Bender": SeriesTagKey.GENDERSWAP,
-  Harem: SeriesTagKey.HAREM,
-  Lolicon: SeriesTagKey.LOLI,
-  "Martial Arts": SeriesTagKey.MARTIAL_ARTS,
-  "School Life": SeriesTagKey.SCHOOL_LIFE,
-  Shotacon: SeriesTagKey.SHOTA,
-  Supernatural: SeriesTagKey.SUPERNATURAL,
-  Doujinshi: SeriesTagKey.DOUJINSHI,
-  Adult: SeriesTagKey.PORNOGRAPHIC,
-  Ecchi: SeriesTagKey.ECCHI,
-  Smut: SeriesTagKey.SMUT,
-  Shounen: SeriesTagKey.SHOUNEN,
-  Seinen: SeriesTagKey.SEINEN,
-  Shoujo: SeriesTagKey.SHOUJO,
-  Josei: SeriesTagKey.JOSEI,
 };
 
 type DirectoryEntry = {
@@ -141,7 +102,7 @@ export class NepClient {
         description: "",
         authors: [],
         artists: [],
-        tagKeys: [],
+        tags: [],
         status: SeriesStatus.ONGOING,
         originalLanguageKey: LanguageKey.JAPANESE,
         numberUnread: 0,
@@ -231,14 +192,6 @@ export class NepClient {
           .parentNode!.getElementsByClassName("Content")![0]
           .textContent.trim();
 
-        const tagKeys: SeriesTagKey[] = [];
-
-        genreStrings.forEach((genreStr: string) => {
-          if (genreStr in TAG_MAP) {
-            tagKeys.push(TAG_MAP[genreStr]);
-          }
-        });
-
         const series: Series = {
           id: undefined,
           extensionId: this.extensionId,
@@ -249,7 +202,7 @@ export class NepClient {
           description: description,
           authors: authors,
           artists: [],
-          tagKeys: tagKeys,
+          tags: genreStrings,
           status: status,
           originalLanguageKey: originalLanguage,
           numberUnread: 0,
