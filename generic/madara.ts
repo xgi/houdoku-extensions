@@ -7,7 +7,6 @@ import {
   GetPageDataFunc,
   PageRequesterData,
   GetDirectoryFunc,
-  SeriesTagKey,
   WebviewFunc,
   FetchFunc,
   GetSettingsFunc,
@@ -24,62 +23,28 @@ import {
 import DOMParser from "dom-parser";
 import DomParser from "dom-parser";
 
-const SERIES_STATUS_MAP: { [key: string]: SeriesStatus } = {
-  OnGoing: SeriesStatus.ONGOING,
-  Completed: SeriesStatus.COMPLETED,
-};
-
-const TAG_MAP: { [key: string]: SeriesTagKey } = {
-  action: SeriesTagKey.ACTION,
-  adventure: SeriesTagKey.ADVENTURE,
-  comedy: SeriesTagKey.COMEDY,
-  crime: SeriesTagKey.CRIME,
-  drama: SeriesTagKey.DRAMA,
-  fantasy: SeriesTagKey.FANTASY,
-  historical: SeriesTagKey.HISTORICAL,
-  horror: SeriesTagKey.HORROR,
-  isekai: SeriesTagKey.ISEKAI,
-  mystery: SeriesTagKey.MYSTERY,
-  psychological: SeriesTagKey.PSYCHOLOGICAL,
-  romance: SeriesTagKey.ROMANCE,
-  scifi: SeriesTagKey.SCI_FI,
-  sliceoflife: SeriesTagKey.SLICE_OF_LIFE,
-  sports: SeriesTagKey.SPORTS,
-  thriller: SeriesTagKey.THRILLER,
-  tragedy: SeriesTagKey.TRAGEDY,
-  yaoi: SeriesTagKey.YAOI,
-  yuri: SeriesTagKey.YURI,
-  harem: SeriesTagKey.HAREM,
-  incest: SeriesTagKey.INCEST,
-  office: SeriesTagKey.OFFICE_WORKERS,
-  schoollife: SeriesTagKey.SCHOOL_LIFE,
-  supernatural: SeriesTagKey.SUPERNATURAL,
-  adult: SeriesTagKey.PORNOGRAPHIC,
-  shounen: SeriesTagKey.SHOUNEN,
-  seinen: SeriesTagKey.SEINEN,
-  shoujo: SeriesTagKey.SHOUJO,
-  josei: SeriesTagKey.JOSEI,
-};
-
 export class MadaraClient {
   fetchFn: FetchFunc;
   webviewFn: WebviewFunc;
   domParser: DOMParser;
   extensionId: string;
   baseUrl: string;
+  translatedLanguageKey: LanguageKey;
 
   constructor(
     extensionId: string,
     baseUrl: string,
     fetchFn: FetchFunc,
     webviewFn: WebviewFunc,
-    domParser: DOMParser
+    domParser: DOMParser,
+    translatedLanguageKey: LanguageKey = LanguageKey.ENGLISH
   ) {
     this.extensionId = extensionId;
     this.baseUrl = baseUrl;
     this.fetchFn = fetchFn;
     this.webviewFn = webviewFn;
     this.domParser = domParser;
+    this.translatedLanguageKey = translatedLanguageKey;
   }
 
   _parseSearch = (doc: DomParser.Dom): SeriesListResponse => {
@@ -114,7 +79,7 @@ export class MadaraClient {
       seriesList.push({
         id: undefined,
         extensionId: this.extensionId,
-        sourceId: `x:${sourceId}`,
+        sourceId: sourceId,
         sourceType: SeriesSourceType.STANDARD,
         title,
         altTitles: [],
@@ -134,7 +99,7 @@ export class MadaraClient {
   };
 
   getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.webviewFn(`${this.baseUrl}/${id.split(":").pop()}`).then(
+    return this.webviewFn(`${this.baseUrl}${id}`).then(
       (response: WebviewResponse) => {
         const doc = this.domParser.parseFromString(response.text);
 
@@ -142,21 +107,14 @@ export class MadaraClient {
           const titleContainer = doc.getElementsByClassName("post-title")![0];
           const title = titleContainer
             .getElementsByTagName("h1")![0]
-            .lastChild!.textContent.trim();
+            .textContent.trim();
 
           const detailsContainer =
             doc.getElementsByClassName("tab-summary")![0];
           const link = detailsContainer.getElementsByTagName("a")![0];
 
-          const href = link
-            .getAttribute("href")!
-            .split(`${this.baseUrl}`)
-            .pop()!;
-          const pageId = href.substr(0, href.length - 1);
-          const dataId = doc
-            .getElementsByClassName("wp-manga-action-button")![0]
-            .getAttribute("data-post")!;
-          const sourceId = `${dataId}:${pageId}`;
+          const href = link.getAttribute("href")!.split(this.baseUrl)[1];
+          const sourceId = href.substr(0, href.length - 1);
 
           const image = link.getElementsByTagName("img")![0];
           const remoteCoverUrl = (
@@ -167,55 +125,19 @@ export class MadaraClient {
               : image.getAttribute("srcset")!
           ).split(" ")[0];
 
-          const description = doc
-            .getElementsByClassName("description-summary")![0]
-            .textContent.trim();
-
-          const author = detailsContainer
-            ?.getElementsByClassName("author-content")![0]
-            ?.textContent.trim();
-          const artist = detailsContainer
-            ?.getElementsByClassName("artist-content")![0]
-            ?.textContent.trim();
-
-          const statusContainer =
-            detailsContainer.getElementsByClassName("post-status")![0];
-          const statusText = statusContainer
-            .getElementsByClassName("summary-content")!
-            .pop()!
-            .textContent.trim();
-
-          const tagKeys: SeriesTagKey[] = [];
-          const tagLinks = detailsContainer
-            .getElementsByClassName("genres-content")![0]
-            .getElementsByTagName("a")!;
-
-          Object.values(tagLinks).forEach((tagLink: DOMParser.Node) => {
-            const tagStr = tagLink.textContent
-              .trim()
-              .replace(" ", "")
-              .replace("-", "")
-              .toLowerCase();
-            if (tagStr !== undefined && tagStr in TAG_MAP) {
-              tagKeys.push(TAG_MAP[tagStr]);
-            }
-          });
-
           const series: Series = {
             id: undefined,
             extensionId: this.extensionId,
-            sourceId: sourceId || "",
+            sourceId: sourceId,
             sourceType: SeriesSourceType.STANDARD,
             title: title || "",
             altTitles: [],
-            description: description || "",
-            authors: author ? [author] : [],
-            artists: artist ? [artist] : [],
-            tagKeys: tagKeys,
-            status: statusText
-              ? SERIES_STATUS_MAP[statusText]
-              : SeriesStatus.ONGOING,
-            originalLanguageKey: LanguageKey.KOREAN,
+            description: "",
+            authors: [],
+            artists: [],
+            tagKeys: [],
+            status: SeriesStatus.ONGOING,
+            originalLanguageKey: LanguageKey.JAPANESE,
             numberUnread: 0,
             remoteCoverUrl: remoteCoverUrl || "",
           };
@@ -229,7 +151,7 @@ export class MadaraClient {
   };
 
   getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.webviewFn(`${this.baseUrl}${id.split(":")[1]}/ajax/chapters`, {
+    return this.webviewFn(`${this.baseUrl}${id}/ajax/chapters`, {
       postData: [
         {
           type: "rawData",
@@ -273,7 +195,7 @@ export class MadaraClient {
             title: title || "",
             chapterNumber: chapterNumber || "",
             volumeNumber: "",
-            languageKey: LanguageKey.ENGLISH,
+            languageKey: this.translatedLanguageKey,
             groupName: "",
             time: date.getTime(),
             read: false,
@@ -295,7 +217,7 @@ export class MadaraClient {
     chapterSourceId: string
   ) => {
     return this.webviewFn(
-      `${this.baseUrl}/${seriesSourceId.split(":").pop()}/${chapterSourceId}`
+      `${this.baseUrl}/${seriesSourceId}/${chapterSourceId}`
     ).then((response: WebviewResponse) => {
       const doc = this.domParser.parseFromString(response.text);
       const imgContainers = doc.getElementsByClassName("wp-manga-chapter-img")!;
