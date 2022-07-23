@@ -91,19 +91,22 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.fetchFn(`${BASE_URL}/g/${id}`)
-      .then((response: Response) => response.text())
-      .then((data: string) => {
-        const doc = this.domParser.parseFromString(data);
+    return this.webviewFn(`${BASE_URL}/g/${id}`).then(
+      (response: WebviewResponse) => {
+        const doc = this.domParser.parseFromString(response.text);
 
-        const title = doc
-          .getElementsByTagName("h1")![0]
+        const titleElements = doc.getElementsByClassName("title")!;
+        const title = titleElements[0]
           .getElementsByClassName("pretty")![0]
           .textContent.trim();
-        const altTitle = doc
-          .getElementsByTagName("h2")![0]
-          .getElementsByClassName("pretty")![0]
-          .textContent.trim();
+        const altTitles =
+          titleElements.length > 1
+            ? [
+                titleElements[1]
+                  .getElementsByClassName("pretty")![0]
+                  .textContent.trim(),
+              ]
+            : [];
 
         const img = doc
           .getElementById("cover")!
@@ -134,7 +137,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
           sourceId: id,
           sourceType: SeriesSourceType.STANDARD,
           title: title,
-          altTitles: [altTitle],
+          altTitles: altTitles,
           description: description,
           authors: artists || [],
           artists: artists || [],
@@ -145,14 +148,14 @@ export class ExtensionClient extends ExtensionClientAbstract {
           remoteCoverUrl: img.getAttribute("src")!,
         };
         return series;
-      });
+      }
+    );
   };
 
   getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.fetchFn(`${BASE_URL}/g/${id}`)
-      .then((response: Response) => response.text())
-      .then((data: string) => {
-        const doc = this.domParser.parseFromString(data);
+    return this.webviewFn(`${BASE_URL}/g/${id}`).then(
+      (response: WebviewResponse) => {
+        const doc = this.domParser.parseFromString(response.text);
 
         const timeStr = doc
           .getElementsByTagName("time")![0]
@@ -195,7 +198,8 @@ export class ExtensionClient extends ExtensionClientAbstract {
             read: false,
           },
         ];
-      });
+      }
+    );
   };
 
   getPageRequesterData: GetPageRequesterDataFunc = (
@@ -236,12 +240,12 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getDirectory: GetDirectoryFunc = (page: number) => {
-    return this.fetchFn(`${BASE_URL}/?page=${page}`)
-      .then((response: Response) => response.text())
-      .then((data: string) => {
-        const doc = this.domParser.parseFromString(data);
+    return this.webviewFn(`${BASE_URL}/?page=${page}`).then(
+      (response: WebviewResponse) => {
+        const doc = this.domParser.parseFromString(response.text);
         return parseDirectoryResponse(doc);
-      });
+      }
+    );
   };
 
   getSearch: GetSearchFunc = (
@@ -249,7 +253,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
     params: { [key: string]: string },
     page: number
   ) => {
-    return this.webviewFn(`${BASE_URL}/page/${page}/?s=${text}`).then(
+    return this.webviewFn(`${BASE_URL}/search/?page=${page}&q=${text}`).then(
       (response: WebviewResponse) => {
         const doc = this.domParser.parseFromString(response.text);
         return parseDirectoryResponse(doc);
