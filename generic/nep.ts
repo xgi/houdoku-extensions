@@ -106,7 +106,7 @@ export class NepClient {
         status: SeriesStatus.ONGOING,
         originalLanguageKey: LanguageKey.JAPANESE,
         numberUnread: 0,
-        remoteCoverUrl: `https://cover.nep.li/cover/${entry.indexName}.jpg`,
+        remoteCoverUrl: `https://temp.compsci88.com/cover/${entry.indexName}.jpg`,
       };
     });
   };
@@ -206,7 +206,7 @@ export class NepClient {
           status: status,
           originalLanguageKey: originalLanguage,
           numberUnread: 0,
-          remoteCoverUrl: `https://cover.nep.li/cover/${id}.jpg`,
+          remoteCoverUrl: `https://temp.compsci88.com/cover/${id}.jpg`,
         };
         return series;
       }
