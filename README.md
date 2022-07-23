@@ -41,6 +41,19 @@ Utility scripts are provided in `/scripts`:
 ./scripts/manual-install-all.sh INSTALL_DIR
 ```
 
+### Testing
+
+```bash
+# Run all tests for all extensions
+npm run test
+
+# Run all tests for a specific extension
+npm run test-base -- test/extensions/guya.test.ts
+
+# Run specific tests for a specific extension
+npm run test-base -- test/extensions/guya.test.ts --grep "directory has"
+```
+
 ### Dependencies
 
 Because of the way that extensions are loaded while Houdoku is running,

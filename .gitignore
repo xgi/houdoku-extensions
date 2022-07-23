@@ -1,5 +1,7 @@
-.vscode
+.vscode/*
 node_modules
+coverage/
+.nyc_output/
 dist/
 extensions/*/package.json
 extensions/*/tsconfig.json
