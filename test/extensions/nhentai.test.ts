@@ -1,5 +1,5 @@
 import * as assert from "assert";
-import { ExtensionClient } from "../../extensions/guya";
+import { ExtensionClient } from "../../extensions/nhentai";
 import { hasSeries, matchesSeries } from "../util/helpers";
 import {
   ExtensionEnv,
@@ -8,34 +8,30 @@ import {
 } from "../util/base";
 import { SeriesSourceType } from "houdoku-extension-lib";
 
-describe("guya", () => {
+describe("nhentai", () => {
   let env: ExtensionEnv;
 
   before(() => (env = createExtensionEnv(ExtensionClient)));
 
-  it("directory has kaguya-sama", async () => {
-    const response = await env.extensionClient.getDirectory(1);
+  it("search has METAMORPHOSIS", async () => {
+    const response = await env.extensionClient.getSearch(
+      "metamorphosis shindol",
+      {},
+      1
+    );
     const actual = hasSeries(response.seriesList, {
-      title: "Kaguya-sama: Love is War",
+      title: "[ShindoLA] METAMORPHOSIS (Complete) [English]",
     });
     assert.equal(actual, true);
   });
 
-  it("search has kaguya-sama", async () => {
-    const response = await env.extensionClient.getSearch("", {}, 1);
-    const actual = hasSeries(response.seriesList, {
-      title: "Kaguya-sama: Love is War",
-    });
-    assert.equal(actual, true);
-  });
-
-  it("get series kaguya-sama", async () => {
+  it("get series METAMORPHOSIS", async () => {
     const response = await env.extensionClient.getSeries(
       SeriesSourceType.STANDARD,
-      "Kaguya-Wants-To-Be-Confessed-To"
+      "177013"
     );
     const actual = matchesSeries(response, {
-      title: "Kaguya-sama: Love is War",
+      title: "METAMORPHOSIS",
     });
     assert.equal(actual, true);
   });

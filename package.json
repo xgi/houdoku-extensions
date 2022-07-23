@@ -3,8 +3,8 @@
   "description": "Extensions for Houdoku, a manga reader for the desktop",
   "version": "1.0.0",
   "scripts": {
-    "test-base": "nyc electron-mocha -r ts-node/register --timeout 5000",
-    "test": "npm run test-base -- test/**/*.test.ts"
+    "test-base": "nyc electron-mocha -r ts-node/register --timeout 8000",
+    "test": "npm run test-base -- --retries 3 test/**/*.test.ts"
   },
   "repository": {
     "type": "git",

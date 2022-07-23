@@ -35,6 +35,7 @@ export const loadInWebView = async (
         });
     };
 
+    spoofWindow.webContents.session.clearStorageData({ storages: ["cookies"] });
     spoofWindow.webContents.removeAllListeners("did-finish-load");
     spoofWindow.webContents.on("did-finish-load", () => handleFrame());
 

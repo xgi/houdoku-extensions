@@ -1,5 +1,5 @@
 import * as assert from "assert";
-import { ExtensionClient } from "../../extensions/guya";
+import { ExtensionClient } from "../../extensions/kireicake";
 import { hasSeries, matchesSeries } from "../util/helpers";
 import {
   ExtensionEnv,
@@ -8,34 +8,26 @@ import {
 } from "../util/base";
 import { SeriesSourceType } from "houdoku-extension-lib";
 
-describe("guya", () => {
+describe("kireicake", () => {
   let env: ExtensionEnv;
 
   before(() => (env = createExtensionEnv(ExtensionClient)));
 
-  it("directory has kaguya-sama", async () => {
-    const response = await env.extensionClient.getDirectory(1);
+  it("search has Frieren at the Funeral", async () => {
+    const response = await env.extensionClient.getSearch("frieren", {}, 1);
     const actual = hasSeries(response.seriesList, {
-      title: "Kaguya-sama: Love is War",
+      title: "Frieren at the Funeral",
     });
     assert.equal(actual, true);
   });
 
-  it("search has kaguya-sama", async () => {
-    const response = await env.extensionClient.getSearch("", {}, 1);
-    const actual = hasSeries(response.seriesList, {
-      title: "Kaguya-sama: Love is War",
-    });
-    assert.equal(actual, true);
-  });
-
-  it("get series kaguya-sama", async () => {
+  it("get series Frieren at the Funeral", async () => {
     const response = await env.extensionClient.getSeries(
       SeriesSourceType.STANDARD,
-      "Kaguya-Wants-To-Be-Confessed-To"
+      "frieren_at_the_funeral"
     );
     const actual = matchesSeries(response, {
-      title: "Kaguya-sama: Love is War",
+      title: "Frieren at the Funeral",
     });
     assert.equal(actual, true);
   });
