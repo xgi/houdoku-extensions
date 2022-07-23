@@ -19,13 +19,13 @@ import {
 } from "houdoku-extension-lib";
 import DOMParser from "dom-parser";
 import metadata from "./metadata.json";
-import { FoolSlideClient } from "../../generic/foolslide";
+import { MadaraClient } from "../../generic/madara";
 import { parseMetadata } from "../../util/configuring";
 
 export const METADATA: ExtensionMetadata = parseMetadata(metadata);
 
 export class ExtensionClient extends ExtensionClientAbstract {
-  foolslideClient: FoolSlideClient;
+  madaraClient: MadaraClient;
 
   constructor(
     fetchFn: FetchFunc,
@@ -33,12 +33,12 @@ export class ExtensionClient extends ExtensionClientAbstract {
     domParser: DOMParser
   ) {
     super(fetchFn, webviewFn, domParser);
-    this.foolslideClient = new FoolSlideClient(
+    this.madaraClient = new MadaraClient(
       METADATA.id,
-      "http://zandynofansub.aishiteru.org/reader",
+      METADATA.url,
       fetchFn,
-      domParser,
-      METADATA.translatedLanguage
+      webviewFn,
+      domParser
     );
   }
 
@@ -47,42 +47,42 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) =>
-    this.foolslideClient.getSeries(sourceType, id);
+    this.madaraClient.getSeries(sourceType, id);
 
   getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) =>
-    this.foolslideClient.getChapters(sourceType, id);
+    this.madaraClient.getChapters(sourceType, id);
 
   getPageRequesterData: GetPageRequesterDataFunc = (
     sourceType: SeriesSourceType,
     seriesSourceId: string,
     chapterSourceId: string
   ) =>
-    this.foolslideClient.getPageRequesterData(
+    this.madaraClient.getPageRequesterData(
       sourceType,
       seriesSourceId,
       chapterSourceId
     );
 
   getPageUrls: GetPageUrlsFunc = (pageRequesterData: PageRequesterData) =>
-    this.foolslideClient.getPageUrls(pageRequesterData);
+    this.madaraClient.getPageUrls(pageRequesterData);
 
   getPageData: GetPageDataFunc = (series: Series, url: string) =>
-    this.foolslideClient.getPageData(series, url);
+    this.madaraClient.getPageData(series, url);
 
   getSearch: GetSearchFunc = (
     text: string,
     params: { [key: string]: string },
     page: number
-  ) => this.foolslideClient.getSearch(text, params, page);
+  ) => this.madaraClient.getSearch(text, params, page);
 
   getDirectory: GetDirectoryFunc = (page: number) =>
-    this.foolslideClient.getDirectory(page);
+    this.madaraClient.getDirectory(page);
 
   getSettingTypes: GetSettingTypesFunc = () =>
-    this.foolslideClient.getSettingTypes();
+    this.madaraClient.getSettingTypes();
 
-  getSettings: GetSettingsFunc = () => this.foolslideClient.getSettings();
+  getSettings: GetSettingsFunc = () => this.madaraClient.getSettings();
 
   setSettings: SetSettingsFunc = (newSettings: { [key: string]: any }) =>
-    this.foolslideClient.setSettings(newSettings);
+    this.madaraClient.setSettings(newSettings);
 }
