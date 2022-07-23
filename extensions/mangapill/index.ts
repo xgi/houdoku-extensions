@@ -49,7 +49,7 @@ const parseSeriesGrid = (root: DOMParser.Node): Series[] => {
         extensionId: METADATA.id,
         sourceId: sourceId,
         sourceType: SeriesSourceType.STANDARD,
-        title: link.textContent,
+        title: link.textContent.trim(),
         altTitles: [],
         description: "",
         authors: [],
@@ -88,13 +88,12 @@ export class ExtensionClient extends ExtensionClientAbstract {
         const parent = img.parentNode!.parentNode!;
         const detailsContainer = parent.getElementsByClassName("flex")![0];
 
-        const title =
-          detailsContainer.getElementsByTagName("h1")![0].textContent;
+        const title = detailsContainer
+          .getElementsByTagName("h1")![0]
+          .textContent.trim();
         const description = detailsContainer
           .getElementsByTagName("p")![0]
           .textContent.trim();
-
-        console.log(detailsContainer.innerHTML);
 
         const cells = detailsContainer
           .getElementsByClassName("grid")![0]
