@@ -23,7 +23,6 @@ import {
   SeriesSourceType,
   SeriesStatus,
 } from "houdoku-extension-lib";
-import { Response } from "node-fetch";
 import DOMParser from "dom-parser";
 import metadata from "./metadata.json";
 import { parseMetadata } from "../../util/configuring";
