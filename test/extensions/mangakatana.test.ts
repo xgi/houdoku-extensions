@@ -13,10 +13,18 @@ describe("mangakatana", () => {
 
   before(() => (env = createExtensionEnv(ExtensionClient)));
 
-  it("search has Meshinuma", async () => {
+  it("search for Meshinuma redirects to series page", async () => {
     const response = await env.extensionClient.getSearch("meshinuma", {}, 1);
     const actual = hasSeries(response.seriesList, {
       title: "Meshinuma",
+    });
+    assert.equal(actual, true);
+  });
+
+  it("search for Please Save My Earth", async () => {
+    const response = await env.extensionClient.getSearch("please", {}, 1);
+    const actual = hasSeries(response.seriesList, {
+      title: "Please Save My Earth",
     });
     assert.equal(actual, true);
   });

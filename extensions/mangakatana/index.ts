@@ -31,8 +31,70 @@ export const METADATA: ExtensionMetadata = parseMetadata(metadata);
 
 const SERIES_STATUS_MAP: { [key: string]: SeriesStatus } = {};
 
+const parseSeriesPage = (doc: DOMParser.Dom): Series => {
+  const id = doc
+    .getElementsByAttribute("property", "og:url")![0]
+    .getAttribute("content")
+    .split("/")
+    .pop();
+  const infoContainer = doc.getElementById("single_book")!;
+  const title = infoContainer.getElementsByTagName("h1")![0].textContent.trim();
+  const description = infoContainer
+    .getElementsByClassName("summary")![0]
+    .getElementsByTagName("p")![0]
+    .textContent.trim();
+  const img = infoContainer.getElementsByTagName("img")![0];
+  const rows = infoContainer.getElementsByClassName("d-row-small")!;
+
+  const altNamesRow = rows.find((row: DOMParser.Node) =>
+    row.textContent.includes("Alt name(s):")
+  );
+  const altNames = altNamesRow
+    ?.getElementsByClassName("value")![0]
+    .textContent!.trim()
+    .split(" ; ")!;
+
+  const statusStr =
+    infoContainer?.getElementsByClassName("value status")![0].textContent!;
+
+  const authors = infoContainer
+    .getElementsByClassName("value authors")![0]
+    .getElementsByTagName("a")!
+    .map((link) => link.textContent);
+
+  const tags = infoContainer
+    .getElementsByClassName("genres")![0]
+    .getElementsByTagName("a")!
+    .map((genreLink) => genreLink.textContent);
+
+  const series: Series = {
+    extensionId: METADATA.id,
+    sourceId: id,
+    sourceType: SeriesSourceType.STANDARD,
+    title: title,
+    altTitles: altNames,
+    description: description,
+    authors: authors,
+    artists: [],
+    tags: tags,
+    status: SERIES_STATUS_MAP[statusStr],
+    originalLanguageKey: LanguageKey.JAPANESE,
+    numberUnread: 0,
+    remoteCoverUrl: img.getAttribute("src")!,
+  };
+  return series;
+};
+
 const parseDirectoryResponse = (doc: DOMParser.Dom): SeriesListResponse => {
   const container = doc.getElementById("book_list")!;
+
+  if (container === null) {
+    return {
+      seriesList: [parseSeriesPage(doc)],
+      hasMore: false,
+    };
+  }
+
   const items = container.getElementsByClassName("item")!;
   const hasMore =
     container.getElementsByClassName("next page-numbers")!.length > 0;
@@ -87,56 +149,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
       .then((response) => response.text())
       .then((data: string) => {
         const doc = this.domParser.parseFromString(data);
-
-        const infoContainer = doc.getElementById("single_book")!;
-        const title = infoContainer
-          .getElementsByTagName("h1")![0]
-          .textContent.trim();
-        const description = infoContainer
-          .getElementsByClassName("summary")![0]
-          .getElementsByTagName("p")![0]
-          .textContent.trim();
-        const img = infoContainer.getElementsByTagName("img")![0];
-        const rows = infoContainer.getElementsByClassName("d-row-small")!;
-
-        const altNamesRow = rows.find((row: DOMParser.Node) =>
-          row.textContent.includes("Alt name(s):")
-        );
-        const altNames = altNamesRow
-          ?.getElementsByClassName("value")![0]
-          .textContent!.trim()
-          .split(" ; ")!;
-
-        const statusStr =
-          infoContainer?.getElementsByClassName("value status")![0]
-            .textContent!;
-
-        const authors = infoContainer
-          .getElementsByClassName("value authors")![0]
-          .getElementsByTagName("a")!
-          .map((link) => link.textContent);
-
-        const tags = infoContainer
-          .getElementsByClassName("genres")![0]
-          .getElementsByTagName("a")!
-          .map((genreLink) => genreLink.textContent);
-
-        const series: Series = {
-          extensionId: METADATA.id,
-          sourceId: id,
-          sourceType: SeriesSourceType.STANDARD,
-          title: title,
-          altTitles: altNames,
-          description: description,
-          authors: authors,
-          artists: [],
-          tags: tags,
-          status: SERIES_STATUS_MAP[statusStr],
-          originalLanguageKey: LanguageKey.JAPANESE,
-          numberUnread: 0,
-          remoteCoverUrl: img.getAttribute("src")!,
-        };
-        return series;
+        return parseSeriesPage(doc);
       });
   };
 
@@ -221,7 +234,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
     params: { [key: string]: string },
     page: number
   ) => {
-    return this.fetchFn(`${BASE_URL}/page/${page}/?s=${text}`)
+    return this.fetchFn(`${BASE_URL}/page/${page}/?search=${text}`)
       .then((response) => response.text())
       .then((data: string) => {
         const doc = this.domParser.parseFromString(data);
