@@ -13,14 +13,6 @@ describe("yuriism", () => {
 
   before(() => (env = createExtensionEnv(ExtensionClient)));
 
-  it("search has Bakemonogatari", async () => {
-    const response = await env.extensionClient.getSearch("bakemonogatari", {}, 1);
-    const actual = hasSeries(response.seriesList, {
-      title: "Bakemonogatari",
-    });
-    assert.equal(actual, true);
-  });
-
   it("get series Bakemonogatari", async () => {
     const response = await env.extensionClient.getSeries(
       SeriesSourceType.STANDARD,
