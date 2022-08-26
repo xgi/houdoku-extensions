@@ -42,7 +42,7 @@ type DirectoryEntry = {
   seriesName: string;
 };
 
-const PAGE_SIZE = 24;
+const PAGE_SIZE = 48;
 
 export class NepClient {
   fetchFn: FetchFunc;

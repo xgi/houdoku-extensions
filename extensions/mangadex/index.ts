@@ -98,7 +98,7 @@ const DEFAULT_SETTINGS = {
   [SETTING_NAMES.INCLUDE_PORNOGRAPHIC]: false,
 };
 
-const PAGE_SIZE = 24;
+const PAGE_SIZE = 48;
 
 type ParsedResults = {
   seriesList: Series[];
