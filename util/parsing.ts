@@ -1,7 +1,5 @@
-import DOMParser from "dom-parser";
-
-export const findNodeWithText = (nodes: DOMParser.Node[], text: string) => {
-  return nodes.find((node: DOMParser.Node) =>
-    node.textContent.toLowerCase().includes(text.toLowerCase())
+export const findElementWithText = (elements: HTMLCollectionOf<Element>, text: string) => {
+  return Array.from(elements).find((element: Element) =>
+    element.textContent.toLowerCase().includes(text.toLowerCase())
   );
 };

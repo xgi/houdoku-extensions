@@ -32,5 +32,5 @@ for EXTENSION_DIR in ../extensions/*/; do
 
   # somewhat overkill for the modules each extension actually needs,
   # but shouldn't take too much extra space
-  rsync -r ../node_modules $INSTALL_PATH --exclude 'typescript' --exclude '.bin'
+  rsync -r ../node_modules $INSTALL_PATH --exclude 'typescript' --exclude 'electron' --exclude '.bin'
 done

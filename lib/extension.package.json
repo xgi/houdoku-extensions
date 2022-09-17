@@ -16,13 +16,11 @@
     "ts"
   ],
   "dependencies": {
-    "houdoku-extension-lib": "^1.7.1",
-    "@types/node-fetch": "^2.5.10",
-    "@types/dom-parser": "^0.1.1"
+    "houdoku-extension-lib": "^1.8.0",
+    "@types/node-fetch": "^2.5.10"
   },
   "devDependencies": {
     "typescript": "^4.2.4",
-    "node-fetch": "^2.6.7",
-    "dom-parser": "^0.1.6"
+    "node-fetch": "^2.6.7"
   }
 }
