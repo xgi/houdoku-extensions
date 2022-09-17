@@ -8,8 +8,6 @@ import {
   ExtensionMetadata,
   GetDirectoryFunc,
   ExtensionClientAbstract,
-  FetchFunc,
-  WebviewFunc,
   Series,
   PageRequesterData,
   SeriesSourceType,
@@ -17,29 +15,19 @@ import {
   GetSettingsFunc,
   GetSettingTypesFunc,
 } from "houdoku-extension-lib";
-import DOMParser from "dom-parser";
 import metadata from "./metadata.json";
 import { parseMetadata } from "../../util/configuring";
 import { NepClient } from "../../generic/nep";
+import { UtilFunctions } from "houdoku-extension-lib/dist/interface";
 
 export const METADATA: ExtensionMetadata = parseMetadata(metadata);
 
 export class ExtensionClient extends ExtensionClientAbstract {
   nepClient: NepClient;
 
-  constructor(
-    fetchFn: FetchFunc,
-    webviewFn: WebviewFunc,
-    domParser: DOMParser
-  ) {
-    super(fetchFn, webviewFn, domParser);
-    this.nepClient = new NepClient(
-      METADATA.id,
-      METADATA.url,
-      fetchFn,
-      webviewFn,
-      domParser
-    );
+  constructor(utilsFn: UtilFunctions) {
+    super(utilsFn);
+    this.nepClient = new NepClient(METADATA.id, METADATA.url, utilsFn);
   }
 
   getMetadata: () => ExtensionMetadata = () => {
@@ -56,12 +44,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
     sourceType: SeriesSourceType,
     seriesSourceId: string,
     chapterSourceId: string
-  ) =>
-    this.nepClient.getPageRequesterData(
-      sourceType,
-      seriesSourceId,
-      chapterSourceId
-    );
+  ) => this.nepClient.getPageRequesterData(sourceType, seriesSourceId, chapterSourceId);
 
   getPageUrls: GetPageUrlsFunc = (pageRequesterData: PageRequesterData) =>
     this.nepClient.getPageUrls(pageRequesterData);
@@ -69,14 +52,10 @@ export class ExtensionClient extends ExtensionClientAbstract {
   getPageData: GetPageDataFunc = (series: Series, url: string) =>
     this.nepClient.getPageData(series, url);
 
-  getSearch: GetSearchFunc = (
-    text: string,
-    params: { [key: string]: string },
-    page: number
-  ) => this.nepClient.getSearch(text, params, page);
+  getSearch: GetSearchFunc = (text: string, params: { [key: string]: string }, page: number) =>
+    this.nepClient.getSearch(text, params, page);
 
-  getDirectory: GetDirectoryFunc = (page: number) =>
-    this.nepClient.getDirectory(page);
+  getDirectory: GetDirectoryFunc = (page: number) => this.nepClient.getDirectory(page);
 
   getSettingTypes: GetSettingTypesFunc = () => this.nepClient.getSettingTypes();
 

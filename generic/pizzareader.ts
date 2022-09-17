@@ -7,8 +7,6 @@ import {
   GetPageDataFunc,
   PageRequesterData,
   GetDirectoryFunc,
-  WebviewFunc,
-  FetchFunc,
   GetSettingsFunc,
   SetSettingsFunc,
   GetSettingTypesFunc,
@@ -18,6 +16,7 @@ import {
   SeriesSourceType,
   SeriesStatus,
 } from "houdoku-extension-lib";
+import { UtilFunctions } from "houdoku-extension-lib/dist/interface";
 import { Response } from "node-fetch";
 
 const LANGUAGE_MAP: { [key: string]: LanguageKey } = {
@@ -63,15 +62,14 @@ const SERIES_STATUS_MAP: { [key: string]: SeriesStatus } = {
 };
 
 export class PizzaReaderClient {
-  fetchFn: FetchFunc;
-  webviewFn: WebviewFunc;
   extensionId: string;
   baseUrl: string;
+  util: UtilFunctions;
 
-  constructor(extensionId: string, baseUrl: string, fetchFn: FetchFunc) {
+  constructor(extensionId: string, baseUrl: string, utilFns: UtilFunctions) {
     this.extensionId = extensionId;
     this.baseUrl = baseUrl;
-    this.fetchFn = fetchFn;
+    this.util = utilFns;
   }
 
   _parseSeries = (entry: any): Series => {
@@ -86,8 +84,7 @@ export class PizzaReaderClient {
       authors: [entry.author],
       artists: [entry.artist],
       tags: entry.genres ? entry.genres.map((genre: any) => genre.name) : [],
-      status:
-        SERIES_STATUS_MAP[entry.status.substr(0, 7)] || SeriesStatus.ONGOING,
+      status: SERIES_STATUS_MAP[entry.status.substr(0, 7)] || SeriesStatus.ONGOING,
       originalLanguageKey: LanguageKey.JAPANESE,
       numberUnread: 0,
       remoteCoverUrl: entry.thumbnail,
@@ -95,7 +92,8 @@ export class PizzaReaderClient {
   };
 
   getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.fetchFn(`${this.baseUrl}/api/comics/${id}`)
+    return this.util
+      .fetchFn(`${this.baseUrl}/api/comics/${id}`)
       .then((response: Response) => response.json())
       .then((data: any) => {
         return this._parseSeries(data.comic);
@@ -103,7 +101,8 @@ export class PizzaReaderClient {
   };
 
   getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.fetchFn(`${this.baseUrl}/api/comics/${id}`)
+    return this.util
+      .fetchFn(`${this.baseUrl}/api/comics/${id}`)
       .then((response: Response) => response.json())
       .then((data: any) => {
         return data.comic.chapters.map(
@@ -116,10 +115,7 @@ export class PizzaReaderClient {
               chapterNumber: entry.chapter || "",
               volumeNumber: entry.volume || "",
               languageKey: LANGUAGE_MAP[entry.language],
-              groupName:
-                entry.teams && entry.teams.length > 0
-                  ? entry.teams[0].name
-                  : "",
+              groupName: entry.teams && entry.teams.length > 0 ? entry.teams[0].name : "",
               time: new Date(entry.published_on).getTime(),
               read: false,
             } as Chapter)
@@ -132,7 +128,8 @@ export class PizzaReaderClient {
     seriesSourceId: string,
     chapterSourceId: string
   ) => {
-    return this.fetchFn(`${this.baseUrl}/api${chapterSourceId}`)
+    return this.util
+      .fetchFn(`${this.baseUrl}/api${chapterSourceId}`)
       .then((response: Response) => response.json())
       .then((data: any) => {
         const pageUrls = data.chapter.pages;
@@ -155,17 +152,12 @@ export class PizzaReaderClient {
     });
   };
 
-  getSearch: GetSearchFunc = (
-    text: string,
-    params: { [key: string]: string },
-    page: number
-  ) => {
-    return this.fetchFn(`${this.baseUrl}/api/search/${text}`)
+  getSearch: GetSearchFunc = (text: string, params: { [key: string]: string }, page: number) => {
+    return this.util
+      .fetchFn(`${this.baseUrl}/api/search/${text}`)
       .then((response: Response) => response.json())
       .then((data: any) => {
-        const seriesList = data.comics.map((entry: any) =>
-          this._parseSeries(entry)
-        );
+        const seriesList = data.comics.map((entry: any) => this._parseSeries(entry));
         return {
           seriesList,
           hasMore: false,
@@ -174,12 +166,11 @@ export class PizzaReaderClient {
   };
 
   getDirectory: GetDirectoryFunc = (page: number) => {
-    return this.fetchFn(`${this.baseUrl}/api/comics`)
+    return this.util
+      .fetchFn(`${this.baseUrl}/api/comics`)
       .then((response: Response) => response.json())
       .then((data: any) => {
-        const seriesList = data.comics.map((entry: any) =>
-          this._parseSeries(entry)
-        );
+        const seriesList = data.comics.map((entry: any) => this._parseSeries(entry));
         return {
           seriesList,
           hasMore: false,

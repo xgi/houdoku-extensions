@@ -32,7 +32,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.fetchFn(`https://guya.moe/api/series/${id}`)
+    return this.utilFns.fetchFn(`https://guya.moe/api/series/${id}`)
       .then((response: Response) => response.json())
       .then((json: any) => {
         const series: Series = {
@@ -56,7 +56,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.fetchFn(`https://guya.moe/api/series/${id}`)
+    return this.utilFns.fetchFn(`https://guya.moe/api/series/${id}`)
       .then((response: Response) => response.json())
       .then((json: any) => {
         const chapters: Chapter[] = [];
@@ -91,7 +91,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
     seriesSourceId: string,
     chapterSourceId: string
   ) => {
-    return this.fetchFn(`https://guya.moe/api/series/${seriesSourceId}`)
+    return this.utilFns.fetchFn(`https://guya.moe/api/series/${seriesSourceId}`)
       .then((response: Response) => response.json())
       .then((json: any) => {
         const chapterNum = chapterSourceId.split(":")[0];
@@ -126,7 +126,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getDirectory: GetDirectoryFunc = (page: number) => {
-    return this.fetchFn(`https://guya.moe/api/get_all_series`)
+    return this.utilFns.fetchFn(`https://guya.moe/api/get_all_series`)
       .then((response: Response) => response.json())
       .then((json: any) => {
         const seriesList: Series[] = [];

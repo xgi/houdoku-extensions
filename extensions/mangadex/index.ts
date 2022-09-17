@@ -15,16 +15,14 @@ import {
   SeriesStatus,
   ExtensionClientAbstract,
   GetSettingsFunc,
-  FetchFunc,
-  WebviewFunc,
   SetSettingsFunc,
   GetSettingTypesFunc,
   SettingType,
 } from "houdoku-extension-lib";
 import { Response } from "node-fetch";
-import DOMParser from "dom-parser";
 import metadata from "./metadata.json";
 import { parseMetadata } from "../../util/configuring";
+import { UtilFunctions } from "houdoku-extension-lib/dist/interface";
 
 export const METADATA: ExtensionMetadata = parseMetadata(metadata);
 
@@ -111,9 +109,7 @@ const _parseMangaResults = (json: any): ParsedResults => {
   }
 
   const seriesList = json.data.map((result: any) => {
-    const tags: string[] = result.attributes.tags.map(
-      (tag: any) => tag.attributes.name.en
-    );
+    const tags: string[] = result.attributes.tags.map((tag: any) => tag.attributes.name.en);
     if (result.attributes.publicationDemographic !== null) {
       tags.push(result.attributes.publicationDemographic);
     }
@@ -125,8 +121,7 @@ const _parseMangaResults = (json: any): ParsedResults => {
 
     const coverRelationship = result.relationships.find(
       (relationship: any) =>
-        relationship.type === "cover_art" &&
-        relationship.attributes !== undefined
+        relationship.type === "cover_art" && relationship.attributes !== undefined
     );
     const remoteCoverUrl =
       coverRelationship !== undefined
@@ -139,22 +134,18 @@ const _parseMangaResults = (json: any): ParsedResults => {
       sourceId: result.id,
       sourceType: SeriesSourceType.STANDARD,
       title,
-      altTitles: result.attributes.altTitles.map(
-        (altTitleCont: any) => altTitleCont.en
-      ),
+      altTitles: result.attributes.altTitles.map((altTitleCont: any) => altTitleCont.en),
       description: result.attributes.description.en,
       authors: result.relationships
         .filter(
           (relationship: any) =>
-            relationship.type === "author" &&
-            relationship.attributes !== undefined
+            relationship.type === "author" && relationship.attributes !== undefined
         )
         .map((relationship: any) => relationship.attributes.name),
       artists: result.relationships
         .filter(
           (relationship: any) =>
-            relationship.type === "artist" &&
-            relationship.attributes !== undefined
+            relationship.type === "artist" && relationship.attributes !== undefined
         )
         .map((relationship: any) => relationship.attributes.name),
       tags: tags,
@@ -178,21 +169,14 @@ const _getContentRatingsStr = (settings: { [key: string]: any }) => {
   if (settings[SETTING_NAMES.INCLUDE_SAFE]) contentRatings.push("safe");
   if (settings[SETTING_NAMES.INCLUDE_ECCHI]) contentRatings.push("suggestive");
   if (settings[SETTING_NAMES.INCLUDE_SMUT]) contentRatings.push("erotica");
-  if (settings[SETTING_NAMES.INCLUDE_PORNOGRAPHIC])
-    contentRatings.push("pornographic");
+  if (settings[SETTING_NAMES.INCLUDE_PORNOGRAPHIC]) contentRatings.push("pornographic");
 
-  return contentRatings
-    .map((rating: string) => `contentRating[]=${rating}`)
-    .join("&");
+  return contentRatings.map((rating: string) => `contentRating[]=${rating}`).join("&");
 };
 
 export class ExtensionClient extends ExtensionClientAbstract {
-  constructor(
-    fetchFn: FetchFunc,
-    webviewFn: WebviewFunc,
-    domParser: DOMParser
-  ) {
-    super(fetchFn, webviewFn, domParser);
+  constructor(utilFns: UtilFunctions) {
+    super(utilFns);
     this.settings = DEFAULT_SETTINGS;
   }
 
@@ -201,40 +185,32 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.fetchFn(
-      `https://api.mangadex.org/manga?ids[]=${id}&includes[]=artist&includes[]=author&includes[]=cover_art`
-    )
+    return this.utilFns
+      .fetchFn(
+        `https://api.mangadex.org/manga?ids[]=${id}&includes[]=artist&includes[]=author&includes[]=cover_art`
+      )
       .then((response: Response) => response.json())
       .then((json: any) => {
         const results: ParsedResults = _parseMangaResults(json);
-        return results.seriesList.length > 0
-          ? results.seriesList[0]
-          : undefined;
+        return results.seriesList.length > 0 ? results.seriesList[0] : undefined;
       });
   };
 
-  getChapters: GetChaptersFunc = async (
-    sourceType: SeriesSourceType,
-    id: string
-  ) => {
+  getChapters: GetChaptersFunc = async (sourceType: SeriesSourceType, id: string) => {
     const chapterList: Chapter[] = [];
     let gotAllChapters: boolean = false;
     let offset = 0;
     while (!gotAllChapters) {
-      const response = await this.fetchFn(
+      const response = await this.utilFns.fetchFn(
         `https://api.mangadex.org/manga/${id}/feed?offset=${offset}&limit=500&includes[]=scanlation_group`
       );
       const json = await response.json();
       json.data.forEach((result: any) => {
         const groupRelationship: any | undefined = result.relationships.find(
           (relationship: any) =>
-            relationship.type === "scanlation_group" &&
-            relationship.attributes !== undefined
+            relationship.type === "scanlation_group" && relationship.attributes !== undefined
         );
-        const groupName =
-          groupRelationship !== undefined
-            ? groupRelationship.attributes.name
-            : "";
+        const groupName = groupRelationship !== undefined ? groupRelationship.attributes.name : "";
 
         chapterList.push({
           id: undefined,
@@ -265,9 +241,8 @@ export class ExtensionClient extends ExtensionClientAbstract {
     seriesSourceId: string,
     chapterSourceId: string
   ) => {
-    return this.fetchFn(
-      `https://api.mangadex.org/at-home/server/${chapterSourceId}`
-    )
+    return this.utilFns
+      .fetchFn(`https://api.mangadex.org/at-home/server/${chapterSourceId}`)
       .then((response: Response) => response.json())
       .then((json: any) => {
         const pageFilenames = this.settings[SETTING_NAMES.USE_DATA_SAVER]
@@ -283,9 +258,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getPageUrls: GetPageUrlsFunc = (pageRequesterData: PageRequesterData) => {
-    const dataStr = this.settings[SETTING_NAMES.USE_DATA_SAVER]
-      ? "data-saver"
-      : "data";
+    const dataStr = this.settings[SETTING_NAMES.USE_DATA_SAVER] ? "data-saver" : "data";
     return pageRequesterData.pageFilenames.map((filename: string) => {
       return `${pageRequesterData.server}/${dataStr}/${pageRequesterData.hash}/${filename}`;
     });
@@ -298,13 +271,12 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getDirectory: GetDirectoryFunc = (page: number) => {
-    return this.fetchFn(
-      `https://api.mangadex.org/manga?${_getContentRatingsStr(
-        this.settings
-      )}&offset=${
-        (page - 1) * PAGE_SIZE
-      }&limit=${PAGE_SIZE}&includes[]=artist&includes[]=author&includes[]=cover_art`
-    )
+    return this.utilFns
+      .fetchFn(
+        `https://api.mangadex.org/manga?${_getContentRatingsStr(this.settings)}&offset=${
+          (page - 1) * PAGE_SIZE
+        }&limit=${PAGE_SIZE}&includes[]=artist&includes[]=author&includes[]=cover_art`
+      )
       .then((response: Response) => response.json())
       .then((json: any) => {
         const results: ParsedResults = _parseMangaResults(json);
@@ -315,18 +287,15 @@ export class ExtensionClient extends ExtensionClientAbstract {
       });
   };
 
-  getSearch: GetSearchFunc = (
-    text: string,
-    params: { [key: string]: string },
-    page: number
-  ) => {
-    return this.fetchFn(
-      `https://api.mangadex.org/manga?title=${text}&${_getContentRatingsStr(
-        this.settings
-      )}&offset=${
-        (page - 1) * PAGE_SIZE
-      }&limit=${PAGE_SIZE}&includes[]=artist&includes[]=author&includes[]=cover_art`
-    )
+  getSearch: GetSearchFunc = (text: string, params: { [key: string]: string }, page: number) => {
+    return this.utilFns
+      .fetchFn(
+        `https://api.mangadex.org/manga?title=${text}&${_getContentRatingsStr(
+          this.settings
+        )}&offset=${
+          (page - 1) * PAGE_SIZE
+        }&limit=${PAGE_SIZE}&includes[]=artist&includes[]=author&includes[]=cover_art`
+      )
       .then((response: Response) => response.json())
       .then((json: any) => {
         const results: ParsedResults = _parseMangaResults(json);
@@ -347,10 +316,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
 
   setSettings: SetSettingsFunc = (newSettings: { [key: string]: any }) => {
     Object.keys(newSettings).forEach((key: string) => {
-      if (
-        key in this.settings &&
-        typeof (this.settings[key] === newSettings[key])
-      ) {
+      if (key in this.settings && typeof (this.settings[key] === newSettings[key])) {
         this.settings[key] = newSettings[key];
       }
     });

@@ -8,8 +8,6 @@ import {
   ExtensionMetadata,
   GetDirectoryFunc,
   ExtensionClientAbstract,
-  FetchFunc,
-  WebviewFunc,
   Series,
   PageRequesterData,
   SeriesSourceType,
@@ -17,27 +15,22 @@ import {
   GetSettingsFunc,
   GetSettingTypesFunc,
 } from "houdoku-extension-lib";
-import DOMParser from "dom-parser";
 import metadata from "./metadata.json";
 import { FoolSlideClient } from "../../generic/foolslide";
 import { parseMetadata } from "../../util/configuring";
+import { UtilFunctions } from "houdoku-extension-lib/dist/interface";
 
 export const METADATA: ExtensionMetadata = parseMetadata(metadata);
 
 export class ExtensionClient extends ExtensionClientAbstract {
   foolslideClient: FoolSlideClient;
 
-  constructor(
-    fetchFn: FetchFunc,
-    webviewFn: WebviewFunc,
-    domParser: DOMParser
-  ) {
-    super(fetchFn, webviewFn, domParser);
+  constructor(utilsFn: UtilFunctions) {
+    super(utilsFn);
     this.foolslideClient = new FoolSlideClient(
       METADATA.id,
       "https://motokare.xyz/reader",
-      fetchFn,
-      domParser,
+      utilsFn,
       METADATA.translatedLanguage
     );
   }

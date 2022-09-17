@@ -13,17 +13,9 @@ import {
   SetSettingsFunc,
   GetSettingTypesFunc,
   SeriesListResponse,
-  FetchFunc,
-  WebviewFunc,
   WebviewResponse,
 } from "houdoku-extension-lib";
-import {
-  LanguageKey,
-  Series,
-  SeriesSourceType,
-  SeriesStatus,
-} from "houdoku-extension-lib";
-import DOMParser from "dom-parser";
+import { LanguageKey, Series, SeriesSourceType, SeriesStatus } from "houdoku-extension-lib";
 import metadata from "./metadata.json";
 import { parseMetadata } from "../../util/configuring";
 
@@ -41,11 +33,11 @@ const SERIES_STATUS_MAP: { [key: string]: SeriesStatus } = {
   Completed: SeriesStatus.COMPLETED,
 };
 
-const parseDirectoryResponse = (doc: DOMParser.Dom): SeriesListResponse => {
+const parseDirectoryResponse = (doc: Document): SeriesListResponse => {
   const items = doc.getElementsByClassName("list-update_item")!;
   const hasMore = doc.getElementsByClassName("next page-numbers")!.length > 0;
 
-  const seriesList = items.map((row: DOMParser.Node) => {
+  const seriesList = Array.from(items).map((row: Element) => {
     const header = row.getElementsByTagName("h3")![0];
     const link = row.getElementsByTagName("a")![0];
     const img = link.getElementsByTagName("img")![0];
@@ -78,111 +70,92 @@ const parseDirectoryResponse = (doc: DOMParser.Dom): SeriesListResponse => {
 };
 
 export class ExtensionClient extends ExtensionClientAbstract {
-  constructor(
-    fetchFn: FetchFunc,
-    webviewFn: WebviewFunc,
-    domParser: DOMParser
-  ) {
-    super(fetchFn, webviewFn, domParser);
-  }
-
   getMetadata: () => ExtensionMetadata = () => {
     return METADATA;
   };
 
   getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.webviewFn(`${BASE_URL}/komik/${id}`).then(
-      (response: WebviewResponse) => {
-        const doc = this.domParser.parseFromString(response.text);
+    return this.utilFns.webviewFn(`${BASE_URL}/komik/${id}`).then((response: WebviewResponse) => {
+      const doc = this.utilFns.docFn(response.text);
 
-        const infoContainer =
-          doc.getElementsByClassName("komik_info-content")![0];
+      const infoContainer = doc.getElementsByClassName("komik_info-content")![0];
 
-        const title = infoContainer
-          .getElementsByClassName("komik_info-content-body-title")![0]
-          .textContent.trim()
-          .split(" Bahasa Indonesia")[0];
-        const altTitles = infoContainer
-          .getElementsByClassName("komik_info-content-native")![0]
-          .textContent.trim()
-          .split(",")!;
-        const description = doc
-          .getElementsByClassName("komik_info-description-sinopsis")![0]
-          .textContent.trim();
+      const title = infoContainer
+        .getElementsByClassName("komik_info-content-body-title")![0]
+        .textContent.trim()
+        .split(" Bahasa Indonesia")[0];
+      const altTitles = infoContainer
+        .getElementsByClassName("komik_info-content-native")![0]
+        .textContent.trim()
+        .split(",")!;
+      const description = doc
+        .getElementsByClassName("komik_info-description-sinopsis")![0]
+        .textContent.trim();
 
-        const img = infoContainer.getElementsByTagName("img")![0];
-        const rows = infoContainer.getElementsByClassName(
-          "komik_info-content-info"
-        )!;
+      const img = infoContainer.getElementsByTagName("img")![0];
+      const rows = infoContainer.getElementsByClassName("komik_info-content-info")!;
 
-        const authorsRow = rows.find((row: DOMParser.Node) =>
-          row.textContent.includes("Author:")
-        );
-        const authors = authorsRow?.textContent
-          .split("Author: ")[1]
-          .split(",")!;
+      const authorsRow = Array.from(rows).find((row: Element) =>
+        row.textContent.includes("Author:")
+      );
+      const authors = authorsRow?.textContent.split("Author: ")[1].split(",")!;
 
-        const statusRow = rows.find((row: DOMParser.Node) =>
-          row.textContent.includes("Status:")
-        );
-        const statusStr = statusRow?.textContent.split("Status: ")[1]!;
+      const statusRow = Array.from(rows).find((row: Element) =>
+        row.textContent.includes("Status:")
+      );
+      const statusStr = statusRow?.textContent.split("Status: ")[1]!;
 
-        const tags = infoContainer
-          .getElementsByClassName("genre-item")!
-          .map((node) => node.textContent);
+      const tags = Array.from(infoContainer.getElementsByClassName("genre-item")!).map(
+        (element) => element.textContent
+      );
 
-        const typeStr = infoContainer
-          .getElementsByClassName("komik_info-content-info-type")![0]
-          .getElementsByTagName("a")![0].textContent;
+      const typeStr = infoContainer
+        .getElementsByClassName("komik_info-content-info-type")![0]
+        .getElementsByTagName("a")![0].textContent;
 
-        const series: Series = {
-          extensionId: METADATA.id,
-          sourceId: id,
-          sourceType: SeriesSourceType.STANDARD,
-          title: title,
-          altTitles: altTitles,
-          description: description,
-          authors: authors,
-          artists: [],
-          tags: tags,
-          status: SERIES_STATUS_MAP[statusStr],
-          originalLanguageKey: ORIGINAL_LANGUAGE_MAP[typeStr],
-          numberUnread: 0,
-          remoteCoverUrl: img.getAttribute("src")!,
-        };
-        return series;
-      }
-    );
+      const series: Series = {
+        extensionId: METADATA.id,
+        sourceId: id,
+        sourceType: SeriesSourceType.STANDARD,
+        title: title,
+        altTitles: altTitles,
+        description: description,
+        authors: authors,
+        artists: [],
+        tags: tags,
+        status: SERIES_STATUS_MAP[statusStr],
+        originalLanguageKey: ORIGINAL_LANGUAGE_MAP[typeStr],
+        numberUnread: 0,
+        remoteCoverUrl: img.getAttribute("src")!,
+      };
+      return series;
+    });
   };
 
   getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.webviewFn(`${BASE_URL}/komik/${id}`).then(
-      (response: WebviewResponse) => {
-        const doc = this.domParser.parseFromString(response.text);
+    return this.utilFns.webviewFn(`${BASE_URL}/komik/${id}`).then((response: WebviewResponse) => {
+      const doc = this.utilFns.docFn(response.text);
 
-        return doc
-          .getElementsByClassName("komik_info-chapters-item")!
-          .map((row) => {
-            const link = row.getElementsByTagName("a")![0];
-            const title = link.textContent.trim();
-            const chapterNum = title.split("Chapter ")[1];
-            const sourceId = link.getAttribute("href")!.split("/")[4];
+      return Array.from(doc.getElementsByClassName("komik_info-chapters-item")!).map((row) => {
+        const link = row.getElementsByTagName("a")![0];
+        const title = link.textContent.trim();
+        const chapterNum = title.split("Chapter ")[1];
+        const sourceId = link.getAttribute("href")!.split("/")[4];
 
-            return {
-              id: undefined,
-              seriesId: undefined,
-              sourceId: sourceId,
-              title: title,
-              chapterNumber: chapterNum,
-              volumeNumber: "",
-              languageKey: LanguageKey.INDONESIAN,
-              groupName: "",
-              time: 0,
-              read: false,
-            };
-          });
-      }
-    );
+        return {
+          id: undefined,
+          seriesId: undefined,
+          sourceId: sourceId,
+          title: title,
+          chapterNumber: chapterNum,
+          volumeNumber: "",
+          languageKey: LanguageKey.INDONESIAN,
+          groupName: "",
+          time: 0,
+          read: false,
+        };
+      });
+    });
   };
 
   getPageRequesterData: GetPageRequesterDataFunc = (
@@ -190,14 +163,15 @@ export class ExtensionClient extends ExtensionClientAbstract {
     seriesSourceId: string,
     chapterSourceId: string
   ) => {
-    return this.webviewFn(`${BASE_URL}/chapter/${chapterSourceId}`).then(
-      (response: WebviewResponse) => {
-        const doc = this.domParser.parseFromString(response.text);
+    return this.utilFns
+      .webviewFn(`${BASE_URL}/chapter/${chapterSourceId}`)
+      .then((response: WebviewResponse) => {
+        const doc = this.utilFns.docFn(response.text);
 
         const images = doc
           .getElementsByClassName("main-reading-area")![0]
           .getElementsByTagName("img")!;
-        const pageFilenames = images.map((image) => image.getAttribute("src")!);
+        const pageFilenames = Array.from(images).map((image) => image.getAttribute("src")!);
 
         return {
           server: "",
@@ -205,8 +179,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
           numPages: pageFilenames.length,
           pageFilenames,
         };
-      }
-    );
+      });
   };
 
   getPageUrls: GetPageUrlsFunc = (pageRequesterData: PageRequesterData) => {
@@ -220,25 +193,21 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getDirectory: GetDirectoryFunc = (page: number) => {
-    return this.webviewFn(`${BASE_URL}/daftar-komik/page/${page}`).then(
-      (response: WebviewResponse) => {
-        const doc = this.domParser.parseFromString(response.text);
+    return this.utilFns
+      .webviewFn(`${BASE_URL}/daftar-komik/page/${page}`)
+      .then((response: WebviewResponse) => {
+        const doc = this.utilFns.docFn(response.text);
         return parseDirectoryResponse(doc);
-      }
-    );
+      });
   };
 
-  getSearch: GetSearchFunc = (
-    text: string,
-    params: { [key: string]: string },
-    page: number
-  ) => {
-    return this.webviewFn(`${BASE_URL}/page/${page}/?s=${text}`).then(
-      (response: WebviewResponse) => {
-        const doc = this.domParser.parseFromString(response.text);
+  getSearch: GetSearchFunc = (text: string, params: { [key: string]: string }, page: number) => {
+    return this.utilFns
+      .webviewFn(`${BASE_URL}/page/${page}/?s=${text}`)
+      .then((response: WebviewResponse) => {
+        const doc = this.utilFns.docFn(response.text);
         return parseDirectoryResponse(doc);
-      }
-    );
+      });
   };
 
   getSettingTypes: GetSettingTypesFunc = () => {

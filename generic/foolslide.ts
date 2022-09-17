@@ -19,21 +19,18 @@ import {
   SeriesSourceType,
   SeriesStatus,
 } from "houdoku-extension-lib";
+import { UtilFunctions } from "houdoku-extension-lib/dist/interface";
 import { Response } from "node-fetch";
-import DOMParser from "dom-parser";
 
 type ParsedResults = {
   seriesList: Series[];
   hasMore: boolean;
 };
 
-const _parseResults = (
-  doc: DOMParser.Dom,
-  extensionId: string
-): ParsedResults => {
+const _parseResults = (doc: Document, extensionId: string): ParsedResults => {
   const seriesContainers = doc.getElementsByClassName("group")!;
-  const seriesList = seriesContainers.map((node: DOMParser.Node) => {
-    const linkElement = node.getElementsByClassName("title")![0].firstChild!;
+  const seriesList = Array.from(seriesContainers).map((element: Element) => {
+    const linkElement = element.getElementsByClassName("title")![0].firstElementChild!;
     const title = linkElement.textContent.trim();
     const link = linkElement.getAttribute("href")!;
     const sourceId = link
@@ -41,7 +38,7 @@ const _parseResults = (
       .split("/")
       .pop()!;
 
-    const imgs = node.getElementsByTagName("img")!;
+    const imgs = element.getElementsByTagName("img")!;
     const remoteCoverUrl = imgs.length > 0 ? imgs[0].getAttribute("src")! : "";
 
     const series: Series = {
@@ -71,41 +68,35 @@ const _parseResults = (
 };
 
 export class FoolSlideClient {
-  fetchFn: FetchFunc;
-  domParser: DOMParser;
   extensionId: string;
   baseUrl: string;
   translatedLanguageKey: LanguageKey;
+  util: UtilFunctions;
 
   constructor(
     extensionId: string,
     baseUrl: string,
-    fetchFn: FetchFunc,
-    domParser: DOMParser,
+    utilFns: UtilFunctions,
     translatedLanguageKey: LanguageKey
   ) {
     this.extensionId = extensionId;
     this.baseUrl = baseUrl;
-    this.fetchFn = fetchFn;
-    this.domParser = domParser;
     this.translatedLanguageKey = translatedLanguageKey;
+    this.util = utilFns;
   }
 
   getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.fetchFn(`${this.baseUrl}/series/${id}`)
+    return this.util
+      .fetchFn(`${this.baseUrl}/series/${id}`)
       .then((response: Response) => response.text())
       .then((data: string) => {
-        const doc = this.domParser.parseFromString(data);
+        const doc = this.util.docFn(data);
         const articleContainer = doc.getElementById("content")!;
-        const infoContainer =
-          articleContainer.getElementsByClassName("large comic")![0];
+        const infoContainer = articleContainer.getElementsByClassName("large comic")![0];
 
-        const title = infoContainer
-          .getElementsByClassName("title")![0]
-          .textContent.trim();
+        const title = infoContainer.getElementsByClassName("title")![0].textContent.trim();
 
-        const thumbnails =
-          articleContainer.getElementsByClassName("thumbnail")!;
+        const thumbnails = articleContainer.getElementsByClassName("thumbnail")!;
         const remoteCoverUrl =
           thumbnails.length > 0
             ? thumbnails[0].getElementsByTagName("img")![0].getAttribute("src")!
@@ -131,15 +122,15 @@ export class FoolSlideClient {
   };
 
   getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.fetchFn(`${this.baseUrl}/series/${id}`)
+    return this.util
+      .fetchFn(`${this.baseUrl}/series/${id}`)
       .then((response: Response) => response.text())
       .then((data: string) => {
-        const doc = this.domParser.parseFromString(data);
+        const doc = this.util.docFn(data);
         const rows = doc.getElementsByClassName("element")!;
 
-        return rows.map((row: DOMParser.Node) => {
-          const linkElement =
-            row.getElementsByClassName("title")![0].firstChild!;
+        return Array.from(rows).map((row: Element) => {
+          const linkElement = row.getElementsByClassName("title")![0].firstElementChild!;
           const title = linkElement.textContent.trim();
 
           const link = linkElement.getAttribute("href")!;
@@ -152,9 +143,7 @@ export class FoolSlideClient {
           const chapterNumber: string = linkNumbers[1];
 
           const metaContainer = row.getElementsByClassName("meta_r")![0];
-          const groupName = metaContainer
-            .getElementsByTagName("a")![0]
-            .getAttribute("title")!;
+          const groupName = metaContainer.getElementsByTagName("a")![0].getAttribute("title")!;
           const dateStr = metaContainer.textContent.split(", ").pop()!.trim();
           const time = new Date(dateStr).getTime();
 
@@ -180,9 +169,8 @@ export class FoolSlideClient {
     seriesSourceId: string,
     chapterSourceId: string
   ) => {
-    return this.fetchFn(
-      `${this.baseUrl}/read/${seriesSourceId}/${chapterSourceId}`
-    )
+    return this.util
+      .fetchFn(`${this.baseUrl}/read/${seriesSourceId}/${chapterSourceId}`)
       .then((response: Response) => response.text())
       .then((data: string) => {
         const contentStr = data.split("var pages = ").pop()!.split(";")[0];
@@ -211,24 +199,18 @@ export class FoolSlideClient {
     });
   };
 
-  getSearch: GetSearchFunc = (
-    text: string,
-    params: { [key: string]: string },
-    page: number
-  ) => {
-    return this.fetchFn(`${this.baseUrl}/search`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-      },
-      body: `search=${text}`,
-    })
+  getSearch: GetSearchFunc = (text: string, params: { [key: string]: string }, page: number) => {
+    return this.util
+      .fetchFn(`${this.baseUrl}/search`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+        },
+        body: `search=${text}`,
+      })
       .then((response: Response) => response.text())
       .then((data: string) => {
-        const parsedResults = _parseResults(
-          this.domParser.parseFromString(data),
-          this.extensionId
-        );
+        const parsedResults = _parseResults(this.util.docFn(data), this.extensionId);
 
         return {
           seriesList: parsedResults.seriesList,
@@ -238,13 +220,11 @@ export class FoolSlideClient {
   };
 
   getDirectory: GetDirectoryFunc = (page: number) => {
-    return this.fetchFn(`${this.baseUrl}/directory/${page}`)
+    return this.util
+      .fetchFn(`${this.baseUrl}/directory/${page}`)
       .then((response: Response) => response.text())
       .then((data: string) => {
-        const parsedResults = _parseResults(
-          this.domParser.parseFromString(data),
-          this.extensionId
-        );
+        const parsedResults = _parseResults(this.util.docFn(data), this.extensionId);
 
         return {
           seriesList: parsedResults.seriesList,

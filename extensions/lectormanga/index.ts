@@ -22,10 +22,8 @@ import {
   SeriesStatus,
 } from "houdoku-extension-lib";
 import { Response } from "node-fetch";
-import DOMParser from "dom-parser";
 import metadata from "./metadata.json";
 import { parseMetadata } from "../../util/configuring";
-import DomParser from "dom-parser";
 
 export const METADATA: ExtensionMetadata = parseMetadata(metadata);
 
@@ -91,15 +89,13 @@ const ORIGINAL_LANGUAGE_MAP: { [key: string]: LanguageKey } = {
 };
 
 export class ExtensionClient extends ExtensionClientAbstract {
-  _parseOneshotChapter = (doc: DOMParser.Dom): Chapter[] => {
+  _parseOneshotChapter = (doc: Document): Chapter[] => {
     const chapterList = doc.getElementsByClassName("chapter-list")![0];
     const chapterRows = chapterList.getElementsByClassName("list-group-item")!;
 
-    return chapterRows.map((chapterRow) => {
+    return Array.from(chapterRows).map((chapterRow) => {
       const groupContainer = chapterRow.getElementsByTagName("span")![0];
-      const dateStr = chapterRow
-        .getElementsByClassName("badge-primary")![0]
-        .textContent.trim();
+      const dateStr = chapterRow.getElementsByClassName("badge-primary")![0].textContent.trim();
       const btn = chapterRow.getElementsByClassName("btn-sm")![0];
 
       return {
@@ -117,11 +113,11 @@ export class ExtensionClient extends ExtensionClientAbstract {
     });
   };
 
-  _parseSearchResults = (doc: DomParser.Dom) => {
+  _parseSearchResults = (doc: Document) => {
     const entries = doc.getElementsByClassName("col-6")!;
-    const seriesList: Series[] = entries.map((node) => {
+    const seriesList: Series[] = Array.from(entries).map((node) => {
       const img = node.getElementsByTagName("img")![0];
-      const link = img.parentNode;
+      const link = img.parentElement;
       const sourceId = link!.getAttribute("href")!.split("/library/").pop()!;
 
       return {
@@ -153,16 +149,15 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.webviewFn(`https://lectormanga.com/library/${id}`).then(
-      (response: WebviewResponse) => {
-        const doc = this.domParser.parseFromString(response.text);
+    return this.utilFns
+      .webviewFn(`https://lectormanga.com/library/${id}`)
+      .then((response: WebviewResponse) => {
+        const doc = this.utilFns.docFn(response.text);
 
         const img = doc.getElementsByTagName("img")![0];
 
         const details = doc.getElementsByClassName("col-sm-9")![0];
-        const title = details
-          .getElementsByTagName("h1")![0]
-          .firstChild!.textContent.trim();
+        const title = details.getElementsByTagName("h1")![0].firstChild!.textContent.trim();
 
         const headings = details.getElementsByTagName("h5")!;
         const type = headings[0]
@@ -171,12 +166,8 @@ export class ExtensionClient extends ExtensionClientAbstract {
           .split("text-")
           .pop()!;
 
-        const publishingNodes =
-          details.getElementsByClassName("status-publishing")!;
-        const status =
-          publishingNodes.length > 0
-            ? SeriesStatus.ONGOING
-            : SeriesStatus.COMPLETED;
+        const publishingNodes = details.getElementsByClassName("status-publishing")!;
+        const status = publishingNodes.length > 0 ? SeriesStatus.ONGOING : SeriesStatus.COMPLETED;
 
         const description = doc
           .getElementsByClassName("mt-2")![1]
@@ -184,7 +175,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
           .textContent.trim();
 
         const tags: string[] = [];
-        details.getElementsByClassName("badge-primary")!.forEach((tagNode) => {
+        Array.from(details.getElementsByClassName("badge-primary")!).forEach((tagNode) => {
           const tagId = tagNode.getAttribute("href")!.split("=").pop()!;
           if (tagId in TAG_MAP) {
             tags.push(TAG_MAP[tagId]);
@@ -207,22 +198,21 @@ export class ExtensionClient extends ExtensionClientAbstract {
           numberUnread: 0,
           remoteCoverUrl: img.getAttribute("src")!,
         };
-      }
-    );
+      });
   };
 
   getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.webviewFn(`https://lectormanga.com/library/${id}`).then(
-      (response: WebviewResponse) => {
-        const doc = this.domParser.parseFromString(response.text);
+    return this.utilFns
+      .webviewFn(`https://lectormanga.com/library/${id}`)
+      .then((response: WebviewResponse) => {
+        const doc = this.utilFns.docFn(response.text);
         const container = doc.getElementById("chapters");
 
         if (!container) {
           return this._parseOneshotChapter(doc);
         }
 
-        const titleHeadings =
-          container.getElementsByClassName("mt-2 text-truncate")!;
+        const titleHeadings = container.getElementsByClassName("mt-2 text-truncate")!;
         const chapterLists = container.getElementsByClassName("chapter-list")!;
 
         const chapters: Chapter[] = [];
@@ -230,10 +220,9 @@ export class ExtensionClient extends ExtensionClientAbstract {
           const chapterList = chapterLists[i];
           const heading = titleHeadings[i];
 
-          const chapterRows =
-            chapterList.getElementsByClassName("list-group-item")!;
+          const chapterRows = chapterList.getElementsByClassName("list-group-item")!;
 
-          const newChapters: Chapter[] = chapterRows.map((chapterRow) => {
+          const newChapters: Chapter[] = Array.from(chapterRows).map((chapterRow) => {
             const title = heading.getAttribute("title")!;
             const groupContainer = chapterRow.getElementsByTagName("span")![0];
             const dateStr = chapterRow
@@ -261,8 +250,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
         }
 
         return chapters;
-      }
-    );
+      });
   };
 
   getPageRequesterData: GetPageRequesterDataFunc = async (
@@ -270,19 +258,18 @@ export class ExtensionClient extends ExtensionClientAbstract {
     seriesSourceId: string,
     chapterSourceId: string
   ) => {
-    const newUrl = await this.webviewFn(
-      `https://lectormanga.com/view_uploads/${chapterSourceId}`
-    ).then((response) => response.url);
+    const newUrl = await this.utilFns
+      .webviewFn(`https://lectormanga.com/view_uploads/${chapterSourceId}`)
+      .then((response) => response.url);
 
-    return this.fetchFn(newUrl, {
-      headers: { Referer: "https://lectormanga.com/" },
-    })
+    return this.utilFns
+      .fetchFn(newUrl, {
+        headers: { Referer: "https://lectormanga.com/" },
+      })
       .then((response: Response) => response.text())
       .then((data: string) => {
         const root = data.split(`var dirPath = '`)[1].split(`'`)[0];
-        const imgListStr = data
-          .split(`var images = JSON.parse('`)[1]
-          .split(`'`)[0];
+        const imgListStr = data.split(`var images = JSON.parse('`)[1].split(`'`)[0];
         const pageFilenames: string[] = JSON.parse(imgListStr);
 
         return {
@@ -295,44 +282,40 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getPageUrls: GetPageUrlsFunc = (pageRequesterData: PageRequesterData) => {
-    return pageRequesterData.pageFilenames.map(
-      (fname) => `${pageRequesterData.server}${fname}`
-    );
+    return pageRequesterData.pageFilenames.map((fname) => `${pageRequesterData.server}${fname}`);
   };
 
   getPageData: GetPageDataFunc = (series: Series, url: string) => {
     const referer = url.split("/uploads/")[0].replace("img1.", "");
-    return this.fetchFn(url, {
-      headers: { Referer: referer },
-    }).then(async (response) => {
-      const contentType = response.headers.get("content-type");
-      const buffer = await response.arrayBuffer();
-      return (
-        `data:${contentType};base64,` + Buffer.from(buffer).toString("base64")
-      );
-    });
+    return this.utilFns
+      .fetchFn(url, {
+        headers: { Referer: referer },
+      })
+      .then(async (response) => {
+        const contentType = response.headers.get("content-type");
+        const buffer = await response.arrayBuffer();
+        return `data:${contentType};base64,` + Buffer.from(buffer).toString("base64");
+      });
   };
 
   getDirectory: GetDirectoryFunc = (page: number) => {
-    return this.webviewFn(
-      `https://lectormanga.com/library?title=&order_field=title&order_item=likes_count&order_dir=desc&type=&demography=&webcomic=&yonkoma=&amateur=&erotic=`
-    ).then((response: WebviewResponse) => {
-      const doc = this.domParser.parseFromString(response.text);
-      return this._parseSearchResults(doc);
-    });
+    return this.utilFns
+      .webviewFn(
+        `https://lectormanga.com/library?title=&order_field=title&order_item=likes_count&order_dir=desc&type=&demography=&webcomic=&yonkoma=&amateur=&erotic=`
+      )
+      .then((response: WebviewResponse) => {
+        const doc = this.utilFns.docFn(response.text);
+        return this._parseSearchResults(doc);
+      });
   };
 
-  getSearch: GetSearchFunc = (
-    text: string,
-    params: { [key: string]: string },
-    page: number
-  ) => {
-    return this.webviewFn(`https://lectormanga.com/library?title=${text}`).then(
-      (response: WebviewResponse) => {
-        const doc = this.domParser.parseFromString(response.text);
+  getSearch: GetSearchFunc = (text: string, params: { [key: string]: string }, page: number) => {
+    return this.utilFns
+      .webviewFn(`https://lectormanga.com/library?title=${text}`)
+      .then((response: WebviewResponse) => {
+        const doc = this.utilFns.docFn(response.text);
         return this._parseSearchResults(doc);
-      }
-    );
+      });
   };
 
   getSettingTypes: GetSettingTypesFunc = () => {

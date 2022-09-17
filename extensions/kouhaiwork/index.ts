@@ -75,7 +75,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.fetchFn(`${API_URL}/manga/get/${id}`)
+    return this.utilFns.fetchFn(`${API_URL}/manga/get/${id}`)
       .then((response: Response) => response.json())
       .then((json: any) => {
         return this._parseSeries(json.data);
@@ -83,7 +83,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.fetchFn(`${API_URL}/manga/get/${id}`)
+    return this.utilFns.fetchFn(`${API_URL}/manga/get/${id}`)
       .then((response: Response) => response.json())
       .then((json: any) => {
         return json.data.chapters.map((chapterData: any) => {
@@ -112,7 +112,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
     seriesSourceId: string,
     chapterSourceId: string
   ) => {
-    return this.fetchFn(`${API_URL}/chapters/get/${chapterSourceId}`)
+    return this.utilFns.fetchFn(`${API_URL}/chapters/get/${chapterSourceId}`)
       .then((response: Response) => response.json())
       .then((json: any) => {
         const pageFilenames: string[] = json.chapter.pages.map(
@@ -142,7 +142,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getDirectory: GetDirectoryFunc = (page: number) => {
-    return this.fetchFn(`${API_URL}/manga/all`)
+    return this.utilFns.fetchFn(`${API_URL}/manga/all`)
       .then((response: Response) => response.json())
       .then((json: any) => {
         return json.data.map((data: any) => this._parseSeries(data));
@@ -160,7 +160,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
     params: { [key: string]: string },
     page: number
   ) => {
-    return this.fetchFn(`${API_URL}/search/manga`, {
+    return this.utilFns.fetchFn(`${API_URL}/search/manga`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

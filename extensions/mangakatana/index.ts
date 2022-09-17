@@ -13,16 +13,8 @@ import {
   SetSettingsFunc,
   GetSettingTypesFunc,
   SeriesListResponse,
-  FetchFunc,
-  WebviewFunc,
 } from "houdoku-extension-lib";
-import {
-  LanguageKey,
-  Series,
-  SeriesSourceType,
-  SeriesStatus,
-} from "houdoku-extension-lib";
-import DOMParser from "dom-parser";
+import { LanguageKey, Series, SeriesSourceType, SeriesStatus } from "houdoku-extension-lib";
 import metadata from "./metadata.json";
 import { parseMetadata } from "../../util/configuring";
 
@@ -31,12 +23,8 @@ export const METADATA: ExtensionMetadata = parseMetadata(metadata);
 
 const SERIES_STATUS_MAP: { [key: string]: SeriesStatus } = {};
 
-const parseSeriesPage = (doc: DOMParser.Dom): Series => {
-  const id = doc
-    .getElementsByAttribute("property", "og:url")![0]
-    .getAttribute("content")
-    .split("/")
-    .pop();
+const parseSeriesPage = (doc: Document): Series => {
+  const id = doc.querySelectorAll(`[property=og:url]`)![0].getAttribute("content").split("/").pop();
   const infoContainer = doc.getElementById("single_book")!;
   const title = infoContainer.getElementsByTagName("h1")![0].textContent.trim();
   const description = infoContainer
@@ -46,26 +34,21 @@ const parseSeriesPage = (doc: DOMParser.Dom): Series => {
   const img = infoContainer.getElementsByTagName("img")![0];
   const rows = infoContainer.getElementsByClassName("d-row-small")!;
 
-  const altNamesRow = rows.find((row: DOMParser.Node) =>
-    row.textContent.includes("Alt name(s):")
-  );
+  const altNamesRow = [...rows].find((row: Element) => row.textContent.includes("Alt name(s):"));
   const altNames = altNamesRow
     ?.getElementsByClassName("value")![0]
     .textContent!.trim()
     .split(" ; ")!;
 
-  const statusStr =
-    infoContainer?.getElementsByClassName("value status")![0].textContent!;
+  const statusStr = infoContainer?.getElementsByClassName("value status")![0].textContent!;
 
-  const authors = infoContainer
-    .getElementsByClassName("value authors")![0]
-    .getElementsByTagName("a")!
-    .map((link) => link.textContent);
+  const authors = Array.from(
+    infoContainer.getElementsByClassName("value authors")![0].getElementsByTagName("a")!
+  ).map((link) => link.textContent);
 
-  const tags = infoContainer
-    .getElementsByClassName("genres")![0]
-    .getElementsByTagName("a")!
-    .map((genreLink) => genreLink.textContent);
+  const tags = Array.from(
+    infoContainer.getElementsByClassName("genres")![0].getElementsByTagName("a")!
+  ).map((genreLink) => genreLink.textContent);
 
   const series: Series = {
     extensionId: METADATA.id,
@@ -85,7 +68,7 @@ const parseSeriesPage = (doc: DOMParser.Dom): Series => {
   return series;
 };
 
-const parseDirectoryResponse = (doc: DOMParser.Dom): SeriesListResponse => {
+const parseDirectoryResponse = (doc: Document): SeriesListResponse => {
   const container = doc.getElementById("book_list")!;
 
   if (container === null) {
@@ -96,14 +79,11 @@ const parseDirectoryResponse = (doc: DOMParser.Dom): SeriesListResponse => {
   }
 
   const items = container.getElementsByClassName("item")!;
-  const hasMore =
-    container.getElementsByClassName("next page-numbers")!.length > 0;
+  const hasMore = container.getElementsByClassName("next page-numbers")!.length > 0;
 
-  const seriesList = items.map((row: DOMParser.Node) => {
+  const seriesList = [...items].map((row: Element) => {
     const img = row.getElementsByTagName("img")![0];
-    const link = row
-      .getElementsByClassName("title")![0]
-      .getElementsByTagName("a")![0];
+    const link = row.getElementsByClassName("title")![0].getElementsByTagName("a")![0];
     const sourceId = link.getAttribute("href")!.split("/")[4];
 
     const series: Series = {
@@ -132,55 +112,48 @@ const parseDirectoryResponse = (doc: DOMParser.Dom): SeriesListResponse => {
 };
 
 export class ExtensionClient extends ExtensionClientAbstract {
-  constructor(
-    fetchFn: FetchFunc,
-    webviewFn: WebviewFunc,
-    domParser: DOMParser
-  ) {
-    super(fetchFn, webviewFn, domParser);
-  }
-
   getMetadata: () => ExtensionMetadata = () => {
     return METADATA;
   };
 
   getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.fetchFn(`${BASE_URL}/manga/${id}`)
+    return this.utilFns
+      .fetchFn(`${BASE_URL}/manga/${id}`)
       .then((response) => response.text())
       .then((data: string) => {
-        const doc = this.domParser.parseFromString(data);
+        const doc = this.utilFns.docFn(data);
         return parseSeriesPage(doc);
       });
   };
 
   getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.fetchFn(`${BASE_URL}/manga/${id}`)
+    return this.utilFns
+      .fetchFn(`${BASE_URL}/manga/${id}`)
       .then((response) => response.text())
       .then((data: string) => {
-        const doc = this.domParser.parseFromString(data);
+        const doc = this.utilFns.docFn(data);
 
-        return doc
-          .getElementsByClassName("chapters")![0]
-          .getElementsByTagName("tr")!
-          .map((row) => {
-            const link = row.getElementsByTagName("a")![0];
-            const sourceId = link.getAttribute("href")!.split("/")[5];
-            const title = link.textContent.trim();
-            const chapterNum = sourceId.split("c")[1];
+        return Array.from(
+          doc.getElementsByClassName("chapters")![0].getElementsByTagName("tr")!
+        ).map((row) => {
+          const link = row.getElementsByTagName("a")![0];
+          const sourceId = link.getAttribute("href")!.split("/")[5];
+          const title = link.textContent.trim();
+          const chapterNum = sourceId.split("c")[1];
 
-            return {
-              id: undefined,
-              seriesId: undefined,
-              sourceId: sourceId,
-              title: title,
-              chapterNumber: chapterNum,
-              volumeNumber: "",
-              languageKey: LanguageKey.ENGLISH,
-              groupName: "",
-              time: 0,
-              read: false,
-            };
-          });
+          return {
+            id: undefined,
+            seriesId: undefined,
+            sourceId: sourceId,
+            title: title,
+            chapterNumber: chapterNum,
+            volumeNumber: "",
+            languageKey: LanguageKey.ENGLISH,
+            groupName: "",
+            time: 0,
+            read: false,
+          };
+        });
       });
   };
 
@@ -189,15 +162,12 @@ export class ExtensionClient extends ExtensionClientAbstract {
     seriesSourceId: string,
     chapterSourceId: string
   ) => {
-    return this.fetchFn(
-      `${BASE_URL}/manga/${seriesSourceId}/${chapterSourceId}`
-    )
+    return this.utilFns
+      .fetchFn(`${BASE_URL}/manga/${seriesSourceId}/${chapterSourceId}`)
       .then((response) => response.text())
       .then((data: string) => {
         const imageArrStr = data.split("var ytaw=[")[1].split(",]")[0];
-        const imageUrls = imageArrStr
-          .split(",")
-          .map((imageUrl) => imageUrl.replace(/\'/g, ""));
+        const imageUrls = imageArrStr.split(",").map((imageUrl) => imageUrl.replace(/\'/g, ""));
 
         return {
           server: "",
@@ -219,25 +189,21 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getDirectory: GetDirectoryFunc = (page: number) => {
-    return this.fetchFn(
-      `${BASE_URL}/manga/page/${page}?filter=1&include_mode=and&chapters=1&order=latest`
-    )
+    return this.utilFns
+      .fetchFn(`${BASE_URL}/manga/page/${page}?filter=1&include_mode=and&chapters=1&order=latest`)
       .then((response) => response.text())
       .then((data: string) => {
-        const doc = this.domParser.parseFromString(data);
+        const doc = this.utilFns.docFn(data);
         return parseDirectoryResponse(doc);
       });
   };
 
-  getSearch: GetSearchFunc = (
-    text: string,
-    params: { [key: string]: string },
-    page: number
-  ) => {
-    return this.fetchFn(`${BASE_URL}/page/${page}/?search=${text}`)
+  getSearch: GetSearchFunc = (text: string, params: { [key: string]: string }, page: number) => {
+    return this.utilFns
+      .fetchFn(`${BASE_URL}/page/${page}/?search=${text}`)
       .then((response) => response.text())
       .then((data: string) => {
-        const doc = this.domParser.parseFromString(data);
+        const doc = this.utilFns.docFn(data);
         return parseDirectoryResponse(doc);
       });
   };

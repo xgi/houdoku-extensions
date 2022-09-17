@@ -7,11 +7,9 @@ import {
   GetPageDataFunc,
   PageRequesterData,
   GetDirectoryFunc,
-  FetchFunc,
   GetSettingsFunc,
   SetSettingsFunc,
   GetSettingTypesFunc,
-  WebviewFunc,
   WebviewResponse,
   Chapter,
   LanguageKey,
@@ -19,8 +17,9 @@ import {
   SeriesSourceType,
   SeriesStatus,
 } from "houdoku-extension-lib";
-import DOMParser from "dom-parser";
-import { findNodeWithText } from "../util/parsing";
+import { UtilFunctions } from "houdoku-extension-lib/dist/interface";
+
+import { findElementWithText } from "../util/parsing";
 
 const SERIES_STATUS_MAP: { [key: string]: SeriesStatus } = {
   Ongoing: SeriesStatus.ONGOING,
@@ -45,49 +44,37 @@ type DirectoryEntry = {
 const PAGE_SIZE = 48;
 
 export class NepClient {
-  fetchFn: FetchFunc;
-  webviewFn: WebviewFunc;
-  domParser: DOMParser;
   extensionId: string;
   baseUrl: string;
+  util: UtilFunctions;
 
   fullDirectoryList: DirectoryEntry[];
 
-  constructor(
-    extensionId: string,
-    baseUrl: string,
-    fetchFn: FetchFunc,
-    webviewFn: WebviewFunc,
-    domParser: DOMParser
-  ) {
+  constructor(extensionId: string, baseUrl: string, utilFns: UtilFunctions) {
     this.extensionId = extensionId;
     this.baseUrl = baseUrl;
-    this.fetchFn = fetchFn;
-    this.webviewFn = webviewFn;
-    this.domParser = domParser;
+    this.util = utilFns;
 
     this.fullDirectoryList = [];
   }
 
   _getDirectoryList = () => {
-    return this.webviewFn(`${this.baseUrl}/directory`).then(
-      (response: WebviewResponse) => {
-        let contentStr = response.text
-          .split("vm.FullDirectory = ")
-          .pop()!
-          .split("vm.CurrLetter")[0]
-          .trim();
-        contentStr = contentStr.substr(0, contentStr.length - 1);
-        const content = JSON.parse(contentStr);
+    return this.util.webviewFn(`${this.baseUrl}/directory`).then((response: WebviewResponse) => {
+      let contentStr = response.text
+        .split("vm.FullDirectory = ")
+        .pop()!
+        .split("vm.CurrLetter")[0]
+        .trim();
+      contentStr = contentStr.substr(0, contentStr.length - 1);
+      const content = JSON.parse(contentStr);
 
-        this.fullDirectoryList = content["Directory"].map((entry: any) => {
-          return {
-            indexName: entry.i,
-            seriesName: entry.s,
-          };
-        });
-      }
-    );
+      this.fullDirectoryList = content["Directory"].map((entry: any) => {
+        return {
+          indexName: entry.i,
+          seriesName: entry.s,
+        };
+      });
+    });
   };
 
   _parseDirectoryList = (directoryList: DirectoryEntry[]): Series[] => {
@@ -146,100 +133,83 @@ export class NepClient {
   };
 
   getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.webviewFn(`${this.baseUrl}/manga/${id}`).then(
-      (response: WebviewResponse) => {
-        // some list item tags are incorrectly closed with </i> instead of </li>,
-        // so we manually replace them here
-        const fixedData = response.text.replace(/\<\/i>/g, "</li>");
+    return this.util.webviewFn(`${this.baseUrl}/manga/${id}`).then((response: WebviewResponse) => {
+      // some list item tags are incorrectly closed with </i> instead of </li>,
+      // so we manually replace them here
+      const fixedData = response.text.replace(/\<\/i>/g, "</li>");
 
-        const doc = this.domParser.parseFromString(fixedData);
+      const doc = this.util.docFn(fixedData);
+      const detailContainer = doc.getElementsByClassName("list-group list-group-flush")![0];
+      const detailLabels = detailContainer.getElementsByClassName("mlabel")!;
 
-        const detailContainer = doc.getElementsByClassName(
-          "list-group list-group-flush"
-        )![0];
-        const detailLabels = detailContainer.getElementsByClassName("mlabel")!;
+      const title = detailContainer.getElementsByTagName("h1")![0].textContent.trim();
 
-        const title = detailContainer
-          .getElementsByTagName("h1")![0]
-          .textContent.trim();
+      const authors: string[] = Array.from(
+        findElementWithText(detailLabels, "Author(s)")!.parentElement!.getElementsByTagName("a")!
+      ).map((element: Element) => element.textContent.trim());
 
-        const authors: string[] = findNodeWithText(detailLabels, "Author(s)")!
-          .parentNode!.getElementsByTagName("a")!
-          .map((node: DOMParser.Node) => node.textContent.trim());
+      const genreStrings: string[] = Array.from(
+        findElementWithText(detailLabels, "Genre(s)")!.parentElement!.getElementsByTagName("a")!
+      ).map((element: Element) => element.textContent.trim());
 
-        const genreStrings: string[] = findNodeWithText(
-          detailLabels,
-          "Genre(s)"
-        )!
-          .parentNode!.getElementsByTagName("a")!
-          .map((node: DOMParser.Node) => node.textContent.trim());
+      const typeStr = findElementWithText(detailLabels, "Type")!
+        .parentElement!.getElementsByTagName("a")![0]
+        .getAttribute("href")!
+        .split("=")
+        .pop()!;
+      const originalLanguage = ORIGINAL_LANGUAGE_MAP[typeStr];
 
-        const typeStr = findNodeWithText(detailLabels, "Type")!
-          .parentNode!.getElementsByTagName("a")![0]
-          .getAttribute("href")!
-          .split("=")
-          .pop()!;
-        const originalLanguage = ORIGINAL_LANGUAGE_MAP[typeStr];
+      const statusStr = findElementWithText(detailLabels, "Status")!
+        .parentElement!.getElementsByTagName("a")![0]
+        .getAttribute("href")!
+        .split("=")
+        .pop()!;
+      const status = SERIES_STATUS_MAP[statusStr];
 
-        const statusStr = findNodeWithText(detailLabels, "Status")!
-          .parentNode!.getElementsByTagName("a")![0]
-          .getAttribute("href")!
-          .split("=")
-          .pop()!;
-        const status = SERIES_STATUS_MAP[statusStr];
+      const description = findElementWithText(detailLabels, "Description")!
+        .parentElement!.getElementsByClassName("Content")![0]
+        .textContent.trim();
 
-        const description = findNodeWithText(detailLabels, "Description")!
-          .parentNode!.getElementsByClassName("Content")![0]
-          .textContent.trim();
-
-        const series: Series = {
-          id: undefined,
-          extensionId: this.extensionId,
-          sourceId: id,
-          sourceType: SeriesSourceType.STANDARD,
-          title: title || "",
-          altTitles: [],
-          description: description,
-          authors: authors,
-          artists: [],
-          tags: genreStrings,
-          status: status,
-          originalLanguageKey: originalLanguage,
-          numberUnread: 0,
-          remoteCoverUrl: `https://temp.compsci88.com/cover/${id}.jpg`,
-        };
-        return series;
-      }
-    );
+      const series: Series = {
+        id: undefined,
+        extensionId: this.extensionId,
+        sourceId: id,
+        sourceType: SeriesSourceType.STANDARD,
+        title: title || "",
+        altTitles: [],
+        description: description,
+        authors: authors,
+        artists: [],
+        tags: genreStrings,
+        status: status,
+        originalLanguageKey: originalLanguage,
+        numberUnread: 0,
+        remoteCoverUrl: `https://temp.compsci88.com/cover/${id}.jpg`,
+      };
+      return series;
+    });
   };
 
   getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.webviewFn(`${this.baseUrl}/manga/${id}`).then(
-      (response: WebviewResponse) => {
-        const contentStr = response.text
-          .split("vm.Chapters = ")
-          .pop()!
-          .split(";")[0];
-        const content = JSON.parse(contentStr);
+    return this.util.webviewFn(`${this.baseUrl}/manga/${id}`).then((response: WebviewResponse) => {
+      const contentStr = response.text.split("vm.Chapters = ").pop()!.split(";")[0];
+      const content = JSON.parse(contentStr);
 
-        return content.map((entry: any) => {
-          return {
-            id: undefined,
-            seriesId: undefined,
-            sourceId: this._decodeChapterId(entry.Chapter).path,
-            title: entry.ChapterName || "",
-            chapterNumber: this._decodeChapterId(
-              entry.Chapter
-            ).number.toString(),
-            volumeNumber: "",
-            languageKey: LanguageKey.ENGLISH,
-            groupName: "",
-            time: new Date(entry.Date).getTime(),
-            read: false,
-          } as Chapter;
-        });
-      }
-    );
+      return content.map((entry: any) => {
+        return {
+          id: undefined,
+          seriesId: undefined,
+          sourceId: this._decodeChapterId(entry.Chapter).path,
+          title: entry.ChapterName || "",
+          chapterNumber: this._decodeChapterId(entry.Chapter).number.toString(),
+          volumeNumber: "",
+          languageKey: LanguageKey.ENGLISH,
+          groupName: "",
+          time: new Date(entry.Date).getTime(),
+          read: false,
+        } as Chapter;
+      });
+    });
   };
 
   getPageRequesterData: GetPageRequesterDataFunc = (
@@ -247,39 +217,37 @@ export class NepClient {
     seriesSourceId: string,
     chapterSourceId: string
   ) => {
-    return this.webviewFn(
-      `${this.baseUrl}/read-online/${seriesSourceId}${chapterSourceId}`
-    ).then((response: WebviewResponse) => {
-      const host = JSON.parse(
-        '"' + response.text.split('vm.CurPathName = "').pop()!.split(";")[0]
-      );
-      const curChapter = JSON.parse(
-        "{" + response.text.split("vm.CurChapter = {").pop()!.split(";")[0]
-      );
-      const indexName = JSON.parse(
-        response.text.split("vm.IndexName = ").pop()!.split(";")[0]
-      );
+    return this.util
+      .webviewFn(`${this.baseUrl}/read-online/${seriesSourceId}${chapterSourceId}`)
+      .then((response: WebviewResponse) => {
+        const host = JSON.parse(
+          '"' + response.text.split('vm.CurPathName = "').pop()!.split(";")[0]
+        );
+        const curChapter = JSON.parse(
+          "{" + response.text.split("vm.CurChapter = {").pop()!.split(";")[0]
+        );
+        const indexName = JSON.parse(response.text.split("vm.IndexName = ").pop()!.split(";")[0]);
 
-      const dir = curChapter.Directory === "" ? "" : `${curChapter.Directory}/`;
-      const chNum = this._chapterImage(curChapter.Chapter);
+        const dir = curChapter.Directory === "" ? "" : `${curChapter.Directory}/`;
+        const chNum = this._chapterImage(curChapter.Chapter);
 
-      const numPages = parseInt(curChapter.Page);
-      const pageFilenames: string[] = [];
-      for (let i = 1; i <= numPages; i++) {
-        const iStr = i.toLocaleString("en-US", {
-          minimumIntegerDigits: 3,
-          useGrouping: false,
-        });
-        pageFilenames.push(`${chNum}-${iStr}.png`);
-      }
+        const numPages = parseInt(curChapter.Page);
+        const pageFilenames: string[] = [];
+        for (let i = 1; i <= numPages; i++) {
+          const iStr = i.toLocaleString("en-US", {
+            minimumIntegerDigits: 3,
+            useGrouping: false,
+          });
+          pageFilenames.push(`${chNum}-${iStr}.png`);
+        }
 
-      return {
-        server: host,
-        hash: `${indexName}/${dir}`,
-        pageFilenames: pageFilenames,
-        numPages,
-      };
-    });
+        return {
+          server: host,
+          hash: `${indexName}/${dir}`,
+          pageFilenames: pageFilenames,
+          numPages,
+        };
+      });
   };
 
   getPageUrls: GetPageUrlsFunc = (pageRequesterData: PageRequesterData) => {

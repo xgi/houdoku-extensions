@@ -14,19 +14,12 @@ import {
   GetSettingTypesFunc,
   SeriesListResponse,
   SettingType,
-  FetchFunc,
-  WebviewFunc,
 } from "houdoku-extension-lib";
-import {
-  LanguageKey,
-  Series,
-  SeriesSourceType,
-  SeriesStatus,
-} from "houdoku-extension-lib";
-import DOMParser from "dom-parser";
+import { LanguageKey, Series, SeriesSourceType, SeriesStatus } from "houdoku-extension-lib";
 import { Response } from "node-fetch";
 import metadata from "./metadata.json";
 import { parseMetadata } from "../../util/configuring";
+import { UtilFunctions } from "houdoku-extension-lib/dist/interface";
 
 const BASE_URL = "https://readcomiconline.li";
 export const METADATA: ExtensionMetadata = parseMetadata(metadata);
@@ -48,25 +41,18 @@ const DEFAULT_SETTINGS = {
   [SETTING_NAMES.USE_HIGH_QUALITY]: true,
 };
 
-const getDetailsRowFields = (
-  rows: DOMParser.Node[],
-  text: string
-): string[] => {
-  const row = rows.find((row: DOMParser.Node) =>
-    row.textContent.includes(text)
-  );
+const getDetailsRowFields = (rows: Element[], text: string): string[] => {
+  const row = rows.find((row) => row.textContent.includes(text));
   if (!row) return [];
 
-  return row
-    .getElementsByTagName("a")!
-    .map((node: DOMParser.Node) => node.textContent.trim());
+  return Array.from(row.getElementsByTagName("a")!).map((element) => element.textContent.trim());
 };
 
-const parseDirectoryResponse = (doc: DOMParser.Dom): SeriesListResponse => {
+const parseDirectoryResponse = (doc: Document): SeriesListResponse => {
   const rows = doc.getElementsByClassName("section group list")!;
   const hasMore = doc.getElementsByClassName("right_bt next_bt")!.length > 0;
 
-  const seriesList = rows.map((row: DOMParser.Node) => {
+  const seriesList = [...rows].map((row) => {
     const link = row.getElementsByTagName("a")![0];
     const img = link.getElementsByTagName("img")![0];
 
@@ -96,12 +82,8 @@ const parseDirectoryResponse = (doc: DOMParser.Dom): SeriesListResponse => {
 };
 
 export class ExtensionClient extends ExtensionClientAbstract {
-  constructor(
-    fetchFn: FetchFunc,
-    webviewFn: WebviewFunc,
-    domParser: DOMParser
-  ) {
-    super(fetchFn, webviewFn, domParser);
+  constructor(utilFns: UtilFunctions) {
+    super(utilFns);
     this.settings = DEFAULT_SETTINGS;
   }
 
@@ -110,30 +92,25 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.fetchFn(`${BASE_URL}/Comic/${id}`)
+    return this.utilFns
+      .fetchFn(`${BASE_URL}/Comic/${id}`)
       .then((response: Response) => response.text())
       .then((data: string) => {
-        const doc = this.domParser.parseFromString(data);
+        const doc = this.utilFns.docFn(data);
         const parent = doc.getElementsByClassName("section group")![0];
-        const description = doc
-          .getElementsByClassName("section group")![1]
-          .textContent.trim();
+        const description = doc.getElementsByClassName("section group")![1].textContent.trim();
 
         const img = parent.getElementsByTagName("img")![0];
-        const rows = parent.getElementsByTagName("p")!;
+        const rows = [...parent.getElementsByTagName("p")!];
 
         const altNames = getDetailsRowFields(rows, "Other name:");
         const sourceTags = getDetailsRowFields(rows, "Genres:");
         const authors = getDetailsRowFields(rows, "Writer:");
         const artists = getDetailsRowFields(rows, "Artist:");
 
-        const statusRow = rows.find((row: DOMParser.Node) =>
-          row.textContent.includes("Status:")
-        );
+        const statusRow = rows.find((row) => row.textContent.includes("Status:"));
         const statusStr =
-          statusRow && false
-            ? statusRow!.textContent.replace("Status:&nbsp;", "").trim()
-            : "";
+          statusRow && false ? statusRow!.textContent.replace("Status:&nbsp;", "").trim() : "";
 
         const series: Series = {
           extensionId: METADATA.id,
@@ -155,19 +132,18 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.fetchFn(`${BASE_URL}/Comic/${id}`)
+    return this.utilFns
+      .fetchFn(`${BASE_URL}/Comic/${id}`)
       .then((response: Response) => response.text())
       .then((data: string) => {
-        const doc = this.domParser.parseFromString(data);
+        const doc = this.utilFns.docFn(data);
         const parent = doc.getElementsByClassName("section group")![2];
         const rows = parent.getElementsByTagName("li")!;
 
-        return rows.map((row: DOMParser.Node) => {
+        return [...rows].map((row) => {
           const link = row.getElementsByTagName("a")![0];
           const title = link.textContent.trim();
-          const chapterNum = title.startsWith("Issue #")
-            ? title.split("Issue #")[1]
-            : "";
+          const chapterNum = title.startsWith("Issue #") ? title.split("Issue #")[1] : "";
 
           return {
             id: undefined,
@@ -190,11 +166,10 @@ export class ExtensionClient extends ExtensionClientAbstract {
     seriesSourceId: string,
     chapterSourceId: string
   ) => {
-    const qualityStr = this.settings[SETTING_NAMES.USE_HIGH_QUALITY]
-      ? "hq"
-      : "lq";
+    const qualityStr = this.settings[SETTING_NAMES.USE_HIGH_QUALITY] ? "hq" : "lq";
 
-    return this.fetchFn(`${BASE_URL}${chapterSourceId}&quality=${qualityStr}`)
+    return this.utilFns
+      .fetchFn(`${BASE_URL}${chapterSourceId}&quality=${qualityStr}`)
       .then((response: Response) => response.text())
       .then((data: string) => {
         const snippetRegexp = /lstImages\.push\(\"http.*\)/g;
@@ -224,29 +199,27 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getDirectory: GetDirectoryFunc = (page: number) => {
-    return this.fetchFn(`${BASE_URL}/ComicList/LatestUpdate?page=${page}`)
+    return this.utilFns
+      .fetchFn(`${BASE_URL}/ComicList/LatestUpdate?page=${page}`)
       .then((response: Response) => response.text())
       .then((data: string) => {
-        const doc = this.domParser.parseFromString(data);
+        const doc = this.utilFns.docFn(data);
         return parseDirectoryResponse(doc);
       });
   };
 
-  getSearch: GetSearchFunc = (
-    text: string,
-    params: { [key: string]: string },
-    page: number
-  ) => {
-    return this.fetchFn(`${BASE_URL}/AdvanceSearch?page=${page}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: [`comicName=${text}`, "genres=[]", "status="].join("&"),
-    })
+  getSearch: GetSearchFunc = (text: string, params: { [key: string]: string }, page: number) => {
+    return this.utilFns
+      .fetchFn(`${BASE_URL}/AdvanceSearch?page=${page}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: [`comicName=${text}`, "genres=[]", "status="].join("&"),
+      })
       .then((response: Response) => response.text())
       .then((data: string) => {
-        const doc = this.domParser.parseFromString(data);
+        const doc = this.utilFns.docFn(data);
         return parseDirectoryResponse(doc);
       });
   };
@@ -261,10 +234,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
 
   setSettings: SetSettingsFunc = (newSettings: { [key: string]: any }) => {
     Object.keys(newSettings).forEach((key: string) => {
-      if (
-        key in this.settings &&
-        typeof (this.settings[key] === newSettings[key])
-      ) {
+      if (key in this.settings && typeof (this.settings[key] === newSettings[key])) {
         this.settings[key] = newSettings[key];
       }
     });

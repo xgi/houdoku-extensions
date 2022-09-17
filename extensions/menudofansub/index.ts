@@ -8,8 +8,6 @@ import {
   ExtensionMetadata,
   GetDirectoryFunc,
   ExtensionClientAbstract,
-  FetchFunc,
-  WebviewFunc,
   Series,
   PageRequesterData,
   SeriesSourceType,
@@ -17,27 +15,22 @@ import {
   GetSettingsFunc,
   GetSettingTypesFunc,
 } from "houdoku-extension-lib";
-import DOMParser from "dom-parser";
 import metadata from "./metadata.json";
 import { FoolSlideClient } from "../../generic/foolslide";
 import { parseMetadata } from "../../util/configuring";
+import { UtilFunctions } from "houdoku-extension-lib/dist/interface";
 
 export const METADATA: ExtensionMetadata = parseMetadata(metadata);
 
 export class ExtensionClient extends ExtensionClientAbstract {
   foolslideClient: FoolSlideClient;
 
-  constructor(
-    fetchFn: FetchFunc,
-    webviewFn: WebviewFunc,
-    domParser: DOMParser
-  ) {
-    super(fetchFn, webviewFn, domParser);
+  constructor(utilsFn: UtilFunctions) {
+    super(utilsFn);
     this.foolslideClient = new FoolSlideClient(
       METADATA.id,
       "http://www.menudo-fansub.com/slide",
-      fetchFn,
-      domParser,
+      utilsFn,
       METADATA.translatedLanguage
     );
   }
@@ -56,12 +49,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
     sourceType: SeriesSourceType,
     seriesSourceId: string,
     chapterSourceId: string
-  ) =>
-    this.foolslideClient.getPageRequesterData(
-      sourceType,
-      seriesSourceId,
-      chapterSourceId
-    );
+  ) => this.foolslideClient.getPageRequesterData(sourceType, seriesSourceId, chapterSourceId);
 
   getPageUrls: GetPageUrlsFunc = (pageRequesterData: PageRequesterData) =>
     this.foolslideClient.getPageUrls(pageRequesterData);
@@ -69,17 +57,12 @@ export class ExtensionClient extends ExtensionClientAbstract {
   getPageData: GetPageDataFunc = (series: Series, url: string) =>
     this.foolslideClient.getPageData(series, url);
 
-  getSearch: GetSearchFunc = (
-    text: string,
-    params: { [key: string]: string },
-    page: number
-  ) => this.foolslideClient.getSearch(text, params, page);
+  getSearch: GetSearchFunc = (text: string, params: { [key: string]: string }, page: number) =>
+    this.foolslideClient.getSearch(text, params, page);
 
-  getDirectory: GetDirectoryFunc = (page: number) =>
-    this.foolslideClient.getDirectory(page);
+  getDirectory: GetDirectoryFunc = (page: number) => this.foolslideClient.getDirectory(page);
 
-  getSettingTypes: GetSettingTypesFunc = () =>
-    this.foolslideClient.getSettingTypes();
+  getSettingTypes: GetSettingTypesFunc = () => this.foolslideClient.getSettingTypes();
 
   getSettings: GetSettingsFunc = () => this.foolslideClient.getSettings();
 

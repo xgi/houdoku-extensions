@@ -12,16 +12,8 @@ import {
   GetSettingsFunc,
   SetSettingsFunc,
   GetSettingTypesFunc,
-  FetchFunc,
-  WebviewFunc,
 } from "houdoku-extension-lib";
-import {
-  LanguageKey,
-  Series,
-  SeriesSourceType,
-  SeriesStatus,
-} from "houdoku-extension-lib";
-import DOMParser from "dom-parser";
+import { LanguageKey, Series, SeriesSourceType, SeriesStatus } from "houdoku-extension-lib";
 import metadata from "./metadata.json";
 import { parseMetadata } from "../../util/configuring";
 
@@ -35,75 +27,58 @@ const SERIES_STATUS_MAP: { [key: string]: SeriesStatus } = {
   "not yet published": SeriesStatus.ONGOING,
 };
 
-const parseSeriesGrid = (root: DOMParser.Node): Series[] => {
-  return root
-    .getElementsByClassName("relative block")!
-    .map((node: DOMParser.Node) => {
-      const parent = node.parentNode!;
-      const img = parent.getElementsByTagName("img")![0];
-      const link = parent.getElementsByTagName("a")![1];
-      const sourceId = link.getAttribute("href")!;
+const parseSeriesGrid = (root: Element): Series[] => {
+  return Array.from(root.getElementsByClassName("relative block")!).map((node: Element) => {
+    const parent = node.parentElement!;
+    const img = parent.getElementsByTagName("img")![0];
+    const link = parent.getElementsByTagName("a")![1];
+    const sourceId = link.getAttribute("href")!;
 
-      const series: Series = {
-        id: undefined,
-        extensionId: METADATA.id,
-        sourceId: sourceId,
-        sourceType: SeriesSourceType.STANDARD,
-        title: link.textContent.trim(),
-        altTitles: [],
-        description: "",
-        authors: [],
-        artists: [],
-        tags: [],
-        status: SeriesStatus.ONGOING,
-        originalLanguageKey: LanguageKey.MULTI,
-        numberUnread: 0,
-        remoteCoverUrl: img.getAttribute("data-src")!,
-      };
-      return series;
-    });
+    const series: Series = {
+      id: undefined,
+      extensionId: METADATA.id,
+      sourceId: sourceId,
+      sourceType: SeriesSourceType.STANDARD,
+      title: link.textContent.trim(),
+      altTitles: [],
+      description: "",
+      authors: [],
+      artists: [],
+      tags: [],
+      status: SeriesStatus.ONGOING,
+      originalLanguageKey: LanguageKey.MULTI,
+      numberUnread: 0,
+      remoteCoverUrl: img.getAttribute("data-src")!,
+    };
+    return series;
+  });
 };
 
 export class ExtensionClient extends ExtensionClientAbstract {
-  constructor(
-    fetchFn: FetchFunc,
-    webviewFn: WebviewFunc,
-    domParser: DOMParser
-  ) {
-    super(fetchFn, webviewFn, domParser);
-  }
-
   getMetadata: () => ExtensionMetadata = () => {
     return METADATA;
   };
 
   getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.fetchFn(`${METADATA.url}${id}`)
+    return this.utilFns
+      .fetchFn(`${METADATA.url}${id}`)
       .then((response) => response.text())
       .then((data: string) => {
-        const doc = this.domParser.parseFromString(data);
+        const doc = this.utilFns.docFn(data);
         const container = doc.getElementsByClassName("container")![1];
 
         const img = container.getElementsByTagName("img")![0];
-        const parent = img.parentNode!.parentNode!;
+        const parent = img.parentElement!.parentElement!;
         const detailsContainer = parent.getElementsByClassName("flex")![0];
 
-        const title = detailsContainer
-          .getElementsByTagName("h1")![0]
-          .textContent.trim();
-        const description = detailsContainer
-          .getElementsByTagName("p")![0]
-          .textContent.trim();
+        const title = detailsContainer.getElementsByTagName("h1")![0].textContent.trim();
+        const description = detailsContainer.getElementsByTagName("p")![0].textContent.trim();
 
         const cells = detailsContainer
           .getElementsByClassName("grid")![0]
           .getElementsByTagName("div")!;
-        const typeStr = cells[0]
-          .getElementsByTagName("div")![0]
-          .textContent.trim();
-        const statusStr = cells[2]
-          .getElementsByTagName("div")![0]
-          .textContent.trim();
+        const typeStr = cells[0].getElementsByTagName("div")![0].textContent.trim();
+        const statusStr = cells[2].getElementsByTagName("div")![0].textContent.trim();
 
         let languageKey = LanguageKey.JAPANESE;
         switch (typeStr) {
@@ -115,11 +90,10 @@ export class ExtensionClient extends ExtensionClientAbstract {
             break;
         }
 
-        const genresContainer =
-          detailsContainer.childNodes[detailsContainer.childNodes.length - 2];
-        const tags = genresContainer
-          .getElementsByTagName("a")!
-          .map((link) => link.textContent);
+        const genresContainer = detailsContainer.children[detailsContainer.children.length - 2];
+        const tags = [...genresContainer.getElementsByTagName("a")!].map(
+          (link) => link.textContent
+        );
 
         const series: Series = {
           extensionId: METADATA.id,
@@ -141,14 +115,15 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.fetchFn(`${METADATA.url}${id}`)
+    return this.utilFns
+      .fetchFn(`${METADATA.url}${id}`)
       .then((response) => response.text())
       .then((data: string) => {
-        const doc = this.domParser.parseFromString(data);
+        const doc = this.utilFns.docFn(data);
 
         const container = doc.getElementById("chapters")!;
 
-        return container.getElementsByTagName("a")!.map((link) => {
+        return [...container.getElementsByTagName("a")!].map((link) => {
           const sourceId = link.getAttribute("href")!;
           const title = link.textContent.trim();
           const chapterNum = title.split("Chapter ")[1];
@@ -174,14 +149,15 @@ export class ExtensionClient extends ExtensionClientAbstract {
     seriesSourceId: string,
     chapterSourceId: string
   ) => {
-    return this.fetchFn(`${METADATA.url}${chapterSourceId}`)
+    return this.utilFns
+      .fetchFn(`${METADATA.url}${chapterSourceId}`)
       .then((response) => response.text())
       .then((data: string) => {
-        const doc = this.domParser.parseFromString(data);
+        const doc = this.utilFns.docFn(data);
 
-        const imageUrls = doc
-          .getElementsByTagName("img")!
-          .map((img) => img.getAttribute("data-src")!);
+        const imageUrls = Array.from(doc.getElementsByTagName("img")!).map(
+          (img) => img.getAttribute("data-src")!
+        );
 
         return {
           server: "",
@@ -203,10 +179,11 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getDirectory: GetDirectoryFunc = (page: number) => {
-    return this.fetchFn(`${METADATA.url}/mangas/new`)
+    return this.utilFns
+      .fetchFn(`${METADATA.url}/mangas/new`)
       .then((response) => response.text())
       .then((data: string) => {
-        const doc = this.domParser.parseFromString(data);
+        const doc = this.utilFns.docFn(data);
         const grid = doc.getElementsByClassName("grid")![0];
         return {
           seriesList: parseSeriesGrid(grid),
@@ -215,22 +192,16 @@ export class ExtensionClient extends ExtensionClientAbstract {
       });
   };
 
-  getSearch: GetSearchFunc = (
-    text: string,
-    params: { [key: string]: string },
-    page: number
-  ) => {
-    return this.fetchFn(`${METADATA.url}/search?page=${page}&q=${text}`)
+  getSearch: GetSearchFunc = (text: string, params: { [key: string]: string }, page: number) => {
+    return this.utilFns
+      .fetchFn(`${METADATA.url}/search?page=${page}&q=${text}`)
       .then((response) => response.text())
       .then((data: string) => {
-        const doc = this.domParser.parseFromString(data);
+        const doc = this.utilFns.docFn(data);
         const grid = doc.getElementsByClassName("grid")![2];
 
-        const innerLinks = doc
-          .getElementsByClassName("container")![1]
-          .getElementsByTagName("a")!;
-        const hasMore =
-          innerLinks[innerLinks.length - 1].textContent === "Next";
+        const innerLinks = doc.getElementsByClassName("container")![1].getElementsByTagName("a")!;
+        const hasMore = innerLinks[innerLinks.length - 1].textContent === "Next";
 
         return {
           seriesList: parseSeriesGrid(grid),

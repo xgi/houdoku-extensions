@@ -7,8 +7,6 @@ import {
   GetPageDataFunc,
   PageRequesterData,
   GetDirectoryFunc,
-  WebviewFunc,
-  FetchFunc,
   GetSettingsFunc,
   SetSettingsFunc,
   GetSettingTypesFunc,
@@ -18,8 +16,8 @@ import {
   SeriesSourceType,
   SeriesStatus,
 } from "houdoku-extension-lib";
+import { UtilFunctions } from "houdoku-extension-lib/dist/interface";
 import { Response } from "node-fetch";
-import DOMParser from "dom-parser";
 
 const SERIES_STATUS_MAP: { [key: string]: SeriesStatus } = {
   Ongoing: SeriesStatus.ONGOING,
@@ -28,24 +26,22 @@ const SERIES_STATUS_MAP: { [key: string]: SeriesStatus } = {
 };
 
 export class WeebReaderClient {
-  fetchFn: FetchFunc;
-  webviewFn: WebviewFunc;
-  domParser: DOMParser;
   extensionId: string;
   baseUrl: string;
   groupName: string;
   translatedLanguageKey: LanguageKey;
+  util: UtilFunctions;
 
   constructor(
     extensionId: string,
     baseUrl: string,
-    fetchFn: FetchFunc,
+    utilFns: UtilFunctions,
     groupName: string,
     translatedLanguageKey: LanguageKey
   ) {
     this.extensionId = extensionId;
     this.baseUrl = baseUrl;
-    this.fetchFn = fetchFn;
+    this.util = utilFns;
     this.groupName = groupName;
     this.translatedLanguageKey = translatedLanguageKey;
   }
@@ -73,7 +69,7 @@ export class WeebReaderClient {
   };
 
   getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.fetchFn(`${this.baseUrl}/api/titles/${id}`)
+    return this.util.fetchFn(`${this.baseUrl}/api/titles/${id}`)
       .then((response: Response) => response.json())
       .then((data: any) => {
         return {
@@ -96,7 +92,7 @@ export class WeebReaderClient {
   };
 
   getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.fetchFn(`${this.baseUrl}/api/titles/${id}`)
+    return this.util.fetchFn(`${this.baseUrl}/api/titles/${id}`)
       .then((response: Response) => response.json())
       .then((data: any) => {
         return data.chapters.map(
@@ -122,7 +118,7 @@ export class WeebReaderClient {
     seriesSourceId: string,
     chapterSourceId: string
   ) => {
-    return this.fetchFn(`${this.baseUrl}/api/chapters/${chapterSourceId}`)
+    return this.util.fetchFn(`${this.baseUrl}/api/chapters/${chapterSourceId}`)
       .then((response: Response) => response.json())
       .then((data: any) => {
         const pageFilenames = data.pages.map((entry: any) => entry.pageUrl);
@@ -152,7 +148,7 @@ export class WeebReaderClient {
     params: { [key: string]: string },
     page: number
   ) => {
-    return this.fetchFn(`${this.baseUrl}/api/titles/search?term=${text}`)
+    return this.util.fetchFn(`${this.baseUrl}/api/titles/search?term=${text}`)
       .then((response: Response) => response.json())
       .then((data: any) => {
         const seriesList = this._parseSeriesList(data);
@@ -164,7 +160,7 @@ export class WeebReaderClient {
   };
 
   getDirectory: GetDirectoryFunc = (page: number) => {
-    return this.fetchFn(`${this.baseUrl}/api/titles`)
+    return this.util.fetchFn(`${this.baseUrl}/api/titles`)
       .then((response: Response) => response.json())
       .then((data: any) => {
         const seriesList = this._parseSeriesList(data);

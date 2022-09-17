@@ -8,8 +8,6 @@ import {
   ExtensionMetadata,
   GetDirectoryFunc,
   ExtensionClientAbstract,
-  FetchFunc,
-  WebviewFunc,
   Series,
   PageRequesterData,
   SeriesSourceType,
@@ -17,26 +15,22 @@ import {
   GetSettingsFunc,
   GetSettingTypesFunc,
 } from "houdoku-extension-lib";
-import DOMParser from "dom-parser";
 import metadata from "./metadata.json";
 import { PizzaReaderClient } from "../../generic/pizzareader";
 import { parseMetadata } from "../../util/configuring";
+import { UtilFunctions } from "houdoku-extension-lib/dist/interface";
 
 export const METADATA: ExtensionMetadata = parseMetadata(metadata);
 
 export class ExtensionClient extends ExtensionClientAbstract {
   pizzaReaderClient: PizzaReaderClient;
 
-  constructor(
-    fetchFn: FetchFunc,
-    webviewFn: WebviewFunc,
-    domParser: DOMParser
-  ) {
-    super(fetchFn, webviewFn, domParser);
+  constructor(utilsFn: UtilFunctions) {
+    super(utilsFn);
     this.pizzaReaderClient = new PizzaReaderClient(
       METADATA.id,
       "https://www.phoenixscans.com",
-      fetchFn
+      utilsFn
     );
   }
 
@@ -54,12 +48,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
     sourceType: SeriesSourceType,
     seriesSourceId: string,
     chapterSourceId: string
-  ) =>
-    this.pizzaReaderClient.getPageRequesterData(
-      sourceType,
-      seriesSourceId,
-      chapterSourceId
-    );
+  ) => this.pizzaReaderClient.getPageRequesterData(sourceType, seriesSourceId, chapterSourceId);
 
   getPageUrls: GetPageUrlsFunc = (pageRequesterData: PageRequesterData) =>
     this.pizzaReaderClient.getPageUrls(pageRequesterData);
@@ -67,17 +56,12 @@ export class ExtensionClient extends ExtensionClientAbstract {
   getPageData: GetPageDataFunc = (series: Series, url: string) =>
     this.pizzaReaderClient.getPageData(series, url);
 
-  getSearch: GetSearchFunc = (
-    text: string,
-    params: { [key: string]: string },
-    page: number
-  ) => this.pizzaReaderClient.getSearch(text, params, page);
+  getSearch: GetSearchFunc = (text: string, params: { [key: string]: string }, page: number) =>
+    this.pizzaReaderClient.getSearch(text, params, page);
 
-  getDirectory: GetDirectoryFunc = (page: number) =>
-    this.pizzaReaderClient.getDirectory(page);
+  getDirectory: GetDirectoryFunc = (page: number) => this.pizzaReaderClient.getDirectory(page);
 
-  getSettingTypes: GetSettingTypesFunc = () =>
-    this.pizzaReaderClient.getSettingTypes();
+  getSettingTypes: GetSettingTypesFunc = () => this.pizzaReaderClient.getSettingTypes();
 
   getSettings: GetSettingsFunc = () => this.pizzaReaderClient.getSettings();
 
