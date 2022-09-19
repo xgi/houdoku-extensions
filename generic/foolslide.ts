@@ -4,7 +4,7 @@ import {
   GetPageRequesterDataFunc,
   GetPageUrlsFunc,
   GetSearchFunc,
-  GetPageDataFunc,
+  GetImageFunc,
   PageRequesterData,
   GetDirectoryFunc,
   FetchFunc,
@@ -16,7 +16,7 @@ import {
   Chapter,
   LanguageKey,
   Series,
-  SeriesSourceType,
+  
   SeriesStatus,
 } from "houdoku-extension-lib";
 import { UtilFunctions } from "houdoku-extension-lib/dist/interface";
@@ -45,7 +45,7 @@ const _parseResults = (doc: Document, extensionId: string): ParsedResults => {
       id: undefined,
       extensionId: extensionId,
       sourceId: sourceId,
-      sourceType: SeriesSourceType.STANDARD,
+      
       title: title,
       altTitles: [],
       description: "",
@@ -85,7 +85,7 @@ export class FoolSlideClient {
     this.util = utilFns;
   }
 
-  getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) => {
+  getSeries: GetSeriesFunc = (id: string) => {
     return this.util
       .fetchFn(`${this.baseUrl}/series/${id}`)
       .then((response: Response) => response.text())
@@ -106,7 +106,7 @@ export class FoolSlideClient {
           id: undefined,
           extensionId: this.extensionId,
           sourceId: id,
-          sourceType: SeriesSourceType.STANDARD,
+          
           title: title,
           altTitles: [],
           description: "",
@@ -121,7 +121,7 @@ export class FoolSlideClient {
       });
   };
 
-  getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) => {
+  getChapters: GetChaptersFunc = (id: string) => {
     return this.util
       .fetchFn(`${this.baseUrl}/series/${id}`)
       .then((response: Response) => response.text())
@@ -165,7 +165,7 @@ export class FoolSlideClient {
   };
 
   getPageRequesterData: GetPageRequesterDataFunc = (
-    sourceType: SeriesSourceType,
+    
     seriesSourceId: string,
     chapterSourceId: string
   ) => {
@@ -193,7 +193,7 @@ export class FoolSlideClient {
     return pageRequesterData.pageFilenames;
   };
 
-  getPageData: GetPageDataFunc = (series: Series, url: string) => {
+  getImage: GetImageFunc = (series: Series, url: string) => {
     return new Promise((resolve, reject) => {
       resolve(url);
     });

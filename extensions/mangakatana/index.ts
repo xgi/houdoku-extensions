@@ -4,7 +4,7 @@ import {
   GetPageRequesterDataFunc,
   GetPageUrlsFunc,
   GetSearchFunc,
-  GetPageDataFunc,
+  GetImageFunc,
   ExtensionMetadata,
   PageRequesterData,
   GetDirectoryFunc,
@@ -14,7 +14,7 @@ import {
   GetSettingTypesFunc,
   SeriesListResponse,
 } from "houdoku-extension-lib";
-import { LanguageKey, Series, SeriesSourceType, SeriesStatus } from "houdoku-extension-lib";
+import { LanguageKey, Series, SeriesStatus } from "houdoku-extension-lib";
 import metadata from "./metadata.json";
 import { parseMetadata } from "../../util/configuring";
 
@@ -24,7 +24,11 @@ export const METADATA: ExtensionMetadata = parseMetadata(metadata);
 const SERIES_STATUS_MAP: { [key: string]: SeriesStatus } = {};
 
 const parseSeriesPage = (doc: Document): Series => {
-  const id = doc.querySelectorAll(`[property=og:url]`)![0].getAttribute("content").split("/").pop();
+  const id = doc
+    .querySelectorAll(`[property=og:url]`)![0]
+    .getAttribute("content")
+    .split("/")
+    .pop();
   const infoContainer = doc.getElementById("single_book")!;
   const title = infoContainer.getElementsByTagName("h1")![0].textContent.trim();
   const description = infoContainer
@@ -34,26 +38,33 @@ const parseSeriesPage = (doc: Document): Series => {
   const img = infoContainer.getElementsByTagName("img")![0];
   const rows = infoContainer.getElementsByClassName("d-row-small")!;
 
-  const altNamesRow = [...rows].find((row: Element) => row.textContent.includes("Alt name(s):"));
+  const altNamesRow = [...rows].find((row: Element) =>
+    row.textContent.includes("Alt name(s):")
+  );
   const altNames = altNamesRow
     ?.getElementsByClassName("value")![0]
     .textContent!.trim()
     .split(" ; ")!;
 
-  const statusStr = infoContainer?.getElementsByClassName("value status")![0].textContent!;
+  const statusStr =
+    infoContainer?.getElementsByClassName("value status")![0].textContent!;
 
   const authors = Array.from(
-    infoContainer.getElementsByClassName("value authors")![0].getElementsByTagName("a")!
+    infoContainer
+      .getElementsByClassName("value authors")![0]
+      .getElementsByTagName("a")!
   ).map((link) => link.textContent);
 
   const tags = Array.from(
-    infoContainer.getElementsByClassName("genres")![0].getElementsByTagName("a")!
+    infoContainer
+      .getElementsByClassName("genres")![0]
+      .getElementsByTagName("a")!
   ).map((genreLink) => genreLink.textContent);
 
   const series: Series = {
     extensionId: METADATA.id,
     sourceId: id,
-    sourceType: SeriesSourceType.STANDARD,
+
     title: title,
     altTitles: altNames,
     description: description,
@@ -79,18 +90,21 @@ const parseDirectoryResponse = (doc: Document): SeriesListResponse => {
   }
 
   const items = container.getElementsByClassName("item")!;
-  const hasMore = container.getElementsByClassName("next page-numbers")!.length > 0;
+  const hasMore =
+    container.getElementsByClassName("next page-numbers")!.length > 0;
 
   const seriesList = [...items].map((row: Element) => {
     const img = row.getElementsByTagName("img")![0];
-    const link = row.getElementsByClassName("title")![0].getElementsByTagName("a")![0];
+    const link = row
+      .getElementsByClassName("title")![0]
+      .getElementsByTagName("a")![0];
     const sourceId = link.getAttribute("href")!.split("/")[4];
 
     const series: Series = {
       id: undefined,
       extensionId: METADATA.id,
       sourceId: sourceId,
-      sourceType: SeriesSourceType.STANDARD,
+
       title: link.textContent.trim(),
       altTitles: [],
       description: "",
@@ -116,7 +130,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
     return METADATA;
   };
 
-  getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) => {
+  getSeries: GetSeriesFunc = (id: string) => {
     return this.utilFns
       .fetchFn(`${BASE_URL}/manga/${id}`)
       .then((response) => response.text())
@@ -126,7 +140,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
       });
   };
 
-  getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) => {
+  getChapters: GetChaptersFunc = (id: string) => {
     return this.utilFns
       .fetchFn(`${BASE_URL}/manga/${id}`)
       .then((response) => response.text())
@@ -158,7 +172,6 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getPageRequesterData: GetPageRequesterDataFunc = (
-    sourceType: SeriesSourceType,
     seriesSourceId: string,
     chapterSourceId: string
   ) => {
@@ -167,7 +180,9 @@ export class ExtensionClient extends ExtensionClientAbstract {
       .then((response) => response.text())
       .then((data: string) => {
         const imageArrStr = data.split("var ytaw=[")[1].split(",]")[0];
-        const imageUrls = imageArrStr.split(",").map((imageUrl) => imageUrl.replace(/\'/g, ""));
+        const imageUrls = imageArrStr
+          .split(",")
+          .map((imageUrl) => imageUrl.replace(/\'/g, ""));
 
         return {
           server: "",
@@ -182,7 +197,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
     return pageRequesterData.pageFilenames;
   };
 
-  getPageData: GetPageDataFunc = (series: Series, url: string) => {
+  getImage: GetImageFunc = (series: Series, url: string) => {
     return new Promise((resolve, reject) => {
       resolve(url);
     });
@@ -190,7 +205,9 @@ export class ExtensionClient extends ExtensionClientAbstract {
 
   getDirectory: GetDirectoryFunc = (page: number) => {
     return this.utilFns
-      .fetchFn(`${BASE_URL}/manga/page/${page}?filter=1&include_mode=and&chapters=1&order=latest`)
+      .fetchFn(
+        `${BASE_URL}/manga/page/${page}?filter=1&include_mode=and&chapters=1&order=latest`
+      )
       .then((response) => response.text())
       .then((data: string) => {
         const doc = this.utilFns.docFn(data);
@@ -198,7 +215,11 @@ export class ExtensionClient extends ExtensionClientAbstract {
       });
   };
 
-  getSearch: GetSearchFunc = (text: string, params: { [key: string]: string }, page: number) => {
+  getSearch: GetSearchFunc = (
+    text: string,
+    params: { [key: string]: string },
+    page: number
+  ) => {
     return this.utilFns
       .fetchFn(`${BASE_URL}/page/${page}/?search=${text}`)
       .then((response) => response.text())

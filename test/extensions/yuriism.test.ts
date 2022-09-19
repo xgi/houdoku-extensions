@@ -6,7 +6,6 @@ import {
   createExtensionEnv,
   teardownExtensionEnv,
 } from "../util/base";
-import { SeriesSourceType } from "houdoku-extension-lib";
 
 describe("yuriism", () => {
   let env: ExtensionEnv;
@@ -14,10 +13,7 @@ describe("yuriism", () => {
   before(() => (env = createExtensionEnv(ExtensionClient)));
 
   it("get series Bakemonogatari", async () => {
-    const response = await env.extensionClient.getSeries(
-      SeriesSourceType.STANDARD,
-      "bakemonogatari"
-    );
+    const response = await env.extensionClient.getSeries("bakemonogatari");
     const actual = matchesSeries(response, {
       title: "Bakemonogatari",
     });

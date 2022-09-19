@@ -6,7 +6,6 @@ import {
   createExtensionEnv,
   teardownExtensionEnv,
 } from "../util/base";
-import { SeriesSourceType } from "houdoku-extension-lib";
 
 describe("toonily", () => {
   let env: ExtensionEnv;
@@ -23,7 +22,6 @@ describe("toonily", () => {
 
   it("get series Tomb Raider King", async () => {
     const response = await env.extensionClient.getSeries(
-      SeriesSourceType.STANDARD,
       "/webtoon/tomb-raider-king/"
     );
     const actual = matchesSeries(response, {

@@ -6,7 +6,6 @@ import {
   createExtensionEnv,
   teardownExtensionEnv,
 } from "../util/base";
-import { SeriesSourceType } from "houdoku-extension-lib";
 
 describe("isekaiscan", () => {
   let env: ExtensionEnv;
@@ -23,7 +22,6 @@ describe("isekaiscan", () => {
 
   it("get series Divine Perspective", async () => {
     const response = await env.extensionClient.getSeries(
-      SeriesSourceType.STANDARD,
       "/manga/divine-perspective"
     );
     const actual = matchesSeries(response, {

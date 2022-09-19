@@ -6,7 +6,6 @@ import {
   createExtensionEnv,
   teardownExtensionEnv,
 } from "../util/base";
-import { SeriesSourceType } from "houdoku-extension-lib";
 
 describe("lilyreader", () => {
   let env: ExtensionEnv;
@@ -22,10 +21,7 @@ describe("lilyreader", () => {
   });
 
   it("get series Sakura Trick", async () => {
-    const response = await env.extensionClient.getSeries(
-      SeriesSourceType.STANDARD,
-      "sakura-trick"
-    );
+    const response = await env.extensionClient.getSeries("sakura-trick");
     const actual = matchesSeries(response, {
       title: "Sakura Trick",
     });

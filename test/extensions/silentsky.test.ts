@@ -6,7 +6,6 @@ import {
   createExtensionEnv,
   teardownExtensionEnv,
 } from "../util/base";
-import { SeriesSourceType } from "houdoku-extension-lib";
 
 describe("silentsky", () => {
   let env: ExtensionEnv;
@@ -22,10 +21,7 @@ describe("silentsky", () => {
   });
 
   it("get series Great Pretender", async () => {
-    const response = await env.extensionClient.getSeries(
-      SeriesSourceType.STANDARD,
-      "great_pretender"
-    );
+    const response = await env.extensionClient.getSeries("great_pretender");
     const actual = matchesSeries(response, {
       title: "Great Pretender",
     });

@@ -6,7 +6,6 @@ import {
   createExtensionEnv,
   teardownExtensionEnv,
 } from "../util/base";
-import { SeriesSourceType } from "houdoku-extension-lib";
 
 describe("sleepingknightscans", () => {
   let env: ExtensionEnv;
@@ -23,7 +22,6 @@ describe("sleepingknightscans", () => {
 
   it("get series Chronicles of the Martial God’s Return", async () => {
     const response = await env.extensionClient.getSeries(
-      SeriesSourceType.STANDARD,
       "/manga/chronicles-of-the-martial-gods-return"
     );
     const actual = matchesSeries(response, {

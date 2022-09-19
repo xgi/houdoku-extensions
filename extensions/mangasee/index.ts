@@ -4,13 +4,12 @@ import {
   GetPageRequesterDataFunc,
   GetPageUrlsFunc,
   GetSearchFunc,
-  GetPageDataFunc,
+  GetImageFunc,
   ExtensionMetadata,
   GetDirectoryFunc,
   ExtensionClientAbstract,
   Series,
   PageRequesterData,
-  SeriesSourceType,
   SetSettingsFunc,
   GetSettingsFunc,
   GetSettingTypesFunc,
@@ -34,28 +33,29 @@ export class ExtensionClient extends ExtensionClientAbstract {
     return METADATA;
   };
 
-  getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) =>
-    this.nepClient.getSeries(sourceType, id);
+  getSeries: GetSeriesFunc = (id: string) => this.nepClient.getSeries(id);
 
-  getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) =>
-    this.nepClient.getChapters(sourceType, id);
+  getChapters: GetChaptersFunc = (id: string) => this.nepClient.getChapters(id);
 
   getPageRequesterData: GetPageRequesterDataFunc = (
-    sourceType: SeriesSourceType,
     seriesSourceId: string,
     chapterSourceId: string
-  ) => this.nepClient.getPageRequesterData(sourceType, seriesSourceId, chapterSourceId);
+  ) => this.nepClient.getPageRequesterData(seriesSourceId, chapterSourceId);
 
   getPageUrls: GetPageUrlsFunc = (pageRequesterData: PageRequesterData) =>
     this.nepClient.getPageUrls(pageRequesterData);
 
-  getPageData: GetPageDataFunc = (series: Series, url: string) =>
-    this.nepClient.getPageData(series, url);
+  getImage: GetImageFunc = (series: Series, url: string) =>
+    this.nepClient.getImage(series, url);
 
-  getSearch: GetSearchFunc = (text: string, params: { [key: string]: string }, page: number) =>
-    this.nepClient.getSearch(text, params, page);
+  getSearch: GetSearchFunc = (
+    text: string,
+    params: { [key: string]: string },
+    page: number
+  ) => this.nepClient.getSearch(text, params, page);
 
-  getDirectory: GetDirectoryFunc = (page: number) => this.nepClient.getDirectory(page);
+  getDirectory: GetDirectoryFunc = (page: number) =>
+    this.nepClient.getDirectory(page);
 
   getSettingTypes: GetSettingTypesFunc = () => this.nepClient.getSettingTypes();
 

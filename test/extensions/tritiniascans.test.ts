@@ -6,7 +6,6 @@ import {
   createExtensionEnv,
   teardownExtensionEnv,
 } from "../util/base";
-import { SeriesSourceType } from "houdoku-extension-lib";
 
 describe("tritiniascans", () => {
   let env: ExtensionEnv;
@@ -22,10 +21,7 @@ describe("tritiniascans", () => {
   });
 
   it("get series Live Dungeon!", async () => {
-    const response = await env.extensionClient.getSeries(
-      SeriesSourceType.STANDARD,
-      "/manga/live-dungeon"
-    );
+    const response = await env.extensionClient.getSeries("/manga/live-dungeon");
     const actual = matchesSeries(response, {
       title: "Live Dungeon!",
     });

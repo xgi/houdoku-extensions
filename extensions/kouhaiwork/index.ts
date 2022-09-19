@@ -4,7 +4,7 @@ import {
   GetPageRequesterDataFunc,
   GetPageUrlsFunc,
   GetSearchFunc,
-  GetPageDataFunc,
+  GetImageFunc,
   ExtensionMetadata,
   PageRequesterData,
   GetDirectoryFunc,
@@ -17,7 +17,6 @@ import {
   Chapter,
   LanguageKey,
   Series,
-  SeriesSourceType,
   SeriesStatus,
 } from "houdoku-extension-lib";
 import { Response } from "node-fetch";
@@ -55,7 +54,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
       id: undefined,
       extensionId: METADATA.id,
       sourceId: data.id,
-      sourceType: SeriesSourceType.STANDARD,
+
       title: data.title,
       altTitles: data.alternative_titles || [],
       description: data.synopsis,
@@ -74,16 +73,18 @@ export class ExtensionClient extends ExtensionClientAbstract {
     return METADATA;
   };
 
-  getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.utilFns.fetchFn(`${API_URL}/manga/get/${id}`)
+  getSeries: GetSeriesFunc = (id: string) => {
+    return this.utilFns
+      .fetchFn(`${API_URL}/manga/get/${id}`)
       .then((response: Response) => response.json())
       .then((json: any) => {
         return this._parseSeries(json.data);
       });
   };
 
-  getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.utilFns.fetchFn(`${API_URL}/manga/get/${id}`)
+  getChapters: GetChaptersFunc = (id: string) => {
+    return this.utilFns
+      .fetchFn(`${API_URL}/manga/get/${id}`)
       .then((response: Response) => response.json())
       .then((json: any) => {
         return json.data.chapters.map((chapterData: any) => {
@@ -108,11 +109,11 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getPageRequesterData: GetPageRequesterDataFunc = (
-    sourceType: SeriesSourceType,
     seriesSourceId: string,
     chapterSourceId: string
   ) => {
-    return this.utilFns.fetchFn(`${API_URL}/chapters/get/${chapterSourceId}`)
+    return this.utilFns
+      .fetchFn(`${API_URL}/chapters/get/${chapterSourceId}`)
       .then((response: Response) => response.json())
       .then((json: any) => {
         const pageFilenames: string[] = json.chapter.pages.map(
@@ -135,14 +136,15 @@ export class ExtensionClient extends ExtensionClientAbstract {
     );
   };
 
-  getPageData: GetPageDataFunc = (series: Series, url: string) => {
+  getImage: GetImageFunc = (series: Series, url: string) => {
     return new Promise((resolve, _reject) => {
       resolve(url);
     });
   };
 
   getDirectory: GetDirectoryFunc = (page: number) => {
-    return this.utilFns.fetchFn(`${API_URL}/manga/all`)
+    return this.utilFns
+      .fetchFn(`${API_URL}/manga/all`)
       .then((response: Response) => response.json())
       .then((json: any) => {
         return json.data.map((data: any) => this._parseSeries(data));
@@ -160,20 +162,21 @@ export class ExtensionClient extends ExtensionClientAbstract {
     params: { [key: string]: string },
     page: number
   ) => {
-    return this.utilFns.fetchFn(`${API_URL}/search/manga`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ search: text }),
-    })
+    return this.utilFns
+      .fetchFn(`${API_URL}/search/manga`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ search: text }),
+      })
       .then((response: Response) => response.json())
       .then((json: any) => {
         return json.data.map((data: any) => {
           const series: Series = {
             extensionId: METADATA.id,
             sourceId: data[0],
-            sourceType: SeriesSourceType.STANDARD,
+
             title: data[1],
             altTitles: [],
             description: data[2],

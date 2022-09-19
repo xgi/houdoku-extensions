@@ -6,7 +6,6 @@ import {
   createExtensionEnv,
   teardownExtensionEnv,
 } from "../util/base";
-import { SeriesSourceType } from "houdoku-extension-lib";
 
 describe("immortalupdates", () => {
   let env: ExtensionEnv;
@@ -22,10 +21,7 @@ describe("immortalupdates", () => {
   });
 
   it("get series Player", async () => {
-    const response = await env.extensionClient.getSeries(
-      SeriesSourceType.STANDARD,
-      "/manga/player-five"
-    );
+    const response = await env.extensionClient.getSeries("/manga/player-five");
     const actual = matchesSeries(response, {
       title: "Player",
     });

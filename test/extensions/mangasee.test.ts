@@ -6,7 +6,6 @@ import {
   createExtensionEnv,
   teardownExtensionEnv,
 } from "../util/base";
-import { SeriesSourceType } from "houdoku-extension-lib";
 
 describe("mangasee", () => {
   let env: ExtensionEnv;
@@ -23,7 +22,6 @@ describe("mangasee", () => {
 
   it("get series Kaguya-sama - Love Is War", async () => {
     const response = await env.extensionClient.getSeries(
-      SeriesSourceType.STANDARD,
       "Kaguya-Wants-To-Be-Confessed-To"
     );
     const actual = matchesSeries(response, {

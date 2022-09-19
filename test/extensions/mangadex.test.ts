@@ -6,7 +6,6 @@ import {
   createExtensionEnv,
   teardownExtensionEnv,
 } from "../util/base";
-import { SeriesSourceType } from "houdoku-extension-lib";
 
 describe("mangadex", () => {
   let env: ExtensionEnv;
@@ -23,7 +22,6 @@ describe("mangadex", () => {
 
   it("get series Berserk", async () => {
     const response = await env.extensionClient.getSeries(
-      SeriesSourceType.STANDARD,
       "801513ba-a712-498c-8f57-cae55b38cc92"
     );
     const actual = matchesSeries(response, {

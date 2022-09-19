@@ -6,7 +6,6 @@ import {
   createExtensionEnv,
   teardownExtensionEnv,
 } from "../util/base";
-import { SeriesSourceType } from "houdoku-extension-lib";
 
 describe("phoenixscans", () => {
   let env: ExtensionEnv;
@@ -22,10 +21,7 @@ describe("phoenixscans", () => {
   });
 
   it("get series Addio, Eri", async () => {
-    const response = await env.extensionClient.getSeries(
-      SeriesSourceType.STANDARD,
-      "addio-eri"
-    );
+    const response = await env.extensionClient.getSeries("addio-eri");
     const actual = matchesSeries(response, {
       title: "Addio, Eri",
     });

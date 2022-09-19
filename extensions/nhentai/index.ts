@@ -4,7 +4,7 @@ import {
   GetPageRequesterDataFunc,
   GetPageUrlsFunc,
   GetSearchFunc,
-  GetPageDataFunc,
+  GetImageFunc,
   ExtensionMetadata,
   PageRequesterData,
   GetDirectoryFunc,
@@ -15,7 +15,7 @@ import {
   SeriesListResponse,
   WebviewResponse,
 } from "houdoku-extension-lib";
-import { LanguageKey, Series, SeriesSourceType, SeriesStatus } from "houdoku-extension-lib";
+import { LanguageKey, Series, SeriesStatus } from "houdoku-extension-lib";
 import metadata from "./metadata.json";
 import { parseMetadata } from "../../util/configuring";
 
@@ -41,7 +41,7 @@ const parseDirectoryResponse = (doc: Document): SeriesListResponse => {
       id: undefined,
       extensionId: METADATA.id,
       sourceId: sourceId,
-      sourceType: SeriesSourceType.STANDARD,
+
       title: item.textContent.trim(),
       altTitles: [],
       description: "",
@@ -73,101 +73,119 @@ export class ExtensionClient extends ExtensionClientAbstract {
     return METADATA;
   };
 
-  getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.utilFns.webviewFn(`${BASE_URL}/g/${id}`).then((response: WebviewResponse) => {
-      const doc = this.utilFns.docFn(response.text);
+  getSeries: GetSeriesFunc = (id: string) => {
+    return this.utilFns
+      .webviewFn(`${BASE_URL}/g/${id}`)
+      .then((response: WebviewResponse) => {
+        const doc = this.utilFns.docFn(response.text);
 
-      const titleElements = doc.getElementsByClassName("title")!;
-      const title = titleElements[0].getElementsByClassName("pretty")![0].textContent.trim();
-      const altTitles =
-        titleElements.length > 1
-          ? [titleElements[1].getElementsByClassName("pretty")![0].textContent.trim()]
-          : [];
+        const titleElements = doc.getElementsByClassName("title")!;
+        const title = titleElements[0]
+          .getElementsByClassName("pretty")![0]
+          .textContent.trim();
+        const altTitles =
+          titleElements.length > 1
+            ? [
+                titleElements[1]
+                  .getElementsByClassName("pretty")![0]
+                  .textContent.trim(),
+              ]
+            : [];
 
-      const img = doc.getElementById("cover")!.getElementsByTagName("img")![1];
+        const img = doc
+          .getElementById("cover")!
+          .getElementsByTagName("img")![1];
 
-      const rows = doc.getElementsByClassName("tag-container")!;
-      const parodies = parseTags(rows[0]);
-      const characters = parseTags(rows[1]);
-      const tags = parseTags(rows[2]);
-      const artists = parseTags(rows[3]);
-      // const groups = parseTags(rows[4]);
-      const languages = parseTags(rows[5]);
-      // const categories = parseTags(rows[6]);
-      // const pages = parseTags(rows[7]);
+        const rows = doc.getElementsByClassName("tag-container")!;
+        const parodies = parseTags(rows[0]);
+        const characters = parseTags(rows[1]);
+        const tags = parseTags(rows[2]);
+        const artists = parseTags(rows[3]);
+        // const groups = parseTags(rows[4]);
+        const languages = parseTags(rows[5]);
+        // const categories = parseTags(rows[6]);
+        // const pages = parseTags(rows[7]);
 
-      const description = `Parodies: ${parodies}; Characters: ${characters}`;
-      let languageKey = LanguageKey.MULTI;
-      if (languages) {
-        languages.forEach((language) => {
-          if (language in ORIGINAL_LANGUAGE_MAP) {
-            languageKey = ORIGINAL_LANGUAGE_MAP[language];
-          }
-        });
-      }
+        const description = `Parodies: ${parodies}; Characters: ${characters}`;
+        let languageKey = LanguageKey.MULTI;
+        if (languages) {
+          languages.forEach((language) => {
+            if (language in ORIGINAL_LANGUAGE_MAP) {
+              languageKey = ORIGINAL_LANGUAGE_MAP[language];
+            }
+          });
+        }
 
-      const series: Series = {
-        extensionId: METADATA.id,
-        sourceId: id,
-        sourceType: SeriesSourceType.STANDARD,
-        title: title,
-        altTitles: altTitles,
-        description: description,
-        authors: artists || [],
-        artists: artists || [],
-        tags: tags || [],
-        status: SeriesStatus.COMPLETED,
-        originalLanguageKey: languageKey,
-        numberUnread: 0,
-        remoteCoverUrl: img.getAttribute("src")!,
-      };
-      return series;
-    });
+        const series: Series = {
+          extensionId: METADATA.id,
+          sourceId: id,
+
+          title: title,
+          altTitles: altTitles,
+          description: description,
+          authors: artists || [],
+          artists: artists || [],
+          tags: tags || [],
+          status: SeriesStatus.COMPLETED,
+          originalLanguageKey: languageKey,
+          numberUnread: 0,
+          remoteCoverUrl: img.getAttribute("src")!,
+        };
+        return series;
+      });
   };
 
-  getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.utilFns.webviewFn(`${BASE_URL}/g/${id}`).then((response: WebviewResponse) => {
-      const doc = this.utilFns.docFn(response.text);
+  getChapters: GetChaptersFunc = (id: string) => {
+    return this.utilFns
+      .webviewFn(`${BASE_URL}/g/${id}`)
+      .then((response: WebviewResponse) => {
+        const doc = this.utilFns.docFn(response.text);
 
-      const timeStr = doc.getElementsByTagName("time")![0].getAttribute("datetime")!;
-      const img = doc.getElementById("cover")!.getElementsByTagName("img")![1];
-      const chapterId = img.getAttribute("src")!.split("galleries/")[1].split("/")[0];
+        const timeStr = doc
+          .getElementsByTagName("time")![0]
+          .getAttribute("datetime")!;
+        const img = doc
+          .getElementById("cover")!
+          .getElementsByTagName("img")![1];
+        const chapterId = img
+          .getAttribute("src")!
+          .split("galleries/")[1]
+          .split("/")[0];
 
-      const rows = doc.getElementsByClassName("tag-container")!;
-      const groups = parseTags(rows[4]);
-      const languages = parseTags(rows[5]);
-      const pages = parseTags(rows[7]);
+        const rows = doc.getElementsByClassName("tag-container")!;
+        const groups = parseTags(rows[4]);
+        const languages = parseTags(rows[5]);
+        const pages = parseTags(rows[7]);
 
-      let languageKey = LanguageKey.MULTI;
-      if (languages) {
-        languages.forEach((language) => {
-          if (language in ORIGINAL_LANGUAGE_MAP) {
-            languageKey = ORIGINAL_LANGUAGE_MAP[language];
-          }
-        });
-      }
+        let languageKey = LanguageKey.MULTI;
+        if (languages) {
+          languages.forEach((language) => {
+            if (language in ORIGINAL_LANGUAGE_MAP) {
+              languageKey = ORIGINAL_LANGUAGE_MAP[language];
+            }
+          });
+        }
 
-      return [
-        {
-          id: undefined,
-          seriesId: undefined,
-          // hack: embedding the page count in the sourceId so we don't have to get it
-          // again in the page requester
-          sourceId: `${chapterId}:${pages ? pages[0] : ""}`,
-          title: "",
-          chapterNumber: "1",
-          volumeNumber: "",
-          languageKey: languageKey,
-          groupName: groups && groups.length > 0 ? groups[0] : "",
-          time: new Date(timeStr).getTime(),
-          read: false,
-        },
-      ];
-    });
+        return [
+          {
+            id: undefined,
+            seriesId: undefined,
+            // hack: embedding the page count in the sourceId so we don't have to get it
+            // again in the page requester
+            sourceId: `${chapterId}:${pages ? pages[0] : ""}`,
+            title: "",
+            chapterNumber: "1",
+            volumeNumber: "",
+            languageKey: languageKey,
+            groupName: groups && groups.length > 0 ? groups[0] : "",
+            time: new Date(timeStr).getTime(),
+            read: false,
+          },
+        ];
+      });
   };
 
   getPageRequesterData: GetPageRequesterDataFunc = (
-    sourceType: SeriesSourceType,
     seriesSourceId: string,
     chapterSourceId: string
   ) => {
@@ -190,25 +208,33 @@ export class ExtensionClient extends ExtensionClientAbstract {
 
     for (let i = 1; i <= pageRequesterData.numPages; i++) {
       const host = hosts[i % hosts.length];
-      pageUrls.push(`https://${host}.nhentai.net/galleries/${pageRequesterData.hash}/${i}.jpg`);
+      pageUrls.push(
+        `https://${host}.nhentai.net/galleries/${pageRequesterData.hash}/${i}.jpg`
+      );
     }
     return pageUrls;
   };
 
-  getPageData: GetPageDataFunc = (series: Series, url: string) => {
+  getImage: GetImageFunc = (series: Series, url: string) => {
     return new Promise((resolve, _reject) => {
       resolve(url);
     });
   };
 
   getDirectory: GetDirectoryFunc = (page: number) => {
-    return this.utilFns.webviewFn(`${BASE_URL}/?page=${page}`).then((response: WebviewResponse) => {
-      const doc = this.utilFns.docFn(response.text);
-      return parseDirectoryResponse(doc);
-    });
+    return this.utilFns
+      .webviewFn(`${BASE_URL}/?page=${page}`)
+      .then((response: WebviewResponse) => {
+        const doc = this.utilFns.docFn(response.text);
+        return parseDirectoryResponse(doc);
+      });
   };
 
-  getSearch: GetSearchFunc = (text: string, params: { [key: string]: string }, page: number) => {
+  getSearch: GetSearchFunc = (
+    text: string,
+    params: { [key: string]: string },
+    page: number
+  ) => {
     return this.utilFns
       .webviewFn(`${BASE_URL}/search/?page=${page}&q=${text}`)
       .then((response: WebviewResponse) => {

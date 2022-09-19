@@ -6,7 +6,6 @@ import {
   createExtensionEnv,
   teardownExtensionEnv,
 } from "../util/base";
-import { SeriesSourceType } from "houdoku-extension-lib";
 
 describe("mangakik", () => {
   let env: ExtensionEnv;
@@ -22,10 +21,7 @@ describe("mangakik", () => {
   });
 
   it("get series Martial Peak", async () => {
-    const response = await env.extensionClient.getSeries(
-      SeriesSourceType.STANDARD,
-      "/manga/martial-peak"
-    );
+    const response = await env.extensionClient.getSeries("/manga/martial-peak");
     const actual = matchesSeries(response, {
       title: "Martial Peak",
     });

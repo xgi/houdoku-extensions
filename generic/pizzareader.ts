@@ -4,7 +4,7 @@ import {
   GetPageRequesterDataFunc,
   GetPageUrlsFunc,
   GetSearchFunc,
-  GetPageDataFunc,
+  GetImageFunc,
   PageRequesterData,
   GetDirectoryFunc,
   GetSettingsFunc,
@@ -13,7 +13,7 @@ import {
   Chapter,
   LanguageKey,
   Series,
-  SeriesSourceType,
+  
   SeriesStatus,
 } from "houdoku-extension-lib";
 import { UtilFunctions } from "houdoku-extension-lib/dist/interface";
@@ -77,7 +77,7 @@ export class PizzaReaderClient {
       id: undefined,
       extensionId: this.extensionId,
       sourceId: entry.slug,
-      sourceType: SeriesSourceType.STANDARD,
+      
       title: entry.title,
       altTitles: entry.alt_titles,
       description: entry.description,
@@ -91,7 +91,7 @@ export class PizzaReaderClient {
     };
   };
 
-  getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) => {
+  getSeries: GetSeriesFunc = (id: string) => {
     return this.util
       .fetchFn(`${this.baseUrl}/api/comics/${id}`)
       .then((response: Response) => response.json())
@@ -100,7 +100,7 @@ export class PizzaReaderClient {
       });
   };
 
-  getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) => {
+  getChapters: GetChaptersFunc = (id: string) => {
     return this.util
       .fetchFn(`${this.baseUrl}/api/comics/${id}`)
       .then((response: Response) => response.json())
@@ -124,7 +124,7 @@ export class PizzaReaderClient {
   };
 
   getPageRequesterData: GetPageRequesterDataFunc = (
-    sourceType: SeriesSourceType,
+    
     seriesSourceId: string,
     chapterSourceId: string
   ) => {
@@ -146,7 +146,7 @@ export class PizzaReaderClient {
     return pageRequesterData.pageFilenames;
   };
 
-  getPageData: GetPageDataFunc = (series: Series, url: string) => {
+  getImage: GetImageFunc = (series: Series, url: string) => {
     return new Promise((resolve, _reject) => {
       resolve(url);
     });

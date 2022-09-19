@@ -4,7 +4,7 @@ import {
   GetPageRequesterDataFunc,
   GetPageUrlsFunc,
   GetSearchFunc,
-  GetPageDataFunc,
+  GetImageFunc,
   PageRequesterData,
   GetDirectoryFunc,
   GetSettingsFunc,
@@ -15,7 +15,7 @@ import {
   Chapter,
   LanguageKey,
   Series,
-  SeriesSourceType,
+  
   SeriesStatus,
 } from "houdoku-extension-lib";
 import { UtilFunctions } from "houdoku-extension-lib/dist/interface";
@@ -70,7 +70,7 @@ export class MadaraClient {
         id: undefined,
         extensionId: this.extensionId,
         sourceId: sourceId,
-        sourceType: SeriesSourceType.STANDARD,
+        
         title,
         altTitles: [],
         description: "",
@@ -88,7 +88,7 @@ export class MadaraClient {
     return { seriesList, hasMore: prevLink.length > 0 };
   };
 
-  getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) => {
+  getSeries: GetSeriesFunc = (id: string) => {
     return this.util.webviewFn(`${this.baseUrl}${id}`).then((response: WebviewResponse) => {
       const doc = this.util.docFn(response.text);
 
@@ -114,7 +114,7 @@ export class MadaraClient {
           id: undefined,
           extensionId: this.extensionId,
           sourceId: sourceId,
-          sourceType: SeriesSourceType.STANDARD,
+          
           title: title || "",
           altTitles: [],
           description: "",
@@ -134,7 +134,7 @@ export class MadaraClient {
     });
   };
 
-  getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) => {
+  getChapters: GetChaptersFunc = (id: string) => {
     return this.util
       .webviewFn(`${this.baseUrl}${id}/ajax/chapters`, {
         postData: [
@@ -194,7 +194,7 @@ export class MadaraClient {
   };
 
   getPageRequesterData: GetPageRequesterDataFunc = (
-    sourceType: SeriesSourceType,
+    
     seriesSourceId: string,
     chapterSourceId: string
   ) => {
@@ -225,7 +225,7 @@ export class MadaraClient {
     return pageRequesterData.pageFilenames;
   };
 
-  getPageData: GetPageDataFunc = (series: Series, url: string) => {
+  getImage: GetImageFunc = (series: Series, url: string) => {
     return new Promise((resolve, reject) => {
       resolve(url);
     });

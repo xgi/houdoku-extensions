@@ -6,7 +6,6 @@ import {
   createExtensionEnv,
   teardownExtensionEnv,
 } from "../util/base";
-import { SeriesSourceType } from "houdoku-extension-lib";
 
 describe("kouhaiwork", () => {
   let env: ExtensionEnv;
@@ -22,10 +21,7 @@ describe("kouhaiwork", () => {
   });
 
   it("get series Youjo Senki", async () => {
-    const response = await env.extensionClient.getSeries(
-      SeriesSourceType.STANDARD,
-      "42"
-    );
+    const response = await env.extensionClient.getSeries("42");
     const actual = matchesSeries(response, {
       title: "Youjo Senki",
     });

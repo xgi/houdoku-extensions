@@ -4,7 +4,7 @@ import {
   GetPageRequesterDataFunc,
   GetPageUrlsFunc,
   GetSearchFunc,
-  GetPageDataFunc,
+  GetImageFunc,
   PageRequesterData,
   GetDirectoryFunc,
   GetSettingsFunc,
@@ -13,7 +13,7 @@ import {
   Chapter,
   LanguageKey,
   Series,
-  SeriesSourceType,
+  
   SeriesStatus,
 } from "houdoku-extension-lib";
 import { UtilFunctions } from "houdoku-extension-lib/dist/interface";
@@ -53,7 +53,7 @@ export class WeebReaderClient {
           id: undefined,
           extensionId: this.extensionId,
           sourceId: entry.id,
-          sourceType: SeriesSourceType.STANDARD,
+          
           title: entry.name,
           altTitles: [],
           description: "",
@@ -68,7 +68,7 @@ export class WeebReaderClient {
     );
   };
 
-  getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) => {
+  getSeries: GetSeriesFunc = (id: string) => {
     return this.util.fetchFn(`${this.baseUrl}/api/titles/${id}`)
       .then((response: Response) => response.json())
       .then((data: any) => {
@@ -76,7 +76,7 @@ export class WeebReaderClient {
           id: undefined,
           extensionId: this.extensionId,
           sourceId: data.id,
-          sourceType: SeriesSourceType.STANDARD,
+          
           title: data.name,
           altTitles: [],
           description: data.synopsis,
@@ -91,7 +91,7 @@ export class WeebReaderClient {
       });
   };
 
-  getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) => {
+  getChapters: GetChaptersFunc = (id: string) => {
     return this.util.fetchFn(`${this.baseUrl}/api/titles/${id}`)
       .then((response: Response) => response.json())
       .then((data: any) => {
@@ -114,7 +114,7 @@ export class WeebReaderClient {
   };
 
   getPageRequesterData: GetPageRequesterDataFunc = (
-    sourceType: SeriesSourceType,
+    
     seriesSourceId: string,
     chapterSourceId: string
   ) => {
@@ -137,7 +137,7 @@ export class WeebReaderClient {
     );
   };
 
-  getPageData: GetPageDataFunc = (series: Series, url: string) => {
+  getImage: GetImageFunc = (series: Series, url: string) => {
     return new Promise((resolve, reject) => {
       resolve(url);
     });

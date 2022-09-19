@@ -6,7 +6,6 @@ import {
   createExtensionEnv,
   teardownExtensionEnv,
 } from "../util/base";
-import { SeriesSourceType } from "houdoku-extension-lib";
 
 describe("nhentai", () => {
   let env: ExtensionEnv;
@@ -26,10 +25,7 @@ describe("nhentai", () => {
   });
 
   it("get series METAMORPHOSIS", async () => {
-    const response = await env.extensionClient.getSeries(
-      SeriesSourceType.STANDARD,
-      "177013"
-    );
+    const response = await env.extensionClient.getSeries("177013");
     const actual = matchesSeries(response, {
       title: "METAMORPHOSIS",
     });

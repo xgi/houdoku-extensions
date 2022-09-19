@@ -4,13 +4,12 @@ import {
   GetPageRequesterDataFunc,
   GetPageUrlsFunc,
   GetSearchFunc,
-  GetPageDataFunc,
+  GetImageFunc,
   ExtensionMetadata,
   GetDirectoryFunc,
   ExtensionClientAbstract,
   Series,
   PageRequesterData,
-  SeriesSourceType,
   SetSettingsFunc,
   GetSettingsFunc,
   GetSettingTypesFunc,
@@ -34,30 +33,33 @@ export class ExtensionClient extends ExtensionClientAbstract {
     return METADATA;
   };
 
-  getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) =>
-    this.madaraClient.getSeries(sourceType, id);
+  getSeries: GetSeriesFunc = (id: string) => this.madaraClient.getSeries(id);
 
-  getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) =>
-    this.madaraClient.getChapters(sourceType, id);
+  getChapters: GetChaptersFunc = (id: string) =>
+    this.madaraClient.getChapters(id);
 
   getPageRequesterData: GetPageRequesterDataFunc = (
-    sourceType: SeriesSourceType,
     seriesSourceId: string,
     chapterSourceId: string
-  ) => this.madaraClient.getPageRequesterData(sourceType, seriesSourceId, chapterSourceId);
+  ) => this.madaraClient.getPageRequesterData(seriesSourceId, chapterSourceId);
 
   getPageUrls: GetPageUrlsFunc = (pageRequesterData: PageRequesterData) =>
     this.madaraClient.getPageUrls(pageRequesterData);
 
-  getPageData: GetPageDataFunc = (series: Series, url: string) =>
-    this.madaraClient.getPageData(series, url);
+  getImage: GetImageFunc = (series: Series, url: string) =>
+    this.madaraClient.getImage(series, url);
 
-  getSearch: GetSearchFunc = (text: string, params: { [key: string]: string }, page: number) =>
-    this.madaraClient.getSearch(text, params, page);
+  getSearch: GetSearchFunc = (
+    text: string,
+    params: { [key: string]: string },
+    page: number
+  ) => this.madaraClient.getSearch(text, params, page);
 
-  getDirectory: GetDirectoryFunc = (page: number) => this.madaraClient.getDirectory(page);
+  getDirectory: GetDirectoryFunc = (page: number) =>
+    this.madaraClient.getDirectory(page);
 
-  getSettingTypes: GetSettingTypesFunc = () => this.madaraClient.getSettingTypes();
+  getSettingTypes: GetSettingTypesFunc = () =>
+    this.madaraClient.getSettingTypes();
 
   getSettings: GetSettingsFunc = () => this.madaraClient.getSettings();
 

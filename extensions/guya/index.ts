@@ -4,7 +4,7 @@ import {
   GetPageRequesterDataFunc,
   GetPageUrlsFunc,
   GetSearchFunc,
-  GetPageDataFunc,
+  GetImageFunc,
   ExtensionMetadata,
   PageRequesterData,
   GetDirectoryFunc,
@@ -17,7 +17,6 @@ import {
   Chapter,
   LanguageKey,
   Series,
-  SeriesSourceType,
   SeriesStatus,
 } from "houdoku-extension-lib";
 import { Response } from "node-fetch";
@@ -31,15 +30,16 @@ export class ExtensionClient extends ExtensionClientAbstract {
     return METADATA;
   };
 
-  getSeries: GetSeriesFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.utilFns.fetchFn(`https://guya.moe/api/series/${id}`)
+  getSeries: GetSeriesFunc = (id: string) => {
+    return this.utilFns
+      .fetchFn(`https://guya.moe/api/series/${id}`)
       .then((response: Response) => response.json())
       .then((json: any) => {
         const series: Series = {
           id: undefined,
           extensionId: METADATA.id,
           sourceId: json.slug,
-          sourceType: SeriesSourceType.STANDARD,
+
           title: json.title,
           altTitles: [],
           description: json.description,
@@ -55,8 +55,9 @@ export class ExtensionClient extends ExtensionClientAbstract {
       });
   };
 
-  getChapters: GetChaptersFunc = (sourceType: SeriesSourceType, id: string) => {
-    return this.utilFns.fetchFn(`https://guya.moe/api/series/${id}`)
+  getChapters: GetChaptersFunc = (id: string) => {
+    return this.utilFns
+      .fetchFn(`https://guya.moe/api/series/${id}`)
       .then((response: Response) => response.json())
       .then((json: any) => {
         const chapters: Chapter[] = [];
@@ -87,11 +88,11 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getPageRequesterData: GetPageRequesterDataFunc = (
-    sourceType: SeriesSourceType,
     seriesSourceId: string,
     chapterSourceId: string
   ) => {
-    return this.utilFns.fetchFn(`https://guya.moe/api/series/${seriesSourceId}`)
+    return this.utilFns
+      .fetchFn(`https://guya.moe/api/series/${seriesSourceId}`)
       .then((response: Response) => response.json())
       .then((json: any) => {
         const chapterNum = chapterSourceId.split(":")[0];
@@ -119,14 +120,15 @@ export class ExtensionClient extends ExtensionClientAbstract {
     return pageRequesterData.pageFilenames;
   };
 
-  getPageData: GetPageDataFunc = (series: Series, url: string) => {
+  getImage: GetImageFunc = (series: Series, url: string) => {
     return new Promise((resolve, reject) => {
       resolve(url);
     });
   };
 
   getDirectory: GetDirectoryFunc = (page: number) => {
-    return this.utilFns.fetchFn(`https://guya.moe/api/get_all_series`)
+    return this.utilFns
+      .fetchFn(`https://guya.moe/api/get_all_series`)
       .then((response: Response) => response.json())
       .then((json: any) => {
         const seriesList: Series[] = [];
@@ -137,7 +139,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
             id: undefined,
             extensionId: METADATA.id,
             sourceId: seriesData.slug,
-            sourceType: SeriesSourceType.STANDARD,
+
             title: title,
             altTitles: [],
             description: seriesData.description,

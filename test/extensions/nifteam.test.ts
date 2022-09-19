@@ -6,7 +6,6 @@ import {
   createExtensionEnv,
   teardownExtensionEnv,
 } from "../util/base";
-import { SeriesSourceType } from "houdoku-extension-lib";
 
 describe("nifteam", () => {
   let env: ExtensionEnv;
@@ -22,10 +21,7 @@ describe("nifteam", () => {
   });
 
   it("get series One Piece", async () => {
-    const response = await env.extensionClient.getSeries(
-      SeriesSourceType.STANDARD,
-      "one-piece"
-    );
+    const response = await env.extensionClient.getSeries("one-piece");
     const actual = matchesSeries(response, {
       title: "One Piece di Eichiro Oda",
     });

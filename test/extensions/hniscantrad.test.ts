@@ -6,7 +6,6 @@ import {
   createExtensionEnv,
   teardownExtensionEnv,
 } from "../util/base";
-import { SeriesSourceType } from "houdoku-extension-lib";
 
 describe("hniscantrad", () => {
   let env: ExtensionEnv;
@@ -22,10 +21,7 @@ describe("hniscantrad", () => {
   });
 
   it("get series Black-Box", async () => {
-    const response = await env.extensionClient.getSeries(
-      SeriesSourceType.STANDARD,
-      "black-box"
-    );
+    const response = await env.extensionClient.getSeries("black-box");
     const actual = matchesSeries(response, {
       title: "Black-Box",
     });

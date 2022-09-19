@@ -6,7 +6,6 @@ import {
   createExtensionEnv,
   teardownExtensionEnv,
 } from "../util/base";
-import { SeriesSourceType } from "houdoku-extension-lib";
 
 describe("lectormanga", () => {
   let env: ExtensionEnv;
@@ -23,7 +22,6 @@ describe("lectormanga", () => {
 
   it("get series No color", async () => {
     const response = await env.extensionClient.getSeries(
-      SeriesSourceType.STANDARD,
       "manga/43037/no-color"
     );
     const actual = matchesSeries(response, {
