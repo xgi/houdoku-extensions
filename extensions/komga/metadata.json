@@ -1,0 +1,11 @@
+{
+  "id": "b21fcfa9-8b46-439f-b060-31832aaf1931",
+  "name": "Komga",
+  "url": "https://komga.org",
+  "version": "1.0.0",
+  "translatedLanguage": "MULTI",
+  "hasSettings": false,
+  "notice": "Configure your Komga address and credentials from the extension settings.",
+  "noticeUrl": "",
+  "pageLoadMessage": ""
+}
