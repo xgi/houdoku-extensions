@@ -45,17 +45,12 @@ export class ExtensionClient extends ExtensionClientAbstract {
   getPageUrls: GetPageUrlsFunc = (pageRequesterData: PageRequesterData) =>
     this.nepClient.getPageUrls(pageRequesterData);
 
-  getImage: GetImageFunc = (series: Series, url: string) =>
-    this.nepClient.getImage(series, url);
+  getImage: GetImageFunc = (series: Series, url: string) => this.nepClient.getImage(series, url);
 
-  getSearch: GetSearchFunc = (
-    text: string,
-    params: { [key: string]: string },
-    page: number
-  ) => this.nepClient.getSearch(text, params, page);
+  getSearch: GetSearchFunc = (text: string, params: { [key: string]: string }, page: number) =>
+    this.nepClient.getSearch(text, params, page);
 
-  getDirectory: GetDirectoryFunc = (page: number) =>
-    this.nepClient.getDirectory(page);
+  getDirectory: GetDirectoryFunc = (page: number) => this.nepClient.getDirectory(page);
 
   getSettingTypes: GetSettingTypesFunc = () => this.nepClient.getSettingTypes();
 
