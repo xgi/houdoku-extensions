@@ -32,7 +32,7 @@
     "@types/node-fetch": "^2.5.10",
     "electron": "^19.0.9",
     "electron-mocha": "^11.0.2",
-    "houdoku-extension-lib": "^1.8.2-alpha.2",
+    "houdoku-extension-lib": "^1.8.3",
     "jsdom": "^20.0.0",
     "node-fetch": "^2.6.7",
     "nyc": "^15.1.0",
