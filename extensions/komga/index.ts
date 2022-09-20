@@ -25,7 +25,7 @@ import { UtilFunctions } from "houdoku-extension-lib/dist/interface";
 
 export const METADATA: ExtensionMetadata = parseMetadata(metadata);
 
-enum SETTING_NAMES {
+export enum SETTING_NAMES {
   ADDRESS = "Address (with port)",
   USERNAME = "Username",
   PASSWORD = "Password",
