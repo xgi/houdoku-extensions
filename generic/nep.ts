@@ -14,7 +14,6 @@ import {
   Chapter,
   LanguageKey,
   Series,
-  
   SeriesStatus,
 } from "houdoku-extension-lib";
 import { UtilFunctions } from "houdoku-extension-lib/dist/interface";
@@ -83,7 +82,7 @@ export class NepClient {
         id: undefined,
         extensionId: this.extensionId,
         sourceId: entry.indexName,
-        
+
         title: entry.seriesName,
         altTitles: [],
         description: "",
@@ -139,11 +138,9 @@ export class NepClient {
       const fixedData = response.text.replace(/\<\/i>/g, "</li>");
 
       const doc = this.util.docFn(fixedData);
-      const detailContainer = doc.getElementsByClassName("list-group list-group-flush")![0];
-      const detailLabels = detailContainer.getElementsByClassName("mlabel")!;
-
-      const title = detailContainer.getElementsByTagName("h1")![0].textContent.trim();
-
+      const title = doc.querySelector('h1').textContent.trim();
+      
+      const detailLabels = doc.getElementsByClassName("mlabel")!;
       const authors: string[] = Array.from(
         findElementWithText(detailLabels, "Author(s)")!.parentElement!.getElementsByTagName("a")!
       ).map((element: Element) => element.textContent.trim());
@@ -174,7 +171,7 @@ export class NepClient {
         id: undefined,
         extensionId: this.extensionId,
         sourceId: id,
-        
+
         title: title || "",
         altTitles: [],
         description: description,
@@ -213,7 +210,6 @@ export class NepClient {
   };
 
   getPageRequesterData: GetPageRequesterDataFunc = (
-    
     seriesSourceId: string,
     chapterSourceId: string
   ) => {
