@@ -8,7 +8,10 @@ export type KomgaSeriesMetadata = {
 };
 
 export type KomgaSeriesBooksMetadata = {
-  authors: string[];
+  authors: {
+    name: string;
+    role: string;
+  }[];
 };
 
 export type KomgaSeries = {
@@ -35,7 +38,10 @@ export type KomgaBookMetadata = {
   summary: string;
   number: string;
   numberSort: number;
-  authors: string[];
+  authors: {
+    name: string;
+    role: string;
+  }[];
   tags: string[];
 };
 

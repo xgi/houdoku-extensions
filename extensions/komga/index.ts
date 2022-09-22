@@ -105,7 +105,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
           title: json.metadata.title,
           altTitles: [],
           description: json.metadata.summary,
-          authors: json.booksMetadata.authors,
+          authors: Array.from(new Set(json.booksMetadata.authors.map((author) => author.name))),
           artists: [],
           tags: [...json.metadata.genres, ...json.metadata.tags],
           status: STATUS_MAP[json.metadata.status],
