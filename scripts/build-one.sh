@@ -17,7 +17,7 @@ cp $EXTENSION_PACKAGE_JSON $EXTENSION_DIR/package.json
 cp $EXTENSION_TSCONFIG_JSON $EXTENSION_DIR/tsconfig.json
 
 NAME="@houdoku/extension-"$(basename $EXTENSION_DIR)
-DESCRIPTION=$(jq -c '.' $EXTENSION_DIR/metadata.json)
+DESCRIPTION=$(jq -c 'del(.notice, .noticeUrl, .pageLoadMessage)' $EXTENSION_DIR/metadata.json)
 VERSION=$(jq -r '.version' $EXTENSION_DIR/metadata.json)
 
 cd $EXTENSION_DIR
