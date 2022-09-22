@@ -14,6 +14,7 @@ import {
   GetSettingTypesFunc,
   SeriesListResponse,
   SettingType,
+  WebviewResponse,
 } from "houdoku-extension-lib";
 import { LanguageKey, Series, SeriesStatus } from "houdoku-extension-lib";
 import { Response } from "node-fetch";
@@ -45,16 +46,14 @@ const getDetailsRowFields = (rows: Element[], text: string): string[] => {
   const row = rows.find((row) => row.textContent.includes(text));
   if (!row) return [];
 
-  return Array.from(row.getElementsByTagName("a")!).map((element) =>
-    element.textContent.trim()
-  );
+  return Array.from(row.getElementsByTagName("a")!).map((element) => element.textContent.trim());
 };
 
 const parseDirectoryResponse = (doc: Document): SeriesListResponse => {
   const rows = doc.getElementsByClassName("section group list")!;
   const hasMore = doc.getElementsByClassName("right_bt next_bt")!.length > 0;
 
-  const seriesList = [...rows].map((row) => {
+  const seriesList = Array.from(rows).map((row) => {
     const link = row.getElementsByTagName("a")![0];
     const img = link.getElementsByTagName("img")![0];
 
@@ -100,25 +99,19 @@ export class ExtensionClient extends ExtensionClientAbstract {
       .then((data: string) => {
         const doc = this.utilFns.docFn(data);
         const parent = doc.getElementsByClassName("section group")![0];
-        const description = doc
-          .getElementsByClassName("section group")![1]
-          .textContent.trim();
+        const description = doc.getElementsByClassName("section group")![1].textContent.trim();
 
         const img = parent.getElementsByTagName("img")![0];
-        const rows = [...parent.getElementsByTagName("p")!];
+        const rows = Array.from(parent.getElementsByTagName("p")!);
 
         const altNames = getDetailsRowFields(rows, "Other name:");
         const sourceTags = getDetailsRowFields(rows, "Genres:");
         const authors = getDetailsRowFields(rows, "Writer:");
         const artists = getDetailsRowFields(rows, "Artist:");
 
-        const statusRow = rows.find((row) =>
-          row.textContent.includes("Status:")
-        );
+        const statusRow = rows.find((row) => row.textContent.includes("Status:"));
         const statusStr =
-          statusRow && false
-            ? statusRow!.textContent.replace("Status:&nbsp;", "").trim()
-            : "";
+          statusRow && false ? statusRow!.textContent.replace("Status:&nbsp;", "").trim() : "";
 
         const series: Series = {
           extensionId: METADATA.id,
@@ -148,12 +141,10 @@ export class ExtensionClient extends ExtensionClientAbstract {
         const parent = doc.getElementsByClassName("section group")![2];
         const rows = parent.getElementsByTagName("li")!;
 
-        return [...rows].map((row) => {
+        return Array.from(rows).map((row) => {
           const link = row.getElementsByTagName("a")![0];
           const title = link.textContent.trim();
-          const chapterNum = title.startsWith("Issue #")
-            ? title.split("Issue #")[1]
-            : "";
+          const chapterNum = title.startsWith("Issue #") ? title.split("Issue #")[1] : "";
 
           return {
             id: undefined,
@@ -175,20 +166,14 @@ export class ExtensionClient extends ExtensionClientAbstract {
     seriesSourceId: string,
     chapterSourceId: string
   ) => {
-    const qualityStr = this.settings[SETTING_NAMES.USE_HIGH_QUALITY]
-      ? "hq"
-      : "lq";
+    const qualityStr = this.settings[SETTING_NAMES.USE_HIGH_QUALITY] ? "hq" : "lq";
 
     return this.utilFns
-      .fetchFn(`${BASE_URL}${chapterSourceId}&quality=${qualityStr}`)
-      .then((response: Response) => response.text())
-      .then((data: string) => {
-        const snippetRegexp = /lstImages\.push\(\"http.*\)/g;
-        const snippets = [...data.matchAll(snippetRegexp)];
-
-        const pageFilenames: string[] = snippets.map((snippet) =>
-          snippet.toString().replace('lstImages.push("', "").replace('")', "")
-        );
+      .webviewFn(`${BASE_URL}${chapterSourceId}&quality=${qualityStr}&readType=1`)
+      .then((response: WebviewResponse) => {
+        const doc = this.utilFns.docFn(response.text);
+        const images = doc.querySelectorAll("#divImage img");
+        const pageFilenames = Array.from(images).map((img) => img.getAttribute("src"));
 
         return {
           server: "",
@@ -219,11 +204,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
       });
   };
 
-  getSearch: GetSearchFunc = (
-    text: string,
-    params: { [key: string]: string },
-    page: number
-  ) => {
+  getSearch: GetSearchFunc = (text: string, params: { [key: string]: string }, page: number) => {
     return this.utilFns
       .fetchFn(`${BASE_URL}/AdvanceSearch?page=${page}`, {
         method: "POST",
@@ -249,10 +230,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
 
   setSettings: SetSettingsFunc = (newSettings: { [key: string]: any }) => {
     Object.keys(newSettings).forEach((key: string) => {
-      if (
-        key in this.settings &&
-        typeof (this.settings[key] === newSettings[key])
-      ) {
+      if (key in this.settings && typeof (this.settings[key] === newSettings[key])) {
         this.settings[key] = newSettings[key];
       }
     });
