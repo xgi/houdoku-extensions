@@ -51,11 +51,23 @@ const STATUS_MAP: { [key: string]: SeriesStatus } = {
 };
 
 export class ExtensionClient extends ExtensionClientAbstract {
-  _getHeaders = () => ({
-    Authorization: `Basic ${Buffer.from(
-      `${this.settings[SETTING_NAMES.USERNAME]}:${this.settings[SETTING_NAMES.PASSWORD]}`
-    ).toString("base64")}`,
-  });
+  authToken?: string;
+
+  _getHeaders = () => {
+    if (this.authToken) {
+      return { "X-Auth-Token": this.authToken };
+    }
+    return {
+      Authorization: `Basic ${Buffer.from(
+        `${this.settings[SETTING_NAMES.USERNAME]}:${this.settings[SETTING_NAMES.PASSWORD]}`
+      ).toString("base64")}`,
+      "X-Auth-Token": "",
+    };
+  };
+
+  _updateAuthToken = (response: Response) => {
+    if (response.headers.has("X-Auth-Token")) this.authToken = response.headers.get("X-Auth-Token");
+  };
 
   _parseSeriesListResponse = (seriesListResponse: KomgaSeriesListResponse): SeriesListResponse => {
     const seriesList: Series[] = seriesListResponse.content.map((seriesObj: KomgaSeries) => ({
@@ -96,7 +108,10 @@ export class ExtensionClient extends ExtensionClientAbstract {
       .fetchFn(`${this.settings[SETTING_NAMES.ADDRESS]}/api/v1/series/${id}`, {
         headers: this._getHeaders(),
       })
-      .then((response: Response) => response.json())
+      .then((response: Response) => {
+        this._updateAuthToken(response);
+        return response.json();
+      })
       .then((json: KomgaSeries) => {
         return {
           id: undefined,
@@ -123,7 +138,10 @@ export class ExtensionClient extends ExtensionClientAbstract {
       .fetchFn(`${this.settings[SETTING_NAMES.ADDRESS]}/api/v1/series/${id}`, {
         headers: this._getHeaders(),
       })
-      .then((response: Response) => response.json())
+      .then((response: Response) => {
+        this._updateAuthToken(response);
+        return response.json();
+      })
       .then((json: KomgaSeries) => findLanguageKey(json.metadata.language) || LanguageKey.MULTI);
 
     return this.utilFns
@@ -155,7 +173,10 @@ export class ExtensionClient extends ExtensionClientAbstract {
       .fetchFn(`${this.settings[SETTING_NAMES.ADDRESS]}/api/v1/books/${chapterSourceId}/pages`, {
         headers: this._getHeaders(),
       })
-      .then((response: Response) => response.json())
+      .then((response: Response) => {
+        this._updateAuthToken(response);
+        return response.json();
+      })
       .then((json: KomgaPage[]) => {
         const pageFilenames = json.map(
           (page) =>
@@ -191,7 +212,10 @@ export class ExtensionClient extends ExtensionClientAbstract {
         }&deleted=false&sort=metadata.titleSort,asc`,
         { headers: this._getHeaders() }
       )
-      .then((response: Response) => response.json())
+      .then((response: Response) => {
+        this._updateAuthToken(response);
+        return response.json();
+      })
       .then((json: KomgaSeriesListResponse) => this._parseSeriesListResponse(json));
   };
 
@@ -205,7 +229,10 @@ export class ExtensionClient extends ExtensionClientAbstract {
           headers: this._getHeaders(),
         }
       )
-      .then((response: Response) => response.json())
+      .then((response: Response) => {
+        this._updateAuthToken(response);
+        return response.json();
+      })
       .then((json: KomgaSeriesListResponse) => this._parseSeriesListResponse(json));
   };
 
