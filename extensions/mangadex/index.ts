@@ -17,11 +17,35 @@ import {
   SetSettingsFunc,
   GetSettingTypesFunc,
   SettingType,
+  FilterValues,
+  FilterCheckbox,
+  FilterMultiToggle,
+  FilterSelect,
+  FilterSeparator,
+  FilterSort,
+  SortDirection,
+  TriState,
+  MultiToggleValues,
+  FilterSortValue,
+  FilterCycle,
 } from "houdoku-extension-lib";
 import { Response } from "node-fetch";
 import metadata from "./metadata.json";
 import { parseMetadata } from "../../util/configuring";
-import { UtilFunctions } from "houdoku-extension-lib/dist/interface";
+import { GetFilterOptionsFunc, UtilFunctions } from "houdoku-extension-lib/dist/interface";
+import {
+  FIELDS_CONTENT_RATINGS,
+  FIELDS_CONTENT_WARNINGS,
+  FIELDS_DEMOGRAPHICS,
+  FIELDS_FORMATS,
+  FIELDS_GENRES,
+  FIELDS_ORIGINAL_LANGUAGES,
+  FIELDS_SORT,
+  FIELDS_STATUS,
+  FIELDS_THEMES,
+  FilterControlIds,
+  OPTIONS_TAG_MODE,
+} from "./filters";
 
 export const METADATA: ExtensionMetadata = parseMetadata(metadata);
 
@@ -73,26 +97,14 @@ const LANGUAGE_MAP: { [key: string]: LanguageKey } = {
 
 enum SETTING_NAMES {
   USE_DATA_SAVER = "Use data saver",
-  INCLUDE_SAFE = "Include safe content",
-  INCLUDE_ECCHI = "Include ecchi (suggestive) content",
-  INCLUDE_SMUT = "Include smut (erotica) content",
-  INCLUDE_PORNOGRAPHIC = "Include pornographic content",
 }
 
 const SETTING_TYPES = {
   [SETTING_NAMES.USE_DATA_SAVER]: SettingType.BOOLEAN,
-  [SETTING_NAMES.INCLUDE_SAFE]: SettingType.BOOLEAN,
-  [SETTING_NAMES.INCLUDE_ECCHI]: SettingType.BOOLEAN,
-  [SETTING_NAMES.INCLUDE_SMUT]: SettingType.BOOLEAN,
-  [SETTING_NAMES.INCLUDE_PORNOGRAPHIC]: SettingType.BOOLEAN,
 };
 
 const DEFAULT_SETTINGS = {
   [SETTING_NAMES.USE_DATA_SAVER]: false,
-  [SETTING_NAMES.INCLUDE_SAFE]: true,
-  [SETTING_NAMES.INCLUDE_ECCHI]: true,
-  [SETTING_NAMES.INCLUDE_SMUT]: false,
-  [SETTING_NAMES.INCLUDE_PORNOGRAPHIC]: false,
 };
 
 const PAGE_SIZE = 48;
@@ -108,9 +120,7 @@ const _parseMangaResults = (json: any): ParsedResults => {
   }
 
   const seriesList = json.data.map((result: any) => {
-    const tags: string[] = result.attributes.tags.map(
-      (tag: any) => tag.attributes.name.en
-    );
+    const tags: string[] = result.attributes.tags.map((tag: any) => tag.attributes.name.en);
     if (result.attributes.publicationDemographic !== null) {
       tags.push(result.attributes.publicationDemographic);
     }
@@ -122,8 +132,7 @@ const _parseMangaResults = (json: any): ParsedResults => {
 
     const coverRelationship = result.relationships.find(
       (relationship: any) =>
-        relationship.type === "cover_art" &&
-        relationship.attributes !== undefined
+        relationship.type === "cover_art" && relationship.attributes !== undefined
     );
     const remoteCoverUrl =
       coverRelationship !== undefined
@@ -136,22 +145,18 @@ const _parseMangaResults = (json: any): ParsedResults => {
       sourceId: result.id,
 
       title,
-      altTitles: result.attributes.altTitles.map(
-        (altTitleCont: any) => altTitleCont.en
-      ),
+      altTitles: result.attributes.altTitles.map((altTitleCont: any) => altTitleCont.en),
       description: result.attributes.description.en,
       authors: result.relationships
         .filter(
           (relationship: any) =>
-            relationship.type === "author" &&
-            relationship.attributes !== undefined
+            relationship.type === "author" && relationship.attributes !== undefined
         )
         .map((relationship: any) => relationship.attributes.name),
       artists: result.relationships
         .filter(
           (relationship: any) =>
-            relationship.type === "artist" &&
-            relationship.attributes !== undefined
+            relationship.type === "artist" && relationship.attributes !== undefined
         )
         .map((relationship: any) => relationship.attributes.name),
       tags: tags,
@@ -168,19 +173,6 @@ const _parseMangaResults = (json: any): ParsedResults => {
     seriesList,
     hasMore,
   };
-};
-
-const _getContentRatingsStr = (settings: { [key: string]: any }) => {
-  const contentRatings: string[] = [];
-  if (settings[SETTING_NAMES.INCLUDE_SAFE]) contentRatings.push("safe");
-  if (settings[SETTING_NAMES.INCLUDE_ECCHI]) contentRatings.push("suggestive");
-  if (settings[SETTING_NAMES.INCLUDE_SMUT]) contentRatings.push("erotica");
-  if (settings[SETTING_NAMES.INCLUDE_PORNOGRAPHIC])
-    contentRatings.push("pornographic");
-
-  return contentRatings
-    .map((rating: string) => `contentRating[]=${rating}`)
-    .join("&");
 };
 
 export class ExtensionClient extends ExtensionClientAbstract {
@@ -201,9 +193,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
       .then((response: Response) => response.json())
       .then((json: any) => {
         const results: ParsedResults = _parseMangaResults(json);
-        return results.seriesList.length > 0
-          ? results.seriesList[0]
-          : undefined;
+        return results.seriesList.length > 0 ? results.seriesList[0] : undefined;
       });
   };
 
@@ -219,13 +209,9 @@ export class ExtensionClient extends ExtensionClientAbstract {
       json.data.forEach((result: any) => {
         const groupRelationship: any | undefined = result.relationships.find(
           (relationship: any) =>
-            relationship.type === "scanlation_group" &&
-            relationship.attributes !== undefined
+            relationship.type === "scanlation_group" && relationship.attributes !== undefined
         );
-        const groupName =
-          groupRelationship !== undefined
-            ? groupRelationship.attributes.name
-            : "";
+        const groupName = groupRelationship !== undefined ? groupRelationship.attributes.name : "";
 
         chapterList.push({
           id: undefined,
@@ -272,9 +258,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getPageUrls: GetPageUrlsFunc = (pageRequesterData: PageRequesterData) => {
-    const dataStr = this.settings[SETTING_NAMES.USE_DATA_SAVER]
-      ? "data-saver"
-      : "data";
+    const dataStr = this.settings[SETTING_NAMES.USE_DATA_SAVER] ? "data-saver" : "data";
     return pageRequesterData.pageFilenames.map((filename: string) => {
       return `${pageRequesterData.server}/${dataStr}/${pageRequesterData.hash}/${filename}`;
     });
@@ -286,38 +270,77 @@ export class ExtensionClient extends ExtensionClientAbstract {
     });
   };
 
-  getDirectory: GetDirectoryFunc = (page: number) => {
-    return this.utilFns
-      .fetchFn(
-        `https://api.mangadex.org/manga?${_getContentRatingsStr(
-          this.settings
-        )}&offset=${
-          (page - 1) * PAGE_SIZE
-        }&limit=${PAGE_SIZE}&includes[]=artist&includes[]=author&includes[]=cover_art`
-      )
-      .then((response: Response) => response.json())
-      .then((json: any) => {
-        const results: ParsedResults = _parseMangaResults(json);
-        return {
-          seriesList: results.seriesList,
-          hasMore: results.hasMore,
-        };
-      });
+  getDirectory: GetDirectoryFunc = (page: number, filterValues: FilterValues) => {
+    return this.getSearch("", page, filterValues);
   };
 
-  getSearch: GetSearchFunc = (
-    text: string,
-    params: { [key: string]: string },
-    page: number
-  ) => {
+  getSearch: GetSearchFunc = (text: string, page: number, filterValues: FilterValues) => {
+    const params = new URLSearchParams({
+      title: text,
+      offset: `${(page - 1) * PAGE_SIZE}`,
+      limit: `${PAGE_SIZE}`,
+    });
+    ["artist", "author", "cover_art"].forEach((name) => params.append("includes[]", name));
+
+    const _applyTags = (controlId: string) => {
+      if (controlId in filterValues) {
+        Object.entries(filterValues[controlId] as MultiToggleValues).forEach(([tagId, value]) => {
+          if (value === TriState.INCLUDE) params.append("includedTags[]", tagId);
+          if (value === TriState.EXCLUDE) params.append("excludedTags[]", tagId);
+        });
+      }
+    };
+    _applyTags(FilterControlIds.Formats);
+    _applyTags(FilterControlIds.Genres);
+    _applyTags(FilterControlIds.Themes);
+    _applyTags(FilterControlIds.ContentWarnings);
+
+    if (FilterControlIds.ContentRating in filterValues) {
+      Object.entries(filterValues[FilterControlIds.ContentRating] as MultiToggleValues).forEach(
+        ([contentRating, value]) => {
+          if (value === TriState.INCLUDE) params.append("contentRating[]", contentRating);
+        }
+      );
+    }
+    if (FilterControlIds.Status in filterValues) {
+      Object.entries(filterValues[FilterControlIds.Status] as MultiToggleValues).forEach(
+        ([status, value]) => {
+          if (value === TriState.INCLUDE) params.append("status[]", status);
+        }
+      );
+    }
+    if (FilterControlIds.Sort in filterValues) {
+      const sort = filterValues[FilterControlIds.Sort] as FilterSortValue;
+      params.append(
+        `order[${sort.key}]`,
+        { [SortDirection.ASCENDING]: "asc", [SortDirection.DESCENDING]: "desc" }[sort.direction]
+      );
+    }
+    if (FilterControlIds.Demographic in filterValues) {
+      Object.entries(filterValues[FilterControlIds.Demographic] as MultiToggleValues).forEach(
+        ([demo, value]) => {
+          if (value === TriState.INCLUDE) params.append("publicationDemographic[]", demo);
+        }
+      );
+    }
+    if (FilterControlIds.OriginalLanguage in filterValues) {
+      Object.entries(filterValues[FilterControlIds.OriginalLanguage] as MultiToggleValues).forEach(
+        ([lang, value]) => {
+          if (value === TriState.INCLUDE) {
+            params.append("originalLanguage[]", lang);
+            if (lang === "zh") params.append("originalLanguage[]", "zh-hk");
+          }
+        }
+      );
+    }
+    if (FilterControlIds.HasAvailableChapters in filterValues) {
+      if (filterValues[FilterControlIds.HasAvailableChapters] === true) {
+        params.append("hasAvailableChapters", "true");
+      }
+    }
+
     return this.utilFns
-      .fetchFn(
-        `https://api.mangadex.org/manga?title=${text}&${_getContentRatingsStr(
-          this.settings
-        )}&offset=${
-          (page - 1) * PAGE_SIZE
-        }&limit=${PAGE_SIZE}&includes[]=artist&includes[]=author&includes[]=cover_art`
-      )
+      .fetchFn("https://api.mangadex.org/manga?" + params)
       .then((response: Response) => response.json())
       .then((json: any) => {
         const results: ParsedResults = _parseMangaResults(json);
@@ -338,12 +361,64 @@ export class ExtensionClient extends ExtensionClientAbstract {
 
   setSettings: SetSettingsFunc = (newSettings: { [key: string]: any }) => {
     Object.keys(newSettings).forEach((key: string) => {
-      if (
-        key in this.settings &&
-        typeof (this.settings[key] === newSettings[key])
-      ) {
+      if (key in this.settings && typeof (this.settings[key] === newSettings[key])) {
         this.settings[key] = newSettings[key];
       }
     });
+  };
+
+  getFilterOptions: GetFilterOptionsFunc = () => {
+    return [
+      new FilterCheckbox(FilterControlIds.HasAvailableChapters, "Has available chapters", false),
+      new FilterSort(FilterControlIds.Sort, "Sort", {
+        key: "relevance",
+        direction: SortDirection.DESCENDING,
+      })
+        .withFields(FIELDS_SORT)
+        .withSupportsBothDirections(true),
+
+      new FilterSeparator("separator1", "", ""),
+
+      new FilterMultiToggle(FilterControlIds.Formats, "Format", {})
+        .withFields(FIELDS_FORMATS)
+        .withIsTriState(true),
+      new FilterMultiToggle(FilterControlIds.Themes, "Theme", {})
+        .withFields(FIELDS_THEMES)
+        .withIsTriState(true),
+      new FilterMultiToggle(FilterControlIds.Genres, "Genre", {})
+        .withFields(FIELDS_GENRES)
+        .withIsTriState(true),
+      new FilterMultiToggle(FilterControlIds.ContentWarnings, "Content Warning", {})
+        .withFields(FIELDS_CONTENT_WARNINGS)
+        .withIsTriState(true),
+
+      new FilterSeparator("separator2", "", ""),
+
+      new FilterMultiToggle(FilterControlIds.OriginalLanguage, "Original Language", {})
+        .withFields(FIELDS_ORIGINAL_LANGUAGES)
+        .withIsTriState(false),
+      new FilterMultiToggle(FilterControlIds.Demographic, "Demographic", {})
+        .withFields(FIELDS_DEMOGRAPHICS)
+        .withIsTriState(false),
+      new FilterMultiToggle(FilterControlIds.ContentRating, "Content Rating", {
+        safe: TriState.INCLUDE,
+        suggestive: TriState.INCLUDE,
+        erotica: TriState.INCLUDE,
+      })
+        .withFields(FIELDS_CONTENT_RATINGS)
+        .withIsTriState(false),
+      new FilterMultiToggle(FilterControlIds.Status, "Status", {})
+        .withFields(FIELDS_STATUS)
+        .withIsTriState(false),
+
+      new FilterSeparator("separator3", "", ""),
+
+      new FilterCycle(FilterControlIds.IncludedTagsMode, "Included Tags Mode", "AND").withOptions(
+        OPTIONS_TAG_MODE
+      ),
+      new FilterCycle(FilterControlIds.ExcludedTagsMode, "Excluded Tags Mode", "OR").withOptions(
+        OPTIONS_TAG_MODE
+      ),
+    ];
   };
 }
