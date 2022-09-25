@@ -14,6 +14,11 @@ import {
   GetSettingTypesFunc,
   SeriesListResponse,
   WebviewResponse,
+  GetFilterOptionsFunc,
+  FilterSort,
+  SortDirection,
+  FilterValues,
+  FilterSortValue,
 } from "houdoku-extension-lib";
 import { LanguageKey, Series, SeriesStatus } from "houdoku-extension-lib";
 import metadata from "./metadata.json";
@@ -29,10 +34,12 @@ const ORIGINAL_LANGUAGE_MAP: { [key: string]: LanguageKey } = {
 };
 
 const parseDirectoryResponse = (doc: Document): SeriesListResponse => {
-  const items = doc.getElementsByClassName("gallery")!;
+  const items = doc.querySelectorAll(
+    "div.container.index-container:not(.index-popular) > .gallery"
+  );
   const hasMore = doc.getElementsByClassName("next")!.length > 0;
 
-  const seriesList = [...items].map((item) => {
+  const seriesList = Array.from(items).map((item) => {
     const link = item.getElementsByTagName("a")![0];
     const img = link.getElementsByTagName("img")![1];
     const sourceId = link.getAttribute("href")!.split("/")[2];
@@ -74,115 +81,96 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getSeries: GetSeriesFunc = (id: string) => {
-    return this.utilFns
-      .webviewFn(`${BASE_URL}/g/${id}`)
-      .then((response: WebviewResponse) => {
-        const doc = this.utilFns.docFn(response.text);
+    return this.utilFns.webviewFn(`${BASE_URL}/g/${id}`).then((response: WebviewResponse) => {
+      const doc = this.utilFns.docFn(response.text);
 
-        const titleElements = doc.getElementsByClassName("title")!;
-        const title = titleElements[0]
-          .getElementsByClassName("pretty")![0]
-          .textContent.trim();
-        const altTitles =
-          titleElements.length > 1
-            ? [
-                titleElements[1]
-                  .getElementsByClassName("pretty")![0]
-                  .textContent.trim(),
-              ]
-            : [];
+      const titleElements = doc.getElementsByClassName("title")!;
+      const title = titleElements[0].getElementsByClassName("pretty")![0].textContent.trim();
+      const altTitles =
+        titleElements.length > 1
+          ? [titleElements[1].getElementsByClassName("pretty")![0].textContent.trim()]
+          : [];
 
-        const img = doc
-          .getElementById("cover")!
-          .getElementsByTagName("img")![1];
+      const img = doc.getElementById("cover")!.getElementsByTagName("img")![1];
 
-        const rows = doc.getElementsByClassName("tag-container")!;
-        const parodies = parseTags(rows[0]);
-        const characters = parseTags(rows[1]);
-        const tags = parseTags(rows[2]);
-        const artists = parseTags(rows[3]);
-        // const groups = parseTags(rows[4]);
-        const languages = parseTags(rows[5]);
-        // const categories = parseTags(rows[6]);
-        // const pages = parseTags(rows[7]);
+      const rows = doc.getElementsByClassName("tag-container")!;
+      const parodies = parseTags(rows[0]);
+      const characters = parseTags(rows[1]);
+      const tags = parseTags(rows[2]);
+      const artists = parseTags(rows[3]);
+      // const groups = parseTags(rows[4]);
+      const languages = parseTags(rows[5]);
+      // const categories = parseTags(rows[6]);
+      // const pages = parseTags(rows[7]);
 
-        const description = `Parodies: ${parodies}; Characters: ${characters}`;
-        let languageKey = LanguageKey.MULTI;
-        if (languages) {
-          languages.forEach((language) => {
-            if (language in ORIGINAL_LANGUAGE_MAP) {
-              languageKey = ORIGINAL_LANGUAGE_MAP[language];
-            }
-          });
-        }
+      const description = `Parodies: ${parodies}; Characters: ${characters}`;
+      let languageKey = LanguageKey.MULTI;
+      if (languages) {
+        languages.forEach((language) => {
+          if (language in ORIGINAL_LANGUAGE_MAP) {
+            languageKey = ORIGINAL_LANGUAGE_MAP[language];
+          }
+        });
+      }
 
-        const series: Series = {
-          extensionId: METADATA.id,
-          sourceId: id,
+      const series: Series = {
+        extensionId: METADATA.id,
+        sourceId: id,
 
-          title: title,
-          altTitles: altTitles,
-          description: description,
-          authors: artists || [],
-          artists: artists || [],
-          tags: tags || [],
-          status: SeriesStatus.COMPLETED,
-          originalLanguageKey: languageKey,
-          numberUnread: 0,
-          remoteCoverUrl: img.getAttribute("src")!,
-        };
-        return series;
-      });
+        title: title,
+        altTitles: altTitles,
+        description: description,
+        authors: artists || [],
+        artists: artists || [],
+        tags: tags || [],
+        status: SeriesStatus.COMPLETED,
+        originalLanguageKey: languageKey,
+        numberUnread: 0,
+        remoteCoverUrl: img.getAttribute("src")!,
+      };
+      return series;
+    });
   };
 
   getChapters: GetChaptersFunc = (id: string) => {
-    return this.utilFns
-      .webviewFn(`${BASE_URL}/g/${id}`)
-      .then((response: WebviewResponse) => {
-        const doc = this.utilFns.docFn(response.text);
+    return this.utilFns.webviewFn(`${BASE_URL}/g/${id}`).then((response: WebviewResponse) => {
+      const doc = this.utilFns.docFn(response.text);
 
-        const timeStr = doc
-          .getElementsByTagName("time")![0]
-          .getAttribute("datetime")!;
-        const img = doc
-          .getElementById("cover")!
-          .getElementsByTagName("img")![1];
-        const chapterId = img
-          .getAttribute("src")!
-          .split("galleries/")[1]
-          .split("/")[0];
+      const timeStr = doc.getElementsByTagName("time")![0].getAttribute("datetime")!;
+      const img = doc.getElementById("cover")!.getElementsByTagName("img")![1];
+      const chapterId = img.getAttribute("src")!.split("galleries/")[1].split("/")[0];
 
-        const rows = doc.getElementsByClassName("tag-container")!;
-        const groups = parseTags(rows[4]);
-        const languages = parseTags(rows[5]);
-        const pages = parseTags(rows[7]);
+      const rows = doc.getElementsByClassName("tag-container")!;
+      const groups = parseTags(rows[4]);
+      const languages = parseTags(rows[5]);
+      const pages = parseTags(rows[7]);
 
-        let languageKey = LanguageKey.MULTI;
-        if (languages) {
-          languages.forEach((language) => {
-            if (language in ORIGINAL_LANGUAGE_MAP) {
-              languageKey = ORIGINAL_LANGUAGE_MAP[language];
-            }
-          });
-        }
+      let languageKey = LanguageKey.MULTI;
+      if (languages) {
+        languages.forEach((language) => {
+          if (language in ORIGINAL_LANGUAGE_MAP) {
+            languageKey = ORIGINAL_LANGUAGE_MAP[language];
+          }
+        });
+      }
 
-        return [
-          {
-            id: undefined,
-            seriesId: undefined,
-            // hack: embedding the page count in the sourceId so we don't have to get it
-            // again in the page requester
-            sourceId: `${chapterId}:${pages ? pages[0] : ""}`,
-            title: "",
-            chapterNumber: "1",
-            volumeNumber: "",
-            languageKey: languageKey,
-            groupName: groups && groups.length > 0 ? groups[0] : "",
-            time: new Date(timeStr).getTime(),
-            read: false,
-          },
-        ];
-      });
+      return [
+        {
+          id: undefined,
+          seriesId: undefined,
+          // hack: embedding the page count in the sourceId so we don't have to get it
+          // again in the page requester
+          sourceId: `${chapterId}:${pages ? pages[0] : ""}`,
+          title: "",
+          chapterNumber: "1",
+          volumeNumber: "",
+          languageKey: languageKey,
+          groupName: groups && groups.length > 0 ? groups[0] : "",
+          time: new Date(timeStr).getTime(),
+          read: false,
+        },
+      ];
+    });
   };
 
   getPageRequesterData: GetPageRequesterDataFunc = (
@@ -208,9 +196,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
 
     for (let i = 1; i <= pageRequesterData.numPages; i++) {
       const host = hosts[i % hosts.length];
-      pageUrls.push(
-        `https://${host}.nhentai.net/galleries/${pageRequesterData.hash}/${i}.jpg`
-      );
+      pageUrls.push(`https://${host}.nhentai.net/galleries/${pageRequesterData.hash}/${i}.jpg`);
     }
     return pageUrls;
   };
@@ -221,22 +207,20 @@ export class ExtensionClient extends ExtensionClientAbstract {
     });
   };
 
-  getDirectory: GetDirectoryFunc = (page: number) => {
-    return this.utilFns
-      .webviewFn(`${BASE_URL}/?page=${page}`)
-      .then((response: WebviewResponse) => {
-        const doc = this.utilFns.docFn(response.text);
-        return parseDirectoryResponse(doc);
-      });
+  getDirectory: GetDirectoryFunc = (page: number, filterValues: FilterValues) => {
+    return this.getSearch("-tag:thisdoesntexist", page, filterValues);
   };
 
-  getSearch: GetSearchFunc = (
-    text: string,
-    params: { [key: string]: string },
-    page: number
-  ) => {
+  getSearch: GetSearchFunc = (text: string, page: number, filterValues: FilterValues) => {
+    const params = new URLSearchParams({
+      page: `${page}`,
+      q: text,
+    });
+    if ("sort" in filterValues)
+      params.append("sort", (filterValues["sort"] as FilterSortValue).key);
+
     return this.utilFns
-      .webviewFn(`${BASE_URL}/search/?page=${page}&q=${text}`)
+      .webviewFn(`${BASE_URL}/search/?${params}`)
       .then((response: WebviewResponse) => {
         const doc = this.utilFns.docFn(response.text);
         return parseDirectoryResponse(doc);
@@ -252,4 +236,21 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   setSettings: SetSettingsFunc = (newSettings: { [key: string]: any }) => {};
+
+  getFilterOptions: GetFilterOptionsFunc = () => {
+    return [
+      new FilterSort("sort", "Sort", {
+        key: "recent",
+        direction: SortDirection.DESCENDING,
+      })
+        .withFields([
+          { key: "recent", label: "Recent" },
+          { key: "popular-today", label: "Popular (Today)" },
+          { key: "popular-week", label: "Popular (Week)" },
+          { key: "popular-month", label: "Popular (Month)" },
+          { key: "popular", label: "Popular (All Time)" },
+        ])
+        .withSupportsBothDirections(false),
+    ];
+  };
 }
