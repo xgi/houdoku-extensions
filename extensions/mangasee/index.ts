@@ -13,11 +13,12 @@ import {
   SetSettingsFunc,
   GetSettingsFunc,
   GetSettingTypesFunc,
+  FilterValues,
 } from "houdoku-extension-lib";
 import metadata from "./metadata.json";
 import { parseMetadata } from "../../util/configuring";
-import { NepClient } from "../../generic/nep";
-import { UtilFunctions } from "houdoku-extension-lib/dist/interface";
+import { NepClient } from "../../generic/nep/nep";
+import { GetFilterOptionsFunc, UtilFunctions } from "houdoku-extension-lib/dist/interface";
 
 export const METADATA: ExtensionMetadata = parseMetadata(metadata);
 
@@ -47,10 +48,11 @@ export class ExtensionClient extends ExtensionClientAbstract {
 
   getImage: GetImageFunc = (series: Series, url: string) => this.nepClient.getImage(series, url);
 
-  getSearch: GetSearchFunc = (text: string, params: { [key: string]: string }, page: number) =>
-    this.nepClient.getSearch(text, params, page);
+  getDirectory: GetDirectoryFunc = (page: number, filterValues: FilterValues) =>
+    this.nepClient.getDirectory(page, filterValues);
 
-  getDirectory: GetDirectoryFunc = (page: number) => this.nepClient.getDirectory(page);
+  getSearch: GetSearchFunc = (text: string, page: number, filterValues: FilterValues) =>
+    this.nepClient.getSearch(text, page, filterValues);
 
   getSettingTypes: GetSettingTypesFunc = () => this.nepClient.getSettingTypes();
 
@@ -58,4 +60,6 @@ export class ExtensionClient extends ExtensionClientAbstract {
 
   setSettings: SetSettingsFunc = (newSettings: { [key: string]: any }) =>
     this.nepClient.setSettings(newSettings);
+
+  getFilterOptions: GetFilterOptionsFunc = () => this.nepClient.getFilterOptions();
 }

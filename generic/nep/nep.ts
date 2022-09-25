@@ -15,15 +15,35 @@ import {
   LanguageKey,
   Series,
   SeriesStatus,
+  FilterValues,
+  FilterMultiToggle,
+  MultiToggleValues,
+  TriState,
+  FilterTriStateCheckbox,
+  FilterSortValue,
+  FilterSort,
+  SortDirection,
 } from "houdoku-extension-lib";
-import { UtilFunctions } from "houdoku-extension-lib/dist/interface";
+import { GetFilterOptionsFunc, UtilFunctions } from "houdoku-extension-lib/dist/interface";
 
-import { findElementWithText } from "../util/parsing";
+import { findElementWithText } from "../../util/parsing";
+import { DirectoryEntry } from "./types";
+import {
+  FIELDS_GENRES,
+  FIELDS_SORT,
+  FIELDS_STATUS,
+  FIELDS_TYPES,
+  FilterControlIds,
+  SortType,
+} from "./filters";
+import { applySort, applyTriStateFilter } from "./util";
 
 const SERIES_STATUS_MAP: { [key: string]: SeriesStatus } = {
-  Ongoing: SeriesStatus.ONGOING,
-  Complete: SeriesStatus.COMPLETED,
   Cancelled: SeriesStatus.CANCELLED,
+  Complete: SeriesStatus.COMPLETED,
+  Discontinued: SeriesStatus.CANCELLED,
+  Hiatus: SeriesStatus.ONGOING,
+  Ongoing: SeriesStatus.ONGOING,
 };
 
 const ORIGINAL_LANGUAGE_MAP: { [key: string]: LanguageKey } = {
@@ -35,12 +55,7 @@ const ORIGINAL_LANGUAGE_MAP: { [key: string]: LanguageKey } = {
   "One-shot": LanguageKey.JAPANESE,
 };
 
-type DirectoryEntry = {
-  indexName: string;
-  seriesName: string;
-};
-
-const PAGE_SIZE = 48;
+const PAGE_SIZE = 24;
 
 export class NepClient {
   extensionId: string;
@@ -58,20 +73,29 @@ export class NepClient {
   }
 
   _getDirectoryList = () => {
-    return this.util.webviewFn(`${this.baseUrl}/directory`).then((response: WebviewResponse) => {
+    return this.util.webviewFn(`${this.baseUrl}/search`).then((response: WebviewResponse) => {
       let contentStr = response.text
-        .split("vm.FullDirectory = ")
+        .split("vm.Directory = ")
         .pop()!
-        .split("vm.CurrLetter")[0]
+        .split("vm.GetIntValue=")[0]
         .trim();
-      contentStr = contentStr.substr(0, contentStr.length - 1);
+      contentStr = contentStr.substring(0, contentStr.length - 1);
       const content = JSON.parse(contentStr);
 
-      this.fullDirectoryList = content["Directory"].map((entry: any) => {
-        return {
+      this.fullDirectoryList = content.map((entry: any) => {
+        const parsed: DirectoryEntry = {
           indexName: entry.i,
           seriesName: entry.s,
+          official: entry.o === "yes",
+          scanStatus: entry.ss,
+          publishStatus: entry.ps,
+          type: entry.t,
+          year: parseInt(entry.y),
+          popularity: parseInt(entry.v),
+          lastScanReleased: new Date(entry.ls).getTime(),
+          genres: entry.g,
         };
+        return parsed;
       });
     });
   };
@@ -138,8 +162,8 @@ export class NepClient {
       const fixedData = response.text.replace(/\<\/i>/g, "</li>");
 
       const doc = this.util.docFn(fixedData);
-      const title = doc.querySelector('h1').textContent.trim();
-      
+      const title = doc.querySelector("h1").textContent.trim();
+
       const detailLabels = doc.getElementsByClassName("mlabel")!;
       const authors: string[] = Array.from(
         findElementWithText(detailLabels, "Author(s)")!.parentElement!.getElementsByTagName("a")!
@@ -258,39 +282,57 @@ export class NepClient {
     });
   };
 
-  getSearch: GetSearchFunc = async (
-    text: string,
-    params: { [key: string]: string },
-    page: number
-  ) => {
+  getDirectory: GetDirectoryFunc = async (page: number, filterValues: FilterValues) => {
+    return this.getSearch("", page, filterValues);
+  };
+
+  getSearch: GetSearchFunc = async (text: string, page: number, filterValues: FilterValues) => {
     if (this.fullDirectoryList.length === 0) await this._getDirectoryList();
 
-    const allMatching = this.fullDirectoryList.filter((entry) =>
+    let results = this.fullDirectoryList.filter((entry) =>
       entry.seriesName.toLowerCase().includes(text.toLowerCase())
     );
 
+    if (FilterControlIds.Genres in filterValues) {
+      results = applyTriStateFilter(
+        results,
+        "genres",
+        filterValues[FilterControlIds.Genres] as MultiToggleValues
+      );
+    }
+    if (FilterControlIds.ScanStatus in filterValues) {
+      results = applyTriStateFilter(
+        results,
+        "scanStatus",
+        filterValues[FilterControlIds.ScanStatus] as MultiToggleValues
+      );
+    }
+    if (FilterControlIds.Type in filterValues) {
+      results = applyTriStateFilter(
+        results,
+        "type",
+        filterValues[FilterControlIds.Type] as MultiToggleValues
+      );
+    }
+    if (FilterControlIds.Official in filterValues) {
+      const officialValue = filterValues[FilterControlIds.Official] as TriState;
+      if (officialValue === TriState.INCLUDE) results = results.filter((entry) => entry.official);
+      else if (officialValue === TriState.EXCLUDE)
+        results = results.filter((entry) => !entry.official);
+    }
+    if (FilterControlIds.Sort in filterValues) {
+      results = applySort(results, filterValues[FilterControlIds.Sort] as FilterSortValue);
+    } else {
+      results = applySort(results, {
+        key: SortType.POPULARITY,
+        direction: SortDirection.DESCENDING,
+      });
+    }
+
     const startIndex = (page - 1) * PAGE_SIZE;
-    const seriesList: Series[] = this._parseDirectoryList(
-      allMatching.slice(startIndex, startIndex + PAGE_SIZE)
-    );
-
     return {
-      seriesList,
-      hasMore: allMatching.length > startIndex + PAGE_SIZE,
-    };
-  };
-
-  getDirectory: GetDirectoryFunc = async (page: number) => {
-    if (this.fullDirectoryList.length === 0) await this._getDirectoryList();
-
-    const startIndex = (page - 1) * PAGE_SIZE;
-    const seriesList: Series[] = this._parseDirectoryList(
-      this.fullDirectoryList.slice(startIndex, startIndex + PAGE_SIZE)
-    );
-
-    return {
-      seriesList,
-      hasMore: this.fullDirectoryList.length > startIndex + PAGE_SIZE,
+      seriesList: this._parseDirectoryList(results.slice(startIndex, startIndex + PAGE_SIZE)),
+      hasMore: results.length > startIndex + PAGE_SIZE,
     };
   };
 
@@ -303,4 +345,32 @@ export class NepClient {
   };
 
   setSettings: SetSettingsFunc = (newSettings: { [key: string]: any }) => {};
+
+  getFilterOptions: GetFilterOptionsFunc = () => {
+    return [
+      new FilterMultiToggle(FilterControlIds.Genres, "Genre", {})
+        .withFields(FIELDS_GENRES)
+        .withIsTriState(true),
+      new FilterMultiToggle(FilterControlIds.ScanStatus, "Scan Status", {})
+        .withFields(FIELDS_STATUS)
+        .withIsTriState(true),
+      new FilterMultiToggle(FilterControlIds.PublishStatus, "Publish Status", {})
+        .withFields(FIELDS_STATUS)
+        .withIsTriState(true),
+      new FilterMultiToggle(FilterControlIds.Type, "Type", {})
+        .withFields(FIELDS_TYPES)
+        .withIsTriState(true),
+      new FilterTriStateCheckbox(
+        FilterControlIds.Official,
+        "Official translation",
+        TriState.IGNORE
+      ),
+      new FilterSort(FilterControlIds.Sort, "Sort", {
+        key: SortType.POPULARITY,
+        direction: SortDirection.DESCENDING,
+      })
+        .withFields(FIELDS_SORT)
+        .withSupportsBothDirections(true),
+    ];
+  };
 }
