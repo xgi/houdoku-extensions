@@ -12,6 +12,8 @@ import {
   GetSettingsFunc,
   SetSettingsFunc,
   GetSettingTypesFunc,
+  FilterValues,
+  GetFilterOptionsFunc,
 } from "houdoku-extension-lib";
 import { LanguageKey, Series, SeriesStatus } from "houdoku-extension-lib";
 import { Response } from "node-fetch";
@@ -116,11 +118,11 @@ export class ExtensionClient extends ExtensionClientAbstract {
     });
   };
 
-  getDirectory: GetDirectoryFunc = (page: number) => {
-    return this.getSearch("", {}, page);
+  getDirectory: GetDirectoryFunc = (page: number, filterValues: FilterValues) => {
+    return this.getSearch("", page, filterValues);
   };
 
-  getSearch: GetSearchFunc = (text: string, params: { [key: string]: string }, page: number) => {
+  getSearch: GetSearchFunc = (text: string, page: number, filterValues: FilterValues) => {
     return this.utilFns
       .fetchFn(`${API_URL}/search?q=${text}&limit=${SEARCH_LIMIT}&page=${page}&tachiyomi=true`)
       .then((response: Response) => response.json())
@@ -160,4 +162,6 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   setSettings: SetSettingsFunc = () => {};
+
+  getFilterOptions: GetFilterOptionsFunc = () => [];
 }

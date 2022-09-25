@@ -12,13 +12,10 @@ import {
   GetSettingsFunc,
   SetSettingsFunc,
   GetSettingTypesFunc,
+  GetFilterOptionsFunc,
+  FilterValues,
 } from "houdoku-extension-lib";
-import {
-  Chapter,
-  LanguageKey,
-  Series,
-  SeriesStatus,
-} from "houdoku-extension-lib";
+import { Chapter, LanguageKey, Series, SeriesStatus } from "houdoku-extension-lib";
 import { Response } from "node-fetch";
 import metadata from "./metadata.json";
 import { parseMetadata } from "../../util/configuring";
@@ -65,22 +62,20 @@ export class ExtensionClient extends ExtensionClientAbstract {
 
         Object.keys(json.chapters).forEach((chapterNum: string) => {
           const chapterData = json.chapters[chapterNum];
-          Object.keys(json.chapters[chapterNum].groups).forEach(
-            (groupNum: string) => {
-              chapters.push({
-                id: undefined,
-                seriesId: undefined,
-                sourceId: `${chapterNum}:${json.slug}/chapters/${chapterData.folder}/${groupNum}`,
-                title: chapterData.title,
-                chapterNumber: chapterNum,
-                volumeNumber: chapterData.volume,
-                languageKey: LanguageKey.ENGLISH,
-                groupName: groups[groupNum],
-                time: chapterData.release_date[groupNum],
-                read: false,
-              });
-            }
-          );
+          Object.keys(json.chapters[chapterNum].groups).forEach((groupNum: string) => {
+            chapters.push({
+              id: undefined,
+              seriesId: undefined,
+              sourceId: `${chapterNum}:${json.slug}/chapters/${chapterData.folder}/${groupNum}`,
+              title: chapterData.title,
+              chapterNumber: chapterNum,
+              volumeNumber: chapterData.volume,
+              languageKey: LanguageKey.ENGLISH,
+              groupName: groups[groupNum],
+              time: chapterData.release_date[groupNum],
+              read: false,
+            });
+          });
         });
 
         return chapters;
@@ -99,12 +94,9 @@ export class ExtensionClient extends ExtensionClientAbstract {
         let groupNum = chapterSourceId.split("/").pop();
         groupNum = groupNum ? groupNum : "";
 
-        const pageBasenames: string[] =
-          json.chapters[chapterNum].groups[groupNum];
+        const pageBasenames: string[] = json.chapters[chapterNum].groups[groupNum];
         const pageFilenames = pageBasenames.map((basename: string) => {
-          return `https://guya.moe/media/manga/${chapterSourceId
-            .split(":")
-            .pop()}/${basename}`;
+          return `https://guya.moe/media/manga/${chapterSourceId.split(":").pop()}/${basename}`;
         });
 
         return {
@@ -126,7 +118,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
     });
   };
 
-  getDirectory: GetDirectoryFunc = (page: number) => {
+  getDirectory: GetDirectoryFunc = (page: number, filterValues: FilterValues) => {
     return this.utilFns
       .fetchFn(`https://guya.moe/api/get_all_series`)
       .then((response: Response) => response.json())
@@ -164,12 +156,8 @@ export class ExtensionClient extends ExtensionClientAbstract {
       });
   };
 
-  getSearch: GetSearchFunc = (
-    text: string,
-    params: { [key: string]: string },
-    page: number
-  ) => {
-    return this.getDirectory(page);
+  getSearch: GetSearchFunc = (text: string, page: number, filterValues: FilterValues) => {
+    return this.getDirectory(page, filterValues);
   };
 
   getSettingTypes: GetSettingTypesFunc = () => {
@@ -181,4 +169,6 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   setSettings: SetSettingsFunc = () => {};
+
+  getFilterOptions: GetFilterOptionsFunc = () => [];
 }

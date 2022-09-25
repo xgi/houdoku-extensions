@@ -14,6 +14,8 @@ import {
   GetSettingTypesFunc,
   SeriesListResponse,
   WebviewResponse,
+  GetFilterOptionsFunc,
+  FilterValues,
 } from "houdoku-extension-lib";
 import { LanguageKey, Series, SeriesStatus } from "houdoku-extension-lib";
 import metadata from "./metadata.json";
@@ -75,98 +77,87 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getSeries: GetSeriesFunc = (id: string) => {
-    return this.utilFns
-      .webviewFn(`${BASE_URL}/komik/${id}`)
-      .then((response: WebviewResponse) => {
-        const doc = this.utilFns.docFn(response.text);
+    return this.utilFns.webviewFn(`${BASE_URL}/komik/${id}`).then((response: WebviewResponse) => {
+      const doc = this.utilFns.docFn(response.text);
 
-        const infoContainer =
-          doc.getElementsByClassName("komik_info-content")![0];
+      const infoContainer = doc.getElementsByClassName("komik_info-content")![0];
 
-        const title = infoContainer
-          .getElementsByClassName("komik_info-content-body-title")![0]
-          .textContent.trim()
-          .split(" Bahasa Indonesia")[0];
-        const altTitles = infoContainer
-          .getElementsByClassName("komik_info-content-native")![0]
-          .textContent.trim()
-          .split(",")!;
-        const description = doc
-          .getElementsByClassName("komik_info-description-sinopsis")![0]
-          .textContent.trim();
+      const title = infoContainer
+        .getElementsByClassName("komik_info-content-body-title")![0]
+        .textContent.trim()
+        .split(" Bahasa Indonesia")[0];
+      const altTitles = infoContainer
+        .getElementsByClassName("komik_info-content-native")![0]
+        .textContent.trim()
+        .split(",")!;
+      const description = doc
+        .getElementsByClassName("komik_info-description-sinopsis")![0]
+        .textContent.trim();
 
-        const img = infoContainer.getElementsByTagName("img")![0];
-        const rows = infoContainer.getElementsByClassName(
-          "komik_info-content-info"
-        )!;
+      const img = infoContainer.getElementsByTagName("img")![0];
+      const rows = infoContainer.getElementsByClassName("komik_info-content-info")!;
 
-        const authorsRow = Array.from(rows).find((row: Element) =>
-          row.textContent.includes("Author:")
-        );
-        const authors = authorsRow?.textContent
-          .split("Author: ")[1]
-          .split(",")!;
+      const authorsRow = Array.from(rows).find((row: Element) =>
+        row.textContent.includes("Author:")
+      );
+      const authors = authorsRow?.textContent.split("Author: ")[1].split(",")!;
 
-        const statusRow = Array.from(rows).find((row: Element) =>
-          row.textContent.includes("Status:")
-        );
-        const statusStr = statusRow?.textContent.split("Status: ")[1]!;
+      const statusRow = Array.from(rows).find((row: Element) =>
+        row.textContent.includes("Status:")
+      );
+      const statusStr = statusRow?.textContent.split("Status: ")[1]!;
 
-        const tags = Array.from(
-          infoContainer.getElementsByClassName("genre-item")!
-        ).map((element) => element.textContent);
+      const tags = Array.from(infoContainer.getElementsByClassName("genre-item")!).map(
+        (element) => element.textContent
+      );
 
-        const typeStr = infoContainer
-          .getElementsByClassName("komik_info-content-info-type")![0]
-          .getElementsByTagName("a")![0].textContent;
+      const typeStr = infoContainer
+        .getElementsByClassName("komik_info-content-info-type")![0]
+        .getElementsByTagName("a")![0].textContent;
 
-        const series: Series = {
-          extensionId: METADATA.id,
-          sourceId: id,
+      const series: Series = {
+        extensionId: METADATA.id,
+        sourceId: id,
 
-          title: title,
-          altTitles: altTitles,
-          description: description,
-          authors: authors,
-          artists: [],
-          tags: tags,
-          status: SERIES_STATUS_MAP[statusStr],
-          originalLanguageKey: ORIGINAL_LANGUAGE_MAP[typeStr],
-          numberUnread: 0,
-          remoteCoverUrl: img.getAttribute("src")!,
-        };
-        return series;
-      });
+        title: title,
+        altTitles: altTitles,
+        description: description,
+        authors: authors,
+        artists: [],
+        tags: tags,
+        status: SERIES_STATUS_MAP[statusStr],
+        originalLanguageKey: ORIGINAL_LANGUAGE_MAP[typeStr],
+        numberUnread: 0,
+        remoteCoverUrl: img.getAttribute("src")!,
+      };
+      return series;
+    });
   };
 
   getChapters: GetChaptersFunc = (id: string) => {
-    return this.utilFns
-      .webviewFn(`${BASE_URL}/komik/${id}`)
-      .then((response: WebviewResponse) => {
-        const doc = this.utilFns.docFn(response.text);
+    return this.utilFns.webviewFn(`${BASE_URL}/komik/${id}`).then((response: WebviewResponse) => {
+      const doc = this.utilFns.docFn(response.text);
 
-        return Array.from(
-          doc.getElementsByClassName("komik_info-chapters-item")!
-        ).map((row) => {
-          const link = row.getElementsByTagName("a")![0];
-          const title = link.textContent.trim();
-          const chapterNum = title.split("Chapter ")[1];
-          const sourceId = link.getAttribute("href")!.split("/")[4];
+      return Array.from(doc.getElementsByClassName("komik_info-chapters-item")!).map((row) => {
+        const link = row.getElementsByTagName("a")![0];
+        const title = link.textContent.trim();
+        const chapterNum = title.split("Chapter ")[1];
+        const sourceId = link.getAttribute("href")!.split("/")[4];
 
-          return {
-            id: undefined,
-            seriesId: undefined,
-            sourceId: sourceId,
-            title: title,
-            chapterNumber: chapterNum,
-            volumeNumber: "",
-            languageKey: LanguageKey.INDONESIAN,
-            groupName: "",
-            time: 0,
-            read: false,
-          };
-        });
+        return {
+          id: undefined,
+          seriesId: undefined,
+          sourceId: sourceId,
+          title: title,
+          chapterNumber: chapterNum,
+          volumeNumber: "",
+          languageKey: LanguageKey.INDONESIAN,
+          groupName: "",
+          time: 0,
+          read: false,
+        };
       });
+    });
   };
 
   getPageRequesterData: GetPageRequesterDataFunc = (
@@ -181,9 +172,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
         const images = doc
           .getElementsByClassName("main-reading-area")![0]
           .getElementsByTagName("img")!;
-        const pageFilenames = Array.from(images).map(
-          (image) => image.getAttribute("src")!
-        );
+        const pageFilenames = Array.from(images).map((image) => image.getAttribute("src")!);
 
         return {
           server: "",
@@ -204,7 +193,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
     });
   };
 
-  getDirectory: GetDirectoryFunc = (page: number) => {
+  getDirectory: GetDirectoryFunc = (page: number, filterValues: FilterValues) => {
     return this.utilFns
       .webviewFn(`${BASE_URL}/daftar-komik/page/${page}`)
       .then((response: WebviewResponse) => {
@@ -213,11 +202,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
       });
   };
 
-  getSearch: GetSearchFunc = (
-    text: string,
-    params: { [key: string]: string },
-    page: number
-  ) => {
+  getSearch: GetSearchFunc = (text: string, page: number, filterValues: FilterValues) => {
     return this.utilFns
       .webviewFn(`${BASE_URL}/page/${page}/?s=${text}`)
       .then((response: WebviewResponse) => {
@@ -235,4 +220,6 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   setSettings: SetSettingsFunc = (newSettings: { [key: string]: any }) => {};
+
+  getFilterOptions: GetFilterOptionsFunc = () => [];
 }

@@ -13,10 +13,9 @@ import {
   Chapter,
   LanguageKey,
   Series,
-  
   SeriesStatus,
 } from "houdoku-extension-lib";
-import { UtilFunctions } from "houdoku-extension-lib/dist/interface";
+import { GetFilterOptionsFunc, UtilFunctions } from "houdoku-extension-lib/dist/interface";
 import { Response } from "node-fetch";
 
 const LANGUAGE_MAP: { [key: string]: LanguageKey } = {
@@ -77,7 +76,7 @@ export class PizzaReaderClient {
       id: undefined,
       extensionId: this.extensionId,
       sourceId: entry.slug,
-      
+
       title: entry.title,
       altTitles: entry.alt_titles,
       description: entry.description,
@@ -124,7 +123,6 @@ export class PizzaReaderClient {
   };
 
   getPageRequesterData: GetPageRequesterDataFunc = (
-    
     seriesSourceId: string,
     chapterSourceId: string
   ) => {
@@ -152,7 +150,7 @@ export class PizzaReaderClient {
     });
   };
 
-  getSearch: GetSearchFunc = (text: string, params: { [key: string]: string }, page: number) => {
+  getSearch: GetSearchFunc = (text: string, page: number) => {
     return this.util
       .fetchFn(`${this.baseUrl}/api/search/${text}`)
       .then((response: Response) => response.json())
@@ -187,4 +185,6 @@ export class PizzaReaderClient {
   };
 
   setSettings: SetSettingsFunc = (newSettings: { [key: string]: any }) => {};
+
+  getFilterOptions: GetFilterOptionsFunc = () => [];
 }

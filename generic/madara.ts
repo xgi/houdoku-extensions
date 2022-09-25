@@ -15,10 +15,9 @@ import {
   Chapter,
   LanguageKey,
   Series,
-  
   SeriesStatus,
 } from "houdoku-extension-lib";
-import { UtilFunctions } from "houdoku-extension-lib/dist/interface";
+import { GetFilterOptionsFunc, UtilFunctions } from "houdoku-extension-lib/dist/interface";
 
 export class MadaraClient {
   extensionId: string;
@@ -70,7 +69,7 @@ export class MadaraClient {
         id: undefined,
         extensionId: this.extensionId,
         sourceId: sourceId,
-        
+
         title,
         altTitles: [],
         description: "",
@@ -114,7 +113,6 @@ export class MadaraClient {
           id: undefined,
           extensionId: this.extensionId,
           sourceId: sourceId,
-          
           title: title || "",
           altTitles: [],
           description: "",
@@ -194,7 +192,6 @@ export class MadaraClient {
   };
 
   getPageRequesterData: GetPageRequesterDataFunc = (
-    
     seriesSourceId: string,
     chapterSourceId: string
   ) => {
@@ -231,7 +228,7 @@ export class MadaraClient {
     });
   };
 
-  getSearch: GetSearchFunc = (text: string, params: { [key: string]: string }, page: number) => {
+  getSearch: GetSearchFunc = (text: string, page: number) => {
     return this.util
       .webviewFn(`${this.baseUrl}/page/${page}/?s=${text}&post_type=wp-manga`)
       .then((response: WebviewResponse) => this._parseSearch(this.util.docFn(response.text)));
@@ -252,4 +249,6 @@ export class MadaraClient {
   };
 
   setSettings: SetSettingsFunc = (newSettings: { [key: string]: any }) => {};
+
+  getFilterOptions: GetFilterOptionsFunc = () => [];
 }

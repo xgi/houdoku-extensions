@@ -14,11 +14,12 @@ import {
   GetSettingsFunc,
   GetSettingTypesFunc,
   LanguageKey,
+  FilterValues,
 } from "houdoku-extension-lib";
 import metadata from "./metadata.json";
 import { MadaraClient } from "../../generic/madara";
 import { parseMetadata } from "../../util/configuring";
-import { UtilFunctions } from "houdoku-extension-lib/dist/interface";
+import { GetFilterOptionsFunc, UtilFunctions } from "houdoku-extension-lib/dist/interface";
 
 export const METADATA: ExtensionMetadata = parseMetadata(metadata);
 
@@ -27,12 +28,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
 
   constructor(utilsFn: UtilFunctions) {
     super(utilsFn);
-    this.madaraClient = new MadaraClient(
-      METADATA.id,
-      METADATA.url,
-      utilsFn,
-      LanguageKey.TURKISH
-    );
+    this.madaraClient = new MadaraClient(METADATA.id, METADATA.url, utilsFn, LanguageKey.TURKISH);
   }
 
   getMetadata: () => ExtensionMetadata = () => {
@@ -41,8 +37,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
 
   getSeries: GetSeriesFunc = (id: string) => this.madaraClient.getSeries(id);
 
-  getChapters: GetChaptersFunc = (id: string) =>
-    this.madaraClient.getChapters(id);
+  getChapters: GetChaptersFunc = (id: string) => this.madaraClient.getChapters(id);
 
   getPageRequesterData: GetPageRequesterDataFunc = (
     seriesSourceId: string,
@@ -52,23 +47,20 @@ export class ExtensionClient extends ExtensionClientAbstract {
   getPageUrls: GetPageUrlsFunc = (pageRequesterData: PageRequesterData) =>
     this.madaraClient.getPageUrls(pageRequesterData);
 
-  getImage: GetImageFunc = (series: Series, url: string) =>
-    this.madaraClient.getImage(series, url);
+  getImage: GetImageFunc = (series: Series, url: string) => this.madaraClient.getImage(series, url);
 
-  getSearch: GetSearchFunc = (
-    text: string,
-    params: { [key: string]: string },
-    page: number
-  ) => this.madaraClient.getSearch(text, params, page);
+  getSearch: GetSearchFunc = (text: string, page: number, filterValues: FilterValues) =>
+    this.madaraClient.getSearch(text, page, filterValues);
 
-  getDirectory: GetDirectoryFunc = (page: number) =>
-    this.madaraClient.getDirectory(page);
+  getDirectory: GetDirectoryFunc = (page: number, filterValues: FilterValues) =>
+    this.madaraClient.getDirectory(page, filterValues);
 
-  getSettingTypes: GetSettingTypesFunc = () =>
-    this.madaraClient.getSettingTypes();
+  getSettingTypes: GetSettingTypesFunc = () => this.madaraClient.getSettingTypes();
 
   getSettings: GetSettingsFunc = () => this.madaraClient.getSettings();
 
   setSettings: SetSettingsFunc = (newSettings: { [key: string]: any }) =>
     this.madaraClient.setSettings(newSettings);
+
+  getFilterOptions: GetFilterOptionsFunc = () => this.madaraClient.getFilterOptions();
 }

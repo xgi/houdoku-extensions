@@ -16,7 +16,7 @@ import {
   Series,
   SeriesStatus,
 } from "houdoku-extension-lib";
-import { UtilFunctions } from "houdoku-extension-lib/dist/interface";
+import { GetFilterOptionsFunc, UtilFunctions } from "houdoku-extension-lib/dist/interface";
 
 const SERIES_STATUS_MAP: { [key: string]: SeriesStatus } = {
   Ongoing: SeriesStatus.ONGOING,
@@ -207,7 +207,7 @@ export class MangaBoxClient {
       .then((response) => response.arrayBuffer());
   };
 
-  getSearch: GetSearchFunc = (text: string, params: { [key: string]: string }, page: number) => {
+  getSearch: GetSearchFunc = (text: string, page: number) => {
     const query = text.replace(
       /!|@|%|\^|\*|\(|\)|\+|=|<|>|\?|\/|,|\.|:|;|'| |"|&|#|\[|]|~|-|$|_/,
       "_"
@@ -227,4 +227,6 @@ export class MangaBoxClient {
   getSettings: GetSettingsFunc = () => ({});
 
   setSettings: SetSettingsFunc = (newSettings: { [key: string]: any }) => {};
+
+  getFilterOptions: GetFilterOptionsFunc = () => [];
 }

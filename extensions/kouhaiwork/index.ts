@@ -12,13 +12,10 @@ import {
   GetSettingsFunc,
   SetSettingsFunc,
   GetSettingTypesFunc,
+  GetFilterOptionsFunc,
+  FilterValues,
 } from "houdoku-extension-lib";
-import {
-  Chapter,
-  LanguageKey,
-  Series,
-  SeriesStatus,
-} from "houdoku-extension-lib";
+import { Chapter, LanguageKey, Series, SeriesStatus } from "houdoku-extension-lib";
 import { Response } from "node-fetch";
 import metadata from "./metadata.json";
 import { parseMetadata } from "../../util/configuring";
@@ -89,9 +86,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
       .then((json: any) => {
         return json.data.chapters.map((chapterData: any) => {
           const groupName =
-            chapterData.groups && chapterData.groups.length > 0
-              ? chapterData.groups[0].name
-              : "";
+            chapterData.groups && chapterData.groups.length > 0 ? chapterData.groups[0].name : "";
 
           const chapter: Chapter = {
             sourceId: chapterData.id,
@@ -117,8 +112,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
       .then((response: Response) => response.json())
       .then((json: any) => {
         const pageFilenames: string[] = json.chapter.pages.map(
-          (pageData: { id: number; next_id: number; media: string }) =>
-            pageData.media
+          (pageData: { id: number; next_id: number; media: string }) => pageData.media
         );
 
         return {
@@ -131,9 +125,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getPageUrls: GetPageUrlsFunc = (pageRequesterData: PageRequesterData) => {
-    return pageRequesterData.pageFilenames.map(
-      (filename: string) => `${STORAGE_URL}/${filename}`
-    );
+    return pageRequesterData.pageFilenames.map((filename: string) => `${STORAGE_URL}/${filename}`);
   };
 
   getImage: GetImageFunc = (series: Series, url: string) => {
@@ -142,7 +134,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
     });
   };
 
-  getDirectory: GetDirectoryFunc = (page: number) => {
+  getDirectory: GetDirectoryFunc = (page: number, filterValues: FilterValues) => {
     return this.utilFns
       .fetchFn(`${API_URL}/manga/all`)
       .then((response: Response) => response.json())
@@ -157,11 +149,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
       });
   };
 
-  getSearch: GetSearchFunc = (
-    text: string,
-    params: { [key: string]: string },
-    page: number
-  ) => {
+  getSearch: GetSearchFunc = (text: string, page: number, filterValues: FilterValues) => {
     return this.utilFns
       .fetchFn(`${API_URL}/search/manga`, {
         method: "POST",
@@ -208,4 +196,6 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   setSettings: SetSettingsFunc = () => {};
+
+  getFilterOptions: GetFilterOptionsFunc = () => [];
 }

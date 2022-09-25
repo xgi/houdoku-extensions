@@ -14,6 +14,7 @@ import {
   GetImageFunc,
   SeriesListResponse,
   SettingType,
+  FilterValues,
 } from "houdoku-extension-lib";
 import { LanguageKey, Series, SeriesStatus } from "houdoku-extension-lib";
 import { Response } from "node-fetch";
@@ -21,7 +22,7 @@ import metadata from "./metadata.json";
 import { parseMetadata } from "../../util/configuring";
 import { KomgaBook, KomgaPage, KomgaSeries, KomgaSeriesListResponse } from "./types";
 import { findLanguageKey } from "../../util/parsing";
-import { UtilFunctions } from "houdoku-extension-lib/dist/interface";
+import { GetFilterOptionsFunc, UtilFunctions } from "houdoku-extension-lib/dist/interface";
 
 export const METADATA: ExtensionMetadata = parseMetadata(metadata);
 
@@ -204,7 +205,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
       .then((response) => response.arrayBuffer());
   };
 
-  getDirectory: GetDirectoryFunc = (page: number) => {
+  getDirectory: GetDirectoryFunc = (page: number, filterValues: FilterValues) => {
     return this.utilFns
       .fetchFn(
         `${this.settings[SETTING_NAMES.ADDRESS]}/api/v1/series?page=${
@@ -219,7 +220,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
       .then((json: KomgaSeriesListResponse) => this._parseSeriesListResponse(json));
   };
 
-  getSearch: GetSearchFunc = (text: string, params: { [key: string]: string }, page: number) => {
+  getSearch: GetSearchFunc = (text: string, page: number, filterValues: FilterValues) => {
     return this.utilFns
       .fetchFn(
         `${this.settings[SETTING_NAMES.ADDRESS]}/api/v1/series?search=${text}&page=${
@@ -251,4 +252,6 @@ export class ExtensionClient extends ExtensionClientAbstract {
       }
     });
   };
+
+  getFilterOptions: GetFilterOptionsFunc = () => [];
 }

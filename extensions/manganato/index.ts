@@ -13,8 +13,9 @@ import {
   SetSettingsFunc,
   GetSettingsFunc,
   GetSettingTypesFunc,
+  FilterValues,
 } from "houdoku-extension-lib";
-import { UtilFunctions } from "houdoku-extension-lib/dist/interface";
+import { GetFilterOptionsFunc, UtilFunctions } from "houdoku-extension-lib/dist/interface";
 import { MangaBoxClient } from "../../generic/mangabox";
 import { parseMetadata } from "../../util/configuring";
 import metadata from "./metadata.json";
@@ -47,10 +48,11 @@ export class ExtensionClient extends ExtensionClientAbstract {
   getImage: GetImageFunc = (series: Series, url: string) =>
     this.mangaboxClient.getImage(series, url);
 
-  getSearch: GetSearchFunc = (text: string, params: { [key: string]: string }, page: number) =>
-    this.mangaboxClient.getSearch(text, params, page);
+  getSearch: GetSearchFunc = (text: string, page: number, filterValues: FilterValues) =>
+    this.mangaboxClient.getSearch(text, page, filterValues);
 
-  getDirectory: GetDirectoryFunc = (page: number) => this.mangaboxClient.getDirectory(page);
+  getDirectory: GetDirectoryFunc = (page: number, filterValues: FilterValues) =>
+    this.mangaboxClient.getDirectory(page, filterValues);
 
   getSettingTypes: GetSettingTypesFunc = () => this.mangaboxClient.getSettingTypes();
 
@@ -58,4 +60,6 @@ export class ExtensionClient extends ExtensionClientAbstract {
 
   setSettings: SetSettingsFunc = (newSettings: { [key: string]: any }) =>
     this.mangaboxClient.setSettings(newSettings);
+
+  getFilterOptions: GetFilterOptionsFunc = () => this.mangaboxClient.getFilterOptions();
 }

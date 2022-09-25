@@ -13,10 +13,9 @@ import {
   Chapter,
   LanguageKey,
   Series,
-  
   SeriesStatus,
 } from "houdoku-extension-lib";
-import { UtilFunctions } from "houdoku-extension-lib/dist/interface";
+import { GetFilterOptionsFunc, UtilFunctions } from "houdoku-extension-lib/dist/interface";
 import { Response } from "node-fetch";
 
 const SERIES_STATUS_MAP: { [key: string]: SeriesStatus } = {
@@ -53,7 +52,7 @@ export class WeebReaderClient {
           id: undefined,
           extensionId: this.extensionId,
           sourceId: entry.id,
-          
+
           title: entry.name,
           altTitles: [],
           description: "",
@@ -69,14 +68,15 @@ export class WeebReaderClient {
   };
 
   getSeries: GetSeriesFunc = (id: string) => {
-    return this.util.fetchFn(`${this.baseUrl}/api/titles/${id}`)
+    return this.util
+      .fetchFn(`${this.baseUrl}/api/titles/${id}`)
       .then((response: Response) => response.json())
       .then((data: any) => {
         return {
           id: undefined,
           extensionId: this.extensionId,
           sourceId: data.id,
-          
+
           title: data.name,
           altTitles: [],
           description: data.synopsis,
@@ -92,7 +92,8 @@ export class WeebReaderClient {
   };
 
   getChapters: GetChaptersFunc = (id: string) => {
-    return this.util.fetchFn(`${this.baseUrl}/api/titles/${id}`)
+    return this.util
+      .fetchFn(`${this.baseUrl}/api/titles/${id}`)
       .then((response: Response) => response.json())
       .then((data: any) => {
         return data.chapters.map(
@@ -114,11 +115,11 @@ export class WeebReaderClient {
   };
 
   getPageRequesterData: GetPageRequesterDataFunc = (
-    
     seriesSourceId: string,
     chapterSourceId: string
   ) => {
-    return this.util.fetchFn(`${this.baseUrl}/api/chapters/${chapterSourceId}`)
+    return this.util
+      .fetchFn(`${this.baseUrl}/api/chapters/${chapterSourceId}`)
       .then((response: Response) => response.json())
       .then((data: any) => {
         const pageFilenames = data.pages.map((entry: any) => entry.pageUrl);
@@ -132,9 +133,7 @@ export class WeebReaderClient {
   };
 
   getPageUrls: GetPageUrlsFunc = (pageRequesterData: PageRequesterData) => {
-    return pageRequesterData.pageFilenames.map(
-      (fname) => `${this.baseUrl}/${fname}`
-    );
+    return pageRequesterData.pageFilenames.map((fname) => `${this.baseUrl}/${fname}`);
   };
 
   getImage: GetImageFunc = (series: Series, url: string) => {
@@ -143,12 +142,9 @@ export class WeebReaderClient {
     });
   };
 
-  getSearch: GetSearchFunc = (
-    text: string,
-    params: { [key: string]: string },
-    page: number
-  ) => {
-    return this.util.fetchFn(`${this.baseUrl}/api/titles/search?term=${text}`)
+  getSearch: GetSearchFunc = (text: string, page: number) => {
+    return this.util
+      .fetchFn(`${this.baseUrl}/api/titles/search?term=${text}`)
       .then((response: Response) => response.json())
       .then((data: any) => {
         const seriesList = this._parseSeriesList(data);
@@ -160,7 +156,8 @@ export class WeebReaderClient {
   };
 
   getDirectory: GetDirectoryFunc = (page: number) => {
-    return this.util.fetchFn(`${this.baseUrl}/api/titles`)
+    return this.util
+      .fetchFn(`${this.baseUrl}/api/titles`)
       .then((response: Response) => response.json())
       .then((data: any) => {
         const seriesList = this._parseSeriesList(data);
@@ -180,4 +177,6 @@ export class WeebReaderClient {
   };
 
   setSettings: SetSettingsFunc = (newSettings: { [key: string]: any }) => {};
+
+  getFilterOptions: GetFilterOptionsFunc = () => [];
 }

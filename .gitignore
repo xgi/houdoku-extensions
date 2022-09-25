@@ -7,3 +7,4 @@ extensions/*/package.json
 extensions/*/tsconfig.json
 scripts/extension_table.md
 scripts/create-source.py
+scripts/update-versions.py

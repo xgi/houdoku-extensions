@@ -15,12 +15,13 @@ import {
   SeriesListResponse,
   SettingType,
   WebviewResponse,
+  FilterValues,
 } from "houdoku-extension-lib";
 import { LanguageKey, Series, SeriesStatus } from "houdoku-extension-lib";
 import { Response } from "node-fetch";
 import metadata from "./metadata.json";
 import { parseMetadata } from "../../util/configuring";
-import { UtilFunctions } from "houdoku-extension-lib/dist/interface";
+import { GetFilterOptionsFunc, UtilFunctions } from "houdoku-extension-lib/dist/interface";
 
 const BASE_URL = "https://readcomiconline.li";
 export const METADATA: ExtensionMetadata = parseMetadata(metadata);
@@ -194,7 +195,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
     });
   };
 
-  getDirectory: GetDirectoryFunc = (page: number) => {
+  getDirectory: GetDirectoryFunc = (page: number, filterValues: FilterValues) => {
     return this.utilFns
       .fetchFn(`${BASE_URL}/ComicList/LatestUpdate?page=${page}`)
       .then((response: Response) => response.text())
@@ -204,7 +205,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
       });
   };
 
-  getSearch: GetSearchFunc = (text: string, params: { [key: string]: string }, page: number) => {
+  getSearch: GetSearchFunc = (text: string, page: number, filterValues: FilterValues) => {
     return this.utilFns
       .fetchFn(`${BASE_URL}/AdvanceSearch?page=${page}`, {
         method: "POST",
@@ -235,4 +236,6 @@ export class ExtensionClient extends ExtensionClientAbstract {
       }
     });
   };
+
+  getFilterOptions: GetFilterOptionsFunc = () => [];
 }

@@ -12,14 +12,8 @@ import {
   SetSettingsFunc,
   GetSettingTypesFunc,
 } from "houdoku-extension-lib";
-import {
-  Chapter,
-  LanguageKey,
-  Series,
-  
-  SeriesStatus,
-} from "houdoku-extension-lib";
-import { UtilFunctions } from "houdoku-extension-lib/dist/interface";
+import { Chapter, LanguageKey, Series, SeriesStatus } from "houdoku-extension-lib";
+import { GetFilterOptionsFunc, UtilFunctions } from "houdoku-extension-lib/dist/interface";
 import { Response } from "node-fetch";
 
 type ParsedResults = {
@@ -45,7 +39,7 @@ const _parseResults = (doc: Document, extensionId: string): ParsedResults => {
       id: undefined,
       extensionId: extensionId,
       sourceId: sourceId,
-      
+
       title: title,
       altTitles: [],
       description: "",
@@ -106,7 +100,7 @@ export class FoolSlideClient {
           id: undefined,
           extensionId: this.extensionId,
           sourceId: id,
-          
+
           title: title,
           altTitles: [],
           description: "",
@@ -165,7 +159,6 @@ export class FoolSlideClient {
   };
 
   getPageRequesterData: GetPageRequesterDataFunc = (
-    
     seriesSourceId: string,
     chapterSourceId: string
   ) => {
@@ -199,7 +192,7 @@ export class FoolSlideClient {
     });
   };
 
-  getSearch: GetSearchFunc = (text: string, params: { [key: string]: string }, page: number) => {
+  getSearch: GetSearchFunc = (text: string, page: number) => {
     return this.util
       .fetchFn(`${this.baseUrl}/search`, {
         method: "POST",
@@ -242,4 +235,6 @@ export class FoolSlideClient {
   };
 
   setSettings: SetSettingsFunc = (newSettings: { [key: string]: any }) => {};
+
+  getFilterOptions: GetFilterOptionsFunc = () => [];
 }

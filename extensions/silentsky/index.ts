@@ -13,11 +13,12 @@ import {
   SetSettingsFunc,
   GetSettingsFunc,
   GetSettingTypesFunc,
+  FilterValues,
 } from "houdoku-extension-lib";
 import metadata from "./metadata.json";
 import { FoolSlideClient } from "../../generic/foolslide";
 import { parseMetadata } from "../../util/configuring";
-import { UtilFunctions } from "houdoku-extension-lib/dist/interface";
+import { GetFilterOptionsFunc, UtilFunctions } from "houdoku-extension-lib/dist/interface";
 
 export const METADATA: ExtensionMetadata = parseMetadata(metadata);
 
@@ -40,14 +41,12 @@ export class ExtensionClient extends ExtensionClientAbstract {
 
   getSeries: GetSeriesFunc = (id: string) => this.foolslideClient.getSeries(id);
 
-  getChapters: GetChaptersFunc = (id: string) =>
-    this.foolslideClient.getChapters(id);
+  getChapters: GetChaptersFunc = (id: string) => this.foolslideClient.getChapters(id);
 
   getPageRequesterData: GetPageRequesterDataFunc = (
     seriesSourceId: string,
     chapterSourceId: string
-  ) =>
-    this.foolslideClient.getPageRequesterData(seriesSourceId, chapterSourceId);
+  ) => this.foolslideClient.getPageRequesterData(seriesSourceId, chapterSourceId);
 
   getPageUrls: GetPageUrlsFunc = (pageRequesterData: PageRequesterData) =>
     this.foolslideClient.getPageUrls(pageRequesterData);
@@ -55,20 +54,18 @@ export class ExtensionClient extends ExtensionClientAbstract {
   getImage: GetImageFunc = (series: Series, url: string) =>
     this.foolslideClient.getImage(series, url);
 
-  getSearch: GetSearchFunc = (
-    text: string,
-    params: { [key: string]: string },
-    page: number
-  ) => this.foolslideClient.getSearch(text, params, page);
+  getSearch: GetSearchFunc = (text: string, page: number, filterValues: FilterValues) =>
+    this.foolslideClient.getSearch(text, page, filterValues);
 
-  getDirectory: GetDirectoryFunc = (page: number) =>
-    this.foolslideClient.getDirectory(page);
+  getDirectory: GetDirectoryFunc = (page: number, filterValues: FilterValues) =>
+    this.foolslideClient.getDirectory(page, filterValues);
 
-  getSettingTypes: GetSettingTypesFunc = () =>
-    this.foolslideClient.getSettingTypes();
+  getSettingTypes: GetSettingTypesFunc = () => this.foolslideClient.getSettingTypes();
 
   getSettings: GetSettingsFunc = () => this.foolslideClient.getSettings();
 
   setSettings: SetSettingsFunc = (newSettings: { [key: string]: any }) =>
     this.foolslideClient.setSettings(newSettings);
+
+  getFilterOptions: GetFilterOptionsFunc = () => this.foolslideClient.getFilterOptions();
 }
