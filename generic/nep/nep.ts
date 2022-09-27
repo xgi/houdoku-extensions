@@ -348,6 +348,18 @@ export class NepClient {
 
   getFilterOptions: GetFilterOptionsFunc = () => {
     return [
+      new FilterSort(FilterControlIds.Sort, "Sort", {
+        key: SortType.POPULARITY,
+        direction: SortDirection.DESCENDING,
+      })
+        .withFields(FIELDS_SORT)
+        .withSupportsBothDirections(true),
+      new FilterTriStateCheckbox(
+        FilterControlIds.Official,
+        "Official translation",
+        TriState.IGNORE
+      ),
+
       new FilterMultiToggle(FilterControlIds.Genres, "Genre", {})
         .withFields(FIELDS_GENRES)
         .withIsTriState(true),
@@ -360,17 +372,6 @@ export class NepClient {
       new FilterMultiToggle(FilterControlIds.Type, "Type", {})
         .withFields(FIELDS_TYPES)
         .withIsTriState(true),
-      new FilterTriStateCheckbox(
-        FilterControlIds.Official,
-        "Official translation",
-        TriState.IGNORE
-      ),
-      new FilterSort(FilterControlIds.Sort, "Sort", {
-        key: SortType.POPULARITY,
-        direction: SortDirection.DESCENDING,
-      })
-        .withFields(FIELDS_SORT)
-        .withSupportsBothDirections(true),
     ];
   };
 }
