@@ -15,6 +15,7 @@ import {
   SeriesListResponse,
   SettingType,
   FilterValues,
+  Chapter,
 } from "houdoku-extension-lib";
 import { LanguageKey, Series, SeriesStatus } from "houdoku-extension-lib";
 import { Response } from "node-fetch";
@@ -145,13 +146,18 @@ export class ExtensionClient extends ExtensionClientAbstract {
       })
       .then((json: KomgaSeries) => findLanguageKey(json.metadata.language) || LanguageKey.MULTI);
 
-    return this.utilFns
-      .fetchFn(`${this.settings[SETTING_NAMES.ADDRESS]}/api/v1/series/${id}/books`, {
-        headers: this._getHeaders(),
-      })
-      .then((response: Response) => response.json())
-      .then((json: any) => {
-        return json.content.map((book: KomgaBook) => ({
+    const chapters: Chapter[] = [];
+    let page = 0;
+    let continuing = true;
+    while (continuing) {
+      const json = await this.utilFns
+        .fetchFn(`${this.settings[SETTING_NAMES.ADDRESS]}/api/v1/series/${id}/books?page=${page}`, {
+          headers: this._getHeaders(),
+        })
+        .then((response: Response) => response.json());
+
+      chapters.push(
+        ...json.content.map((book: KomgaBook) => ({
           id: undefined,
           seriesId: undefined,
           sourceId: book.id,
@@ -162,8 +168,13 @@ export class ExtensionClient extends ExtensionClientAbstract {
           groupName: "",
           time: new Date(book.fileLastModified).getTime(),
           read: false,
-        }));
-      });
+        }))
+      );
+      page++;
+      continuing = json.last === false;
+    }
+
+    return chapters;
   };
 
   getPageRequesterData: GetPageRequesterDataFunc = (
@@ -206,18 +217,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getDirectory: GetDirectoryFunc = (page: number, filterValues: FilterValues) => {
-    return this.utilFns
-      .fetchFn(
-        `${this.settings[SETTING_NAMES.ADDRESS]}/api/v1/series?page=${
-          page - 1
-        }&deleted=false&sort=metadata.titleSort,asc`,
-        { headers: this._getHeaders() }
-      )
-      .then((response: Response) => {
-        this._updateAuthToken(response);
-        return response.json();
-      })
-      .then((json: KomgaSeriesListResponse) => this._parseSeriesListResponse(json));
+    return this.getSearch("", page, filterValues);
   };
 
   getSearch: GetSearchFunc = (text: string, page: number, filterValues: FilterValues) => {
