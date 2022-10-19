@@ -23,10 +23,17 @@ import { parseMetadata } from "../../util/configuring";
 const BASE_URL = "https://mangakatana.com";
 export const METADATA: ExtensionMetadata = parseMetadata(metadata);
 
-const SERIES_STATUS_MAP: { [key: string]: SeriesStatus } = {};
+const SERIES_STATUS_MAP: { [key: string]: SeriesStatus } = {
+  Ongoing: SeriesStatus.ONGOING,
+  Completed: SeriesStatus.COMPLETED,
+};
 
 const parseSeriesPage = (doc: Document): Series => {
-  const id = doc.querySelectorAll(`[property=og:url]`)![0].getAttribute("content").split("/").pop();
+  const id = doc
+    .querySelectorAll(`[property="og:url"]`)![0]
+    .getAttribute("content")
+    .split("/")
+    .pop();
   const infoContainer = doc.getElementById("single_book")!;
   const title = infoContainer.getElementsByTagName("h1")![0].textContent.trim();
   const description = infoContainer
@@ -167,7 +174,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
       .fetchFn(`${BASE_URL}/manga/${seriesSourceId}/${chapterSourceId}`)
       .then((response) => response.text())
       .then((data: string) => {
-        const imageArrStr = data.split("var ytaw=[")[1].split(",]")[0];
+        const imageArrStr = data.split("var thzq=[")[1].split(",]")[0];
         const imageUrls = imageArrStr.split(",").map((imageUrl) => imageUrl.replace(/\'/g, ""));
 
         return {
