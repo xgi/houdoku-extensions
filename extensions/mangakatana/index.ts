@@ -26,7 +26,7 @@ export const METADATA: ExtensionMetadata = parseMetadata(metadata);
 const SERIES_STATUS_MAP: { [key: string]: SeriesStatus } = {};
 
 const parseSeriesPage = (doc: Document): Series => {
-  const id = doc.querySelectorAll(`[property=og:url]`)![0].getAttribute("content").split("/").pop();
+  const id = doc.querySelectorAll(`[property="og:url"]`)![0].getAttribute("content").split("/").pop();
   const infoContainer = doc.getElementById("single_book")!;
   const title = infoContainer.getElementsByTagName("h1")![0].textContent.trim();
   const description = infoContainer
