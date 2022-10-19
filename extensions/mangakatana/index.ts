@@ -23,10 +23,17 @@ import { parseMetadata } from "../../util/configuring";
 const BASE_URL = "https://mangakatana.com";
 export const METADATA: ExtensionMetadata = parseMetadata(metadata);
 
-const SERIES_STATUS_MAP: { [key: string]: SeriesStatus } = {};
+const SERIES_STATUS_MAP: { [key: string]: SeriesStatus } = {
+  Ongoing: SeriesStatus.ONGOING,
+  Completed: SeriesStatus.COMPLETED,
+};
 
 const parseSeriesPage = (doc: Document): Series => {
-  const id = doc.querySelectorAll(`[property="og:url"]`)![0].getAttribute("content").split("/").pop();
+  const id = doc
+    .querySelectorAll(`[property="og:url"]`)![0]
+    .getAttribute("content")
+    .split("/")
+    .pop();
   const infoContainer = doc.getElementById("single_book")!;
   const title = infoContainer.getElementsByTagName("h1")![0].textContent.trim();
   const description = infoContainer
