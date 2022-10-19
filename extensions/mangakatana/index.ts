@@ -167,7 +167,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
       .fetchFn(`${BASE_URL}/manga/${seriesSourceId}/${chapterSourceId}`)
       .then((response) => response.text())
       .then((data: string) => {
-        const imageArrStr = data.split("var ytaw=[")[1].split(",]")[0];
+        const imageArrStr = data.split("var thzq=[")[1].split(",]")[0];
         const imageUrls = imageArrStr.split(",").map((imageUrl) => imageUrl.replace(/\'/g, ""));
 
         return {
