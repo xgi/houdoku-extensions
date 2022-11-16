@@ -21,7 +21,7 @@ import { LanguageKey, Series, SeriesStatus } from "houdoku-extension-lib";
 import metadata from "./metadata.json";
 import { parseMetadata } from "../../util/configuring";
 
-const BASE_URL = "https://komikcast.me";
+const BASE_URL = "https://komikcast.site";
 export const METADATA: ExtensionMetadata = parseMetadata(metadata);
 
 const ORIGINAL_LANGUAGE_MAP: { [key: string]: LanguageKey } = {
