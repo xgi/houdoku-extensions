@@ -14,12 +14,27 @@ import {
   GetSettingTypesFunc,
   FilterValues,
   GetFilterOptionsFunc,
+  FilterCheckbox,
+  FilterSort,
+  FilterSeparator,
+  FilterMultiToggle,
+  MultiToggleValues,
+  TriState,
+  FilterSortValue,
+  SortDirection,
 } from "houdoku-extension-lib";
 import { LanguageKey, Series, SeriesStatus } from "houdoku-extension-lib";
 import { Response } from "node-fetch";
 import metadata from "./metadata.json";
 import { parseMetadata } from "../../util/configuring";
 import { findLanguageKey } from "../../util/parsing";
+import {
+  FIELDS_COUNTRY,
+  FIELDS_DEMOGRAPHICS,
+  FIELDS_GENRES,
+  FIELDS_SORT,
+  FilterControlIds,
+} from "./filters";
 
 export const METADATA: ExtensionMetadata = parseMetadata(metadata);
 
@@ -30,6 +45,13 @@ const SEARCH_LIMIT = 8;
 const STATUS_MAP = {
   1: SeriesStatus.ONGOING,
   2: SeriesStatus.COMPLETED,
+};
+
+type ComickSearchSeries = {
+  title: string;
+  id: number;
+  slug: string;
+  cover_url: string;
 };
 
 export class ExtensionClient extends ExtensionClientAbstract {
@@ -123,18 +145,58 @@ export class ExtensionClient extends ExtensionClientAbstract {
   };
 
   getSearch: GetSearchFunc = (text: string, page: number, filterValues: FilterValues) => {
+    const params = new URLSearchParams({
+      tachiyomi: "true",
+      limit: `${SEARCH_LIMIT}`,
+      page: `${page}`,
+    });
+
+    if (text) params.append("q", text);
+
+    if (FilterControlIds.Genres in filterValues) {
+      Object.entries(filterValues[FilterControlIds.Genres] as MultiToggleValues).forEach(
+        ([genre, value]) => {
+          if (value === TriState.INCLUDE) params.append("genres", genre);
+          if (value === TriState.EXCLUDE) params.append("excludes", genre);
+        }
+      );
+    }
+    if (FilterControlIds.Demographic in filterValues) {
+      Object.entries(filterValues[FilterControlIds.Demographic] as MultiToggleValues).forEach(
+        ([demo, value]) => {
+          if (value === TriState.INCLUDE) params.append("demographic", demo);
+        }
+      );
+    }
+    if (FilterControlIds.Country in filterValues) {
+      Object.entries(filterValues[FilterControlIds.Country] as MultiToggleValues).forEach(
+        ([country, value]) => {
+          if (value === TriState.INCLUDE) params.append("country", country);
+        }
+      );
+    }
+    if (FilterControlIds.Sort in filterValues) {
+      const sort = filterValues[FilterControlIds.Sort] as FilterSortValue;
+      params.append("sort", sort.key);
+    }
+    if (FilterControlIds.Completed in filterValues) {
+      if (filterValues[FilterControlIds.Completed] === true) {
+        params.append("completed", "1");
+      }
+    }
+
     return this.utilFns
-      .fetchFn(`${API_URL}/search?q=${text}&limit=${SEARCH_LIMIT}&page=${page}&tachiyomi=true`)
+      .fetchFn(`${API_URL}/search?` + params)
       .then((response: Response) => response.json())
       .then((json: any) => {
-        const seriesList: Series[] = json.map((seriesObj: any) => {
-          const series = {
+        const seriesList: Series[] = json.map((seriesObj: ComickSearchSeries) => {
+          const series: Series = {
             id: undefined,
             extensionId: METADATA.id,
             sourceId: `${seriesObj.slug}:-1`,
             title: seriesObj.title,
             altTitles: [],
-            description: seriesObj.desc,
+            description: "",
             authors: [],
             artists: [],
             tags: [],
@@ -163,5 +225,30 @@ export class ExtensionClient extends ExtensionClientAbstract {
 
   setSettings: SetSettingsFunc = () => {};
 
-  getFilterOptions: GetFilterOptionsFunc = () => [];
+  getFilterOptions: GetFilterOptionsFunc = () => {
+    return [
+      new FilterSort(FilterControlIds.Sort, "Sort", {
+        key: "follow",
+        direction: SortDirection.DESCENDING,
+      })
+        .withFields(FIELDS_SORT)
+        .withSupportsBothDirections(false),
+
+      new FilterSeparator("separator1", "", ""),
+
+      new FilterMultiToggle(FilterControlIds.Genres, "Genres", {})
+        .withFields(FIELDS_GENRES)
+        .withIsTriState(true),
+      new FilterMultiToggle(FilterControlIds.Demographic, "Demographics", {})
+        .withFields(FIELDS_DEMOGRAPHICS)
+        .withIsTriState(false),
+      new FilterMultiToggle(FilterControlIds.Country, "Types", {})
+        .withFields(FIELDS_COUNTRY)
+        .withIsTriState(false),
+
+      new FilterSeparator("separator2", "", ""),
+
+      new FilterCheckbox(FilterControlIds.Completed, "Completed series only", false),
+    ];
+  };
 }
