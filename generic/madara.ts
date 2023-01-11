@@ -202,11 +202,12 @@ export class MadaraClient {
         const imgContainers = doc.getElementsByClassName("wp-manga-chapter-img")!;
 
         const pageFilenames = Array.from(imgContainers).map((element: Element) => {
-          return Array.from(element.attributes).find(
-            (attrib: any) => attrib.name === "data-src"
-          ) !== undefined
-            ? element.getAttribute("data-src")!
-            : element.getAttribute("src")!;
+          const url =
+            Array.from(element.attributes).find((attrib: any) => attrib.name === "data-src") !==
+            undefined
+              ? element.getAttribute("data-src")!
+              : element.getAttribute("src")!;
+          return url.trim();
         });
 
         return {
