@@ -114,59 +114,61 @@ type ParsedResults = {
   hasMore: boolean;
 };
 
+const _parseManga = (json: any): Series => {
+  const tags: string[] = json.attributes.tags.map((tag: any) => tag.attributes.name.en);
+  if (json.attributes.publicationDemographic !== null) {
+    tags.push(json.attributes.publicationDemographic);
+  }
+
+  const title =
+    json.attributes.title.en !== undefined
+      ? json.attributes.title.en
+      : Object.values(json.attributes.title)[0];
+
+  const coverRelationship = json.relationships.find(
+    (relationship: any) =>
+      relationship.type === "cover_art" && relationship.attributes !== undefined
+  );
+  const remoteCoverUrl =
+    coverRelationship !== undefined
+      ? `https://uploads.mangadex.org/covers/${json.id}/${coverRelationship.attributes.fileName}.512.jpg`
+      : "";
+
+  const series: Series = {
+    id: undefined,
+    extensionId: METADATA.id,
+    sourceId: json.id,
+
+    title,
+    altTitles: json.attributes.altTitles.map((altTitleCont: any) => altTitleCont.en),
+    description: json.attributes.description.en,
+    authors: json.relationships
+      .filter(
+        (relationship: any) =>
+          relationship.type === "author" && relationship.attributes !== undefined
+      )
+      .map((relationship: any) => relationship.attributes.name),
+    artists: json.relationships
+      .filter(
+        (relationship: any) =>
+          relationship.type === "artist" && relationship.attributes !== undefined
+      )
+      .map((relationship: any) => relationship.attributes.name),
+    tags: tags,
+    status: SERIES_STATUS_MAP[json.attributes.status],
+    originalLanguageKey: LANGUAGE_MAP[json.attributes.originalLanguage],
+    numberUnread: 0,
+    remoteCoverUrl,
+  };
+  return series;
+};
+
 const _parseMangaResults = (json: any): ParsedResults => {
   if (!("data" in json) || json.data === undefined || json.data.length === 0) {
     return { seriesList: [], hasMore: false };
   }
 
-  const seriesList = json.data.map((result: any) => {
-    const tags: string[] = result.attributes.tags.map((tag: any) => tag.attributes.name.en);
-    if (result.attributes.publicationDemographic !== null) {
-      tags.push(result.attributes.publicationDemographic);
-    }
-
-    const title =
-      result.attributes.title.en !== undefined
-        ? result.attributes.title.en
-        : Object.values(result.attributes.title)[0];
-
-    const coverRelationship = result.relationships.find(
-      (relationship: any) =>
-        relationship.type === "cover_art" && relationship.attributes !== undefined
-    );
-    const remoteCoverUrl =
-      coverRelationship !== undefined
-        ? `https://uploads.mangadex.org/covers/${result.id}/${coverRelationship.attributes.fileName}.512.jpg`
-        : "";
-
-    const series: Series = {
-      id: undefined,
-      extensionId: METADATA.id,
-      sourceId: result.id,
-
-      title,
-      altTitles: result.attributes.altTitles.map((altTitleCont: any) => altTitleCont.en),
-      description: result.attributes.description.en,
-      authors: result.relationships
-        .filter(
-          (relationship: any) =>
-            relationship.type === "author" && relationship.attributes !== undefined
-        )
-        .map((relationship: any) => relationship.attributes.name),
-      artists: result.relationships
-        .filter(
-          (relationship: any) =>
-            relationship.type === "artist" && relationship.attributes !== undefined
-        )
-        .map((relationship: any) => relationship.attributes.name),
-      tags: tags,
-      status: SERIES_STATUS_MAP[result.attributes.status],
-      originalLanguageKey: LANGUAGE_MAP[result.attributes.originalLanguage],
-      numberUnread: 0,
-      remoteCoverUrl,
-    };
-    return series;
-  });
+  const seriesList = json.data.map((data: any) => _parseManga(data));
 
   const hasMore = json.total > json.offset + seriesList.length;
   return {
@@ -188,12 +190,12 @@ export class ExtensionClient extends ExtensionClientAbstract {
   getSeries: GetSeriesFunc = (id: string) => {
     return this.utilFns
       .fetchFn(
-        `https://api.mangadex.org/manga?ids[]=${id}&includes[]=artist&includes[]=author&includes[]=cover_art`
+        `https://api.mangadex.org/manga/${id}?includes[]=artist&includes[]=author&includes[]=cover_art`
       )
       .then((response: Response) => response.json())
       .then((json: any) => {
-        const results: ParsedResults = _parseMangaResults(json);
-        return results.seriesList.length > 0 ? results.seriesList[0] : undefined;
+        if (!("data" in json) || json.data === undefined) return undefined;
+        return _parseManga(json.data);
       });
   };
 
@@ -202,8 +204,17 @@ export class ExtensionClient extends ExtensionClientAbstract {
     let gotAllChapters: boolean = false;
     let offset = 0;
     while (!gotAllChapters) {
+      const params = new URLSearchParams({
+        offset: `${offset}`,
+        limit: "500",
+        "includes[]": "scanlation_group",
+      });
+      FIELDS_CONTENT_RATINGS.forEach((contentRating) => {
+        params.append("contentRating[]", contentRating.key);
+      });
+
       const response = await this.utilFns.fetchFn(
-        `https://api.mangadex.org/manga/${id}/feed?offset=${offset}&limit=500&includes[]=scanlation_group`
+        `https://api.mangadex.org/manga/${id}/feed?` + params
       );
       const json = await response.json();
       json.data.forEach((result: any) => {
