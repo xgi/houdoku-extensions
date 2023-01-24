@@ -14,6 +14,7 @@ import {
   GetSettingsFunc,
   GetSettingTypesFunc,
   FilterValues,
+  LanguageKey,
 } from "houdoku-extension-lib";
 import metadata from "./metadata.json";
 import { MadaraClient } from "../../generic/madara";
@@ -27,7 +28,13 @@ export class ExtensionClient extends ExtensionClientAbstract {
 
   constructor(utilsFn: UtilFunctions) {
     super(utilsFn);
-    this.madaraClient = new MadaraClient(METADATA.id, METADATA.url, utilsFn);
+    this.madaraClient = new MadaraClient(
+      METADATA.id,
+      METADATA.url,
+      utilsFn,
+      LanguageKey.ENGLISH,
+      METADATA.url + "/"
+    );
   }
 
   getMetadata: () => ExtensionMetadata = () => {

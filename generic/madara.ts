@@ -25,20 +25,24 @@ export class MadaraClient {
   translatedLanguageKey: LanguageKey;
   util: UtilFunctions;
 
+  imageRequestReferer: string = "";
+
   constructor(
     extensionId: string,
     baseUrl: string,
     utilFns: UtilFunctions,
-    translatedLanguageKey: LanguageKey = LanguageKey.ENGLISH
+    translatedLanguageKey: LanguageKey = LanguageKey.ENGLISH,
+    imageRequestReferer: string = ""
   ) {
     this.extensionId = extensionId;
     this.baseUrl = baseUrl;
     this.translatedLanguageKey = translatedLanguageKey;
     this.util = utilFns;
+    this.imageRequestReferer = imageRequestReferer;
   }
 
   _parseSearch = (doc: Document): SeriesListResponse => {
-    const searchContainers = doc.getElementsByClassName("c-tabs-item__content");
+    const searchContainers = doc.querySelectorAll(".c-tabs-item__content, .page-item-detail");
     if (!searchContainers) return { seriesList: [], hasMore: false };
 
     const seriesList: Series[] = [];
@@ -57,7 +61,7 @@ export class MadaraClient {
       const sourceId = href.substr(0, href.length - 1);
       if (title === null || sourceId === undefined) continue;
 
-      const image = item.getElementsByClassName("img-responsive")![0];
+      const image = item.getElementsByTagName("img")![0];
 
       const coverUrl = (
         Array.from(image.attributes).find((attrib: any) => attrib.name === "data-src") !== undefined
@@ -69,7 +73,6 @@ export class MadaraClient {
         id: undefined,
         extensionId: this.extensionId,
         sourceId: sourceId,
-
         title,
         altTitles: [],
         description: "",
@@ -224,9 +227,11 @@ export class MadaraClient {
   };
 
   getImage: GetImageFunc = (series: Series, url: string) => {
-    return new Promise((resolve, reject) => {
-      resolve(url);
-    });
+    return this.util
+      .fetchFn(url, {
+        headers: { Referer: this.imageRequestReferer },
+      })
+      .then((response) => response.arrayBuffer());
   };
 
   getSearch: GetSearchFunc = (text: string, page: number) => {
