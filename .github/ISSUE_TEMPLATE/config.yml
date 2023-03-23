@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: 🎀 Extension request
+    url: https://github.com/xgi/houdoku-extensions/issues/85
+    about: Request a new extension
   - name: 🔗 Houdoku repository
     url: https://github.com/xgi/houdoku/issues/new/choose
     about: Reports/requests for Houdoku itself should be opened in the main repository
