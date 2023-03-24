@@ -69,7 +69,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
         const series: Series = {
           id: undefined,
           extensionId: METADATA.id,
-          sourceId: `${json.comic.slug}:${json.comic.id}`,
+          sourceId: `${json.comic.slug}:${json.comic.id}:${json.comic.hid}`,
           title: json.comic.title,
           altTitles: json.comic.md_titles.map((x: { title: string }) => x.title),
           description: json.comic.desc,
@@ -87,7 +87,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
 
   getChapters: GetChaptersFunc = (id: string) => {
     return this.utilFns
-      .fetchFn(`${API_URL}/comic/${id.split(":")[1]}/chapter?limit=99999`)
+      .fetchFn(`${API_URL}/comic/${id.split(":")[2]}/chapters?limit=99999`)
       .then((response: Response) => response.json())
       .then((json: any) => {
         return json.chapters.map((chapterObj) => {
