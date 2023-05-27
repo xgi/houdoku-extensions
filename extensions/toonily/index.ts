@@ -33,7 +33,8 @@ export class ExtensionClient extends ExtensionClientAbstract {
       METADATA.url,
       utilsFn,
       LanguageKey.ENGLISH,
-      METADATA.url + "/"
+      METADATA.url + "/",
+      { Cookie: "toonily-mature=1" }
     );
   }
 
