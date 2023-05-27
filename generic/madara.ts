@@ -10,12 +10,12 @@ import {
   GetSettingsFunc,
   SetSettingsFunc,
   GetSettingTypesFunc,
-  WebviewResponse,
   SeriesListResponse,
   Chapter,
   LanguageKey,
   Series,
   SeriesStatus,
+  FilterValues,
 } from "houdoku-extension-lib";
 import { GetFilterOptionsFunc, UtilFunctions } from "houdoku-extension-lib/dist/interface";
 
@@ -26,19 +26,22 @@ export class MadaraClient {
   util: UtilFunctions;
 
   imageRequestReferer: string = "";
+  searchHeaders: { [key: string]: string } = {};
 
   constructor(
     extensionId: string,
     baseUrl: string,
     utilFns: UtilFunctions,
     translatedLanguageKey: LanguageKey = LanguageKey.ENGLISH,
-    imageRequestReferer: string = ""
+    imageRequestReferer: string = "",
+    searchHeaders: { [key: string]: string } = {}
   ) {
     this.extensionId = extensionId;
     this.baseUrl = baseUrl;
     this.translatedLanguageKey = translatedLanguageKey;
     this.util = utilFns;
     this.imageRequestReferer = imageRequestReferer;
+    this.searchHeaders = searchHeaders;
   }
 
   _parseSearch = (doc: Document): SeriesListResponse => {
@@ -91,63 +94,62 @@ export class MadaraClient {
   };
 
   getSeries: GetSeriesFunc = (id: string) => {
-    return this.util.webviewFn(`${this.baseUrl}${id}`).then((response: WebviewResponse) => {
-      const doc = this.util.docFn(response.text);
+    return this.util
+      .fetchFn(`${this.baseUrl}${id}`)
+      .then((response) => response.text())
+      .then((text) => {
+        const doc = this.util.docFn(text);
 
-      try {
-        const titleContainer = doc.getElementsByClassName("post-title")![0];
-        const title = titleContainer.getElementsByTagName("h1")![0].textContent.trim();
+        try {
+          const titleContainer = doc.getElementsByClassName("post-title")![0];
+          const title = titleContainer
+            .getElementsByTagName("h1")![0]
+            .childNodes[0].nodeValue.trim();
 
-        const detailsContainer = doc.getElementsByClassName("tab-summary")![0];
-        const link = detailsContainer.getElementsByTagName("a")![0];
+          const detailsContainer = doc.getElementsByClassName("tab-summary")![0];
+          const link = detailsContainer.getElementsByTagName("a")![0];
 
-        const href = link.getAttribute("href")!.split(this.baseUrl)[1];
-        const sourceId = href.substr(0, href.length - 1);
+          const href = link.getAttribute("href")!.split(this.baseUrl)[1];
+          const sourceId = href.substr(0, href.length - 1);
 
-        const image = link.getElementsByTagName("img")![0];
-        const remoteCoverUrl = (
-          Array.from(image.attributes).find((attrib: any) => attrib.name === "data-src") !==
-          undefined
-            ? image.getAttribute("data-src")!
-            : image.getAttribute("srcset")!
-        ).split(" ")[0];
+          const image = link.getElementsByTagName("img")![0];
+          const remoteCoverUrl = (
+            Array.from(image.attributes).find((attrib: any) => attrib.name === "data-src") !==
+            undefined
+              ? image.getAttribute("data-src")!
+              : image.getAttribute("srcset")!
+          ).split(" ")[0];
 
-        const series: Series = {
-          id: undefined,
-          extensionId: this.extensionId,
-          sourceId: sourceId,
-          title: title || "",
-          altTitles: [],
-          description: "",
-          authors: [],
-          artists: [],
-          tags: [],
-          status: SeriesStatus.ONGOING,
-          originalLanguageKey: LanguageKey.JAPANESE,
-          numberUnread: 0,
-          remoteCoverUrl: remoteCoverUrl || "",
-        };
-        return series;
-      } catch (err) {
-        console.error(err);
-        return undefined;
-      }
-    });
+          const series: Series = {
+            id: undefined,
+            extensionId: this.extensionId,
+            sourceId: sourceId,
+            title: title || "",
+            altTitles: [],
+            description: "",
+            authors: [],
+            artists: [],
+            tags: [],
+            status: SeriesStatus.ONGOING,
+            originalLanguageKey: LanguageKey.JAPANESE,
+            numberUnread: 0,
+            remoteCoverUrl: remoteCoverUrl || "",
+          };
+          return series;
+        } catch (err) {
+          console.error(err);
+          return undefined;
+        }
+      });
   };
 
   getChapters: GetChaptersFunc = (id: string) => {
     return this.util
-      .webviewFn(`${this.baseUrl}${id}/ajax/chapters`, {
-        postData: [
-          {
-            type: "rawData",
-            bytes: Buffer.from(""),
-          },
-        ],
-      })
-      .then((response: WebviewResponse) => {
+      .fetchFn(`${this.baseUrl}${id}/ajax/chapters`, { method: "POST" })
+      .then((response) => response.text())
+      .then((text) => {
         const chapters: Chapter[] = [];
-        const doc = this.util.docFn(response.text);
+        const doc = this.util.docFn(text);
 
         try {
           const chapterContainers = doc.getElementsByClassName("wp-manga-chapter")!;
@@ -199,9 +201,10 @@ export class MadaraClient {
     chapterSourceId: string
   ) => {
     return this.util
-      .webviewFn(`${this.baseUrl}/${seriesSourceId}/${chapterSourceId}`)
-      .then((response: WebviewResponse) => {
-        const doc = this.util.docFn(response.text);
+      .fetchFn(`${this.baseUrl}/${seriesSourceId}/${chapterSourceId}`)
+      .then((response) => response.text())
+      .then((text) => {
+        const doc = this.util.docFn(text);
         const imgContainers = doc.getElementsByClassName("wp-manga-chapter-img")!;
 
         const pageFilenames = Array.from(imgContainers).map((element: Element) => {
@@ -234,16 +237,17 @@ export class MadaraClient {
       .then((response) => response.arrayBuffer());
   };
 
-  getSearch: GetSearchFunc = (text: string, page: number) => {
+  getSearch: GetSearchFunc = (text: string, page: number, _filterValues: FilterValues) => {
     return this.util
-      .webviewFn(`${this.baseUrl}/page/${page}/?s=${text}&post_type=wp-manga`)
-      .then((response: WebviewResponse) => this._parseSearch(this.util.docFn(response.text)));
+      .fetchFn(`${this.baseUrl}/page/${page}/?s=${text}&post_type=wp-manga`, {
+        headers: this.searchHeaders,
+      })
+      .then((response) => response.text())
+      .then((text) => this._parseSearch(this.util.docFn(text)));
   };
 
-  getDirectory: GetDirectoryFunc = (page: number) => {
-    return this.util
-      .webviewFn(`${this.baseUrl}/page/${page}/?s=&post_type=wp-manga`)
-      .then((response: WebviewResponse) => this._parseSearch(this.util.docFn(response.text)));
+  getDirectory: GetDirectoryFunc = (page: number, filterValues: FilterValues) => {
+    return this.getSearch("", page, filterValues);
   };
 
   getSettingTypes: GetSettingTypesFunc = () => {
