@@ -22,9 +22,9 @@ import {
   TriState,
   FilterSortValue,
   SortDirection,
+  WebviewResponse,
 } from "houdoku-extension-lib";
 import { LanguageKey, Series, SeriesStatus } from "houdoku-extension-lib";
-import { Response } from "node-fetch";
 import metadata from "./metadata.json";
 import { parseMetadata } from "../../util/configuring";
 import { findLanguageKey } from "../../util/parsing";
@@ -61,9 +61,11 @@ export class ExtensionClient extends ExtensionClientAbstract {
 
   getSeries: GetSeriesFunc = (id: string) => {
     return this.utilFns
-      .fetchFn(`${API_URL}/comic/${id.split(":")[0]}?tachiyomi=true`)
-      .then((response: Response) => response.json())
-      .then((json: any) => {
+      .webviewFn(`${API_URL}/comic/${id.split(":")[0]}?tachiyomi=true`)
+      .then((response: WebviewResponse) => {
+        const json = JSON.parse(
+          this.utilFns.docFn(response.text).getElementsByTagName("pre")[0].textContent
+        );
         const tags = [json.demographic, ...json.genres.map((genre) => genre.name)];
 
         const series: Series = {
@@ -87,9 +89,11 @@ export class ExtensionClient extends ExtensionClientAbstract {
 
   getChapters: GetChaptersFunc = (id: string) => {
     return this.utilFns
-      .fetchFn(`${API_URL}/comic/${id.split(":")[2]}/chapters?limit=99999`)
-      .then((response: Response) => response.json())
-      .then((json: any) => {
+      .webviewFn(`${API_URL}/comic/${id.split(":")[2]}/chapters?limit=99999`)
+      .then((response: WebviewResponse) => {
+        const json = JSON.parse(
+          this.utilFns.docFn(response.text).getElementsByTagName("pre")[0].textContent
+        );
         return json.chapters.map((chapterObj) => {
           return {
             id: undefined,
@@ -117,9 +121,11 @@ export class ExtensionClient extends ExtensionClientAbstract {
     chapterSourceId: string
   ) => {
     return this.utilFns
-      .fetchFn(`${API_URL}/chapter/${chapterSourceId}?tachiyomi=true`)
-      .then((response: Response) => response.json())
-      .then((json: any) => {
+      .webviewFn(`${API_URL}/chapter/${chapterSourceId}?tachiyomi=true`)
+      .then((response: WebviewResponse) => {
+        const json = JSON.parse(
+          this.utilFns.docFn(response.text).getElementsByTagName("pre")[0].textContent
+        );
         const pageFilenames = json.chapter.images.map((image) => image.url);
         return {
           server: "",
@@ -186,9 +192,11 @@ export class ExtensionClient extends ExtensionClientAbstract {
     }
 
     return this.utilFns
-      .fetchFn(`${API_URL}/search?` + params)
-      .then((response: Response) => response.json())
-      .then((json: any) => {
+      .webviewFn(`${API_URL}/search?` + params)
+      .then((response: WebviewResponse) => {
+        const json = JSON.parse(
+          this.utilFns.docFn(response.text).getElementsByTagName("pre")[0].textContent
+        );
         const seriesList: Series[] = json.map((seriesObj: ComickSearchSeries) => {
           const series: Series = {
             id: undefined,
