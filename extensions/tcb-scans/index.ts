@@ -34,7 +34,7 @@ const parseDirectoryResponse = (doc: Document): SeriesListResponse => {
     const titleLink = row.getElementsByClassName("mb-3 text-white text-lg font-bold")![0];
 
     const header = titleLink.textContent.trim();
-    const link = titleLink.getAttribute("href").replace("/mangas/", "");
+    const sourceId = titleLink.getAttribute("href").split("/mangas/")[1];
     const img = row
       .getElementsByClassName(" w-24 h-24 object-cover rounded-lg")![0]
       .getAttribute("src");
@@ -42,7 +42,7 @@ const parseDirectoryResponse = (doc: Document): SeriesListResponse => {
     const series: Series = {
       id: undefined,
       extensionId: METADATA.id,
-      sourceId: link,
+      sourceId,
       title: header,
       altTitles: [],
       description: "",
