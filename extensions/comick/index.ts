@@ -192,7 +192,7 @@ export class ExtensionClient extends ExtensionClientAbstract {
     }
 
     return this.utilFns
-      .webviewFn(`${API_URL}/search?` + params)
+      .webviewFn(`${API_URL}/v1.0/search?` + params)
       .then((response: WebviewResponse) => {
         const json = JSON.parse(
           this.utilFns.docFn(response.text).getElementsByTagName("pre")[0].textContent
