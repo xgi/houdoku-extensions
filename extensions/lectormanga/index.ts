@@ -253,44 +253,34 @@ export class ExtensionClient extends ExtensionClientAbstract {
     seriesSourceId: string,
     chapterSourceId: string
   ) => {
-    const newUrl = await this.utilFns
-      .webviewFn(`https://lectormanga.com/view_uploads/${chapterSourceId}`)
-      .then((response) => response.url);
-
     return this.utilFns
-      .fetchFn(newUrl, {
-        headers: { Referer: "https://lectormanga.com/" },
+      .webviewFn(`https://lectormanga.com/view_uploads/${chapterSourceId}`, {
+        httpReferrer: "https://lectormanga.com/",
       })
-      .then((response: Response) => response.text())
-      .then((data: string) => {
-        const root = data.split(`var dirPath = '`)[1].split(`'`)[0];
-        const imgListStr = data.split(`var images = JSON.parse('`)[1].split(`'`)[0];
-        const pageFilenames: string[] = JSON.parse(imgListStr);
+      .then((response) => {
+        const doc = this.utilFns.docFn(response.text);
+        const imgs = doc.querySelectorAll("img.viewer-image");
 
+        const pagePaths = Object.values(imgs).map((img) => img.getAttribute("data-src"));
         return {
-          server: root,
+          server: "",
           hash: "",
-          numPages: pageFilenames.length,
-          pageFilenames,
+          numPages: pagePaths.length,
+          pageFilenames: pagePaths,
         };
       });
   };
 
   getPageUrls: GetPageUrlsFunc = (pageRequesterData: PageRequesterData) => {
-    return pageRequesterData.pageFilenames.map((fname) => `${pageRequesterData.server}${fname}`);
+    return pageRequesterData.pageFilenames;
   };
 
   getImage: GetImageFunc = (series: Series, url: string) => {
-    const referer = url.split("/uploads/")[0].replace("img1.", "");
     return this.utilFns
       .fetchFn(url, {
-        headers: { Referer: referer },
+        headers: { Referer: "https://lectormanga.com/" },
       })
-      .then(async (response) => {
-        const contentType = response.headers.get("content-type");
-        const buffer = await response.arrayBuffer();
-        return `data:${contentType};base64,` + Buffer.from(buffer).toString("base64");
-      });
+      .then((response) => response.arrayBuffer());
   };
 
   getDirectory: GetDirectoryFunc = (page: number, filterValues: FilterValues) => {
