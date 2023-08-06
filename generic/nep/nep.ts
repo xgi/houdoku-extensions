@@ -217,12 +217,14 @@ export class NepClient {
       const content = JSON.parse(contentStr);
 
       return content.map((entry: any) => {
+        const chapterNumber = this._decodeChapterId(entry.Chapter).number.toString();
+
         return {
           id: undefined,
           seriesId: undefined,
           sourceId: this._decodeChapterId(entry.Chapter).path,
-          title: entry.ChapterName || "",
-          chapterNumber: this._decodeChapterId(entry.Chapter).number.toString(),
+          title: entry.ChapterName || `${entry.Type} ${chapterNumber}`,
+          chapterNumber: chapterNumber,
           volumeNumber: "",
           languageKey: LanguageKey.ENGLISH,
           groupName: "",
