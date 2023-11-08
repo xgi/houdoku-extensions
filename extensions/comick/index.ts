@@ -38,7 +38,7 @@ import {
 
 export const METADATA: ExtensionMetadata = parseMetadata(metadata);
 
-const API_URL = "https://api.comick.fun";
+const API_URL = "https://api.comick.app";
 
 const SEARCH_LIMIT = 8;
 
@@ -66,7 +66,11 @@ export class ExtensionClient extends ExtensionClientAbstract {
         const json = JSON.parse(
           this.utilFns.docFn(response.text).getElementsByTagName("pre")[0].textContent
         );
-        const tags = [json.demographic, ...json.genres.map((genre) => genre.name)];
+
+        const tags = json.demographic ? [json.demographic] : [];
+        json.comic.md_comic_md_genres.forEach((genre) => {
+          tags.push(genre.md_genres.name);
+        });
 
         const series: Series = {
           id: undefined,
