@@ -38,7 +38,7 @@ import {
 
 export const METADATA: ExtensionMetadata = parseMetadata(metadata);
 
-const API_URL = "https://api.comick.app";
+const API_URL = "https://api.comick.cc";
 
 const SEARCH_LIMIT = 8;
 
